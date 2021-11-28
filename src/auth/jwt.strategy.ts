@@ -1,10 +1,21 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+    Injectable,
+    InternalServerErrorException,
+    UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy as BaseStrategy, ExtractJwt } from 'passport-jwt';
+import {
+    Strategy as BaseStrategy,
+    ExtractJwt,
+} from 'passport-jwt';
 import { passportJwtSecret } from 'jwks-rsa';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
-// import { ManagementClient, User } from 'auth0';
+import {
+    ManagementClient,
+    ManagementClientOptions,
+    User,
+} from 'auth0';
 import * as _ from 'lodash';
 
 @Injectable()
@@ -28,13 +39,33 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
     }
 
     async validate(payload: JwtPayload) {
-        const { sub } = payload;
-        if (!sub || !_.isString(sub)) {
+        const { sub: id } = payload;
+
+        if (!id || !_.isString(id)) {
             throw new UnauthorizedException();
         }
-        return {
-            domain: this.configService.get('auth.domain'),
-            payload,
-        };
+
+        const authzManagementClientConfig = [
+            'domain',
+            'clientId',
+            'clientSecret',
+        ].reduce((result, currentKey) => {
+            result[currentKey] = this.configService.get(`auth.${currentKey}`);
+            return result;
+        }, {} as ManagementClientOptions);
+
+        console.log('LENCONDA:', authzManagementClientConfig);
+
+        const client = new ManagementClient(authzManagementClientConfig);
+
+        try {
+            const user: User = await client.getUser({
+                id,
+            });
+
+            return user;
+        } catch (e) {
+            throw new InternalServerErrorException(e.message || e.toString());
+        }
     }
 }
