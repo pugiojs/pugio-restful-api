@@ -9,7 +9,7 @@ import {
     ExtractJwt,
 } from 'passport-jwt';
 import { passportJwtSecret } from 'jwks-rsa';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 import * as _ from 'lodash';
 
 @Injectable()
