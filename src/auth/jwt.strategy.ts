@@ -41,6 +41,7 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
 
         const userinfoTag = this.configService.get('auth.userinfoTag');
         const userinfo = payload[userinfoTag];
+        const permissions = payload['permissions'] || [];
 
         if (!userinfo) {
             throw new UnauthorizedException();
@@ -53,7 +54,9 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
                 result[currentKeyName] = currentValue;
             }
             return result;
-        }, {});
+        }, {
+            permissions,
+        });
 
         return user;
     }
