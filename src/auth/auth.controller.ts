@@ -2,7 +2,9 @@ import {
     Body,
     Controller,
     Get,
+    HttpException,
     Inject,
+    InternalServerErrorException,
     Post,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -17,6 +19,7 @@ export class AuthController {
         return await this.authService.getRefreshedToken(refreshToken);
     }
 
+    // TODO remove
     @Get('/callback')
     public async handleCallback() {
         return {};

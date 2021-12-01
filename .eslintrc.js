@@ -31,6 +31,7 @@ module.exports = {
         '@typescript-eslint/no-parameter-properties': 'off',
         'comma-dangle': ['error', 'always-multiline'],
         'eol-last': 2,
+        semi: ['error', 'always'],
         quotes: [2, 'single'],
         'complexity': 'off',
         'max-nested-callbacks': 'off',

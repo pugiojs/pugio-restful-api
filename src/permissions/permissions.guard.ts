@@ -30,7 +30,7 @@ export class PermissionsGuard implements CanActivate {
             return routePermissions.some(routePermission => {
                 return userPermissions.includes(routePermission);
             });
-        }
+        };
 
         return hasPermission();
     }
