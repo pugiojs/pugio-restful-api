@@ -15,4 +15,6 @@ export interface JwtPayload extends JsonObject {
     azp?: string;
     /** Token scope (what the token has access to) */
     scope?: string;
+    /** User permissions in current audience */
+    permissions?: string[];
 }
