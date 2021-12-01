@@ -65,10 +65,10 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
         name: 'name',
         nickname: 'nickname',
         picture: 'picture',
-        user_id: 'authzId',
+        user_id: 'auth0_open_id',
         email: 'email',
-        email_verified: 'emailVerified',
-        created_at: 'createdAt',
-        updated_at: 'updatedAt',
+        email_verified: 'email_verified',
+        created_at: 'created_at',
+        updated_at: 'updated_at',
     };
 }
