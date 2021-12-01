@@ -9,9 +9,9 @@ import * as _ from 'lodash';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-    constructor(private readonly reflector: Reflector) {}
+    public constructor(private readonly reflector: Reflector) {}
 
-    canActivate(
+    public canActivate(
         context: ExecutionContext,
     ): boolean | Promise<boolean> | Observable<boolean> {
         const routePermissions = this.reflector.get<string[]>(

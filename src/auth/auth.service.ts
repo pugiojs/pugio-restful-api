@@ -7,7 +7,9 @@ import {
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly configService: ConfigService) {
+    private authenticationClient: AuthenticationClient;
+
+    public constructor(private readonly configService: ConfigService) {
         const authenticationClientOptions = [
             'domain',
             'clientId',
@@ -20,9 +22,7 @@ export class AuthService {
         this.authenticationClient = new AuthenticationClient(authenticationClientOptions);
     }
 
-    private authenticationClient: AuthenticationClient;
-
-    async getRefreshedToken(refreshToken: string) {
+    public async getRefreshedToken(refreshToken: string) {
         if (!this.authenticationClient.oauth || !refreshToken) {
             return {};
         }

@@ -6,7 +6,7 @@ import { CurrentUser } from './user.decorator';
 export class UserController {
     @UseGuards(AuthGuard())
     @Get('/profile')
-    getUserProfile(@CurrentUser() user) {
+    public getUserProfile(@CurrentUser() user) {
         return user;
     }
 }

@@ -14,7 +14,18 @@ import * as _ from 'lodash';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
-    constructor(private readonly configService: ConfigService) {
+    private userInfoMap = {
+        name: 'name',
+        nickname: 'nickname',
+        picture: 'picture',
+        user_id: 'auth0_open_id',
+        email: 'email',
+        email_verified: 'email_verified',
+        created_at: 'created_at',
+        updated_at: 'updated_at',
+    };
+
+    public constructor(private readonly configService: ConfigService) {
         super({
             secretOrKeyProvider: passportJwtSecret({
                 cache: true,
@@ -32,7 +43,7 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
         });
     }
 
-    validate(payload: JwtPayload) {
+    public validate(payload: JwtPayload) {
         const { sub: id } = payload;
 
         if (!id || !_.isString(id)) {
@@ -60,15 +71,4 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
 
         return user;
     }
-
-    private userInfoMap = {
-        name: 'name',
-        nickname: 'nickname',
-        picture: 'picture',
-        user_id: 'auth0_open_id',
-        email: 'email',
-        email_verified: 'email_verified',
-        created_at: 'created_at',
-        updated_at: 'updated_at',
-    };
 }
