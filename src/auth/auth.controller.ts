@@ -2,9 +2,7 @@ import {
     Body,
     Controller,
     Get,
-    HttpException,
     Inject,
-    InternalServerErrorException,
     Post,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';

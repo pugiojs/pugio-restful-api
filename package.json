@@ -35,16 +35,19 @@
         "@nestjs/core": "^7.6.13",
         "@nestjs/passport": "^7.1.0",
         "@nestjs/platform-express": "^7.6.5",
+        "@nestjs/typeorm": "^7.1.5",
         "auth0": "^2.37.0",
         "axios": "^0.24.0",
         "jsonwebtoken": "^8.5.1",
         "jwks-rsa": "^2.0.0",
         "lodash": "^4.17.21",
+        "mysql": "^2.18.1",
         "passport": "^0.4.1",
         "passport-jwt": "^4.0.0",
         "reflect-metadata": "^0.1.13",
         "rimraf": "^3.0.2",
-        "rxjs": "^6.6.3"
+        "rxjs": "^6.6.3",
+        "typeorm": "^0.2.29"
     },
     "devDependencies": {
         "@nestjs/cli": "^7.5.4",
