@@ -1,16 +1,16 @@
 {
-    "name": "pugio-be",
+    "name": "@permbase/pb-restful-api",
     "private": true,
     "version": "0.0.1",
-    "description": "Pugio back-end service",
-    "author": "lenconda <i@Lenconda.top>",
-    "homepage": "https://github.com/pugiojs/pugio-be",
+    "description": "Permbase back-end API services",
+    "author": "lenconda <i@lenconda.top>",
+    "homepage": "https://permbase.lenconda.top",
     "bugs": {
-        "url": "https://github.com/pugiojs/pugio-be/issues"
+        "url": "https://github.com/permbase/pb-restful-api/issues"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/pugiojs/pugio-be.git"
+        "url": "git+https://github.com/permbase/pb-restful-api.git"
     },
     "license": "MIT",
     "scripts": {
