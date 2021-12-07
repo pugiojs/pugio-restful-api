@@ -24,7 +24,6 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
         picture: 'picture',
         user_id: 'open_id',
         email: 'email',
-        email_verified: 'email_verified',
         created_at: 'created_at',
         updated_at: 'updated_at',
     };
@@ -58,26 +57,26 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
             throw new UnauthorizedException();
         }
 
-        const userinfoTag = this.configService.get('auth.userinfoTag');
-        const userinfo = payload[userinfoTag];
+        const userInfoTag = this.configService.get('auth.userinfoTag');
+        const userInfo = payload[userInfoTag];
         const permissions = payload['permissions'] || [];
 
-        if (!userinfo) {
+        if (!userInfo) {
             throw new UnauthorizedException();
         }
 
-        const user = Object.keys(this.userInfoMap).reduce((result, currentKey) => {
+        const currentUserDAO = Object.keys(this.userInfoMap).reduce((result, currentKey) => {
             const currentKeyName = this.userInfoMap[currentKey];
-            const currentValue = userinfo[currentKey];
+            const currentValue = userInfo[currentKey];
             if (!_.isNull(currentValue) || !_.isUndefined(currentValue)) {
                 result[currentKeyName] = currentValue;
             }
             return result;
         }, {} as UserDAO);
 
-        const currentUserDTO = this.utilService.transformDAOToDTO<UserDAO, UserDTO>(user);
+        const currentUserDTO = this.utilService.transformDAOToDTO<UserDAO, UserDTO>(currentUserDAO);
         this.userService.syncUserInformation(_.omit(currentUserDTO, ['createdAt', 'updatedAt']));
 
-        return { ...user, permissions };
+        return { ...currentUserDTO, permissions };
     }
 }

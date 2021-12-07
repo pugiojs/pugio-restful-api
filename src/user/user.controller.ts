@@ -25,6 +25,6 @@ export class UserController {
     @UseGuards(AuthGuard())
     @Put('/profile')
     public async updateUserProfile(@CurrentUser() user, @Body() userInformation: UserDAO) {
-        return await this.userService.updateUserInformation(user.id, userInformation);
+        return await this.userService.updateUserInformation(user.openId, userInformation);
     }
 }

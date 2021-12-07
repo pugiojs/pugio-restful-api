@@ -13,11 +13,16 @@ import {
     map,
 } from 'rxjs/operators';
 import { ERR_HTTP_SERVER_ERROR } from './app.constants';
+import { UtilService } from './util/util.service';
 
 export type Response = Record<string, any>;
 
 @Injectable()
 export class AppInterceptor<T> implements NestInterceptor<T, Response> {
+    public constructor(
+        private readonly utilService: UtilService,
+    ) {}
+
     public async intercept(
         context: ExecutionContext,
         next: CallHandler,
@@ -31,7 +36,7 @@ export class AppInterceptor<T> implements NestInterceptor<T, Response> {
                 }
             }),
             map((data) => {
-                return data;
+                return this.utilService.transformDTOToDAO(data);
             }),
         );
     }

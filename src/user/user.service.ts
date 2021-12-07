@@ -1,25 +1,23 @@
 import {
     Injectable,
     BadRequestException,
-    NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     ERR_HTTP_MISSING_BODY_PROPERTY,
-    ERR_HTTP_USER_NOT_FOUND,
 } from 'src/app.constants';
 import { Repository } from 'typeorm';
 import { UserDTO } from './dto/user.dto';
 import * as _ from 'lodash';
 import { UserDAO } from './dao/user.dao';
-import { UtilService } from 'src/util/util.service';
+import { Auth0Service } from 'src/auth0/auth0.service';
 
 @Injectable()
 export class UserService {
     public constructor(
         @InjectRepository(UserDTO)
         private readonly userRepository: Repository<UserDTO>,
-        private readonly utilService: UtilService,
+        private readonly auth0Service: Auth0Service,
     ) {}
 
     /**
@@ -30,7 +28,7 @@ export class UserService {
      * @returns {Promise<UserDTO>}
      */
     public async syncUserInformation(userInformation: Partial<UserDTO>) {
-        if (!userInformation || userInformation.email) {
+        if (!userInformation || !userInformation.email) {
             throw new BadRequestException(ERR_HTTP_MISSING_BODY_PROPERTY);
         }
 
@@ -59,23 +57,15 @@ export class UserService {
 
     /**
      * update user information
-     * @param {Partial<UserDTO>} userInformation
+     * @param {Partial<UserDTO>} updates
      * @returns {Promise<UserDTO>}
      */
-    public async updateUserInformation(id: number, userInformation: Partial<UserDAO>) {
-        const currentUserDTO = await this.userRepository.findOne({
-            id,
-        });
-
-        if (!currentUserDTO) {
-            throw new NotFoundException(ERR_HTTP_USER_NOT_FOUND);
-        }
-
-        return await this.userRepository.update(
+    public async updateUserInformation(openId: string, updates: Partial<UserDAO>) {
+        return await this.auth0Service.managementClient.updateUser(
             {
-                id,
+                id: openId,
             },
-            _.omit(this.utilService.transformDAOToDTO<UserDAO, UserDTO>(userInformation), ['id', 'createdAt', 'updatedAt']),
+            _.pick(updates, ['name', 'nickname', 'picture']),
         );
     }
 }

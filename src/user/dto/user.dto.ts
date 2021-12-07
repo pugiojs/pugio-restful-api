@@ -23,13 +23,6 @@ export class UserDTO {
     @Column()
     public nickname: string;
 
-    @Column({
-        name: 'email_verified',
-        default: true,
-        select: false,
-    })
-    public emailVerified: boolean;
-
     @Column({ name: 'open_id' })
     public openId: string;
 
