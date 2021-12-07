@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'users' })
-export class User {
+export class UserDTO {
     @PrimaryGeneratedColumn()
     public id: number;
 
@@ -23,8 +23,15 @@ export class User {
     @Column()
     public nickname: string;
 
-    @Column({ name: 'email_verified' })
+    @Column({
+        name: 'email_verified',
+        default: true,
+        select: false,
+    })
     public emailVerified: boolean;
+
+    @Column({ name: 'open_id' })
+    public openId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     public createdAt: Date;

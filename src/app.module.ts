@@ -11,6 +11,8 @@ import { AppInterceptor } from './app.interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { getMetadataArgsStorage } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UtilModule } from './util/util.module';
+import { Auth0Module } from './auth0/auth0.module';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -40,6 +42,8 @@ import dbConfig from './config/db.config';
             },
             inject: [ConfigService],
         }),
+        UtilModule,
+        Auth0Module,
     ],
     controllers: [AppController],
     providers: [

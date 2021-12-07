@@ -17,7 +17,9 @@ module.exports = {
     },
     ignorePatterns: ['.eslintrc.js'],
     rules: {
-        indent: ['error', 4],
+        indent: ['error', 4, {
+            SwitchCase: 1,
+        }],
         '@typescript-eslint/indent': 'off',
         '@typescript-eslint/no-empty-interface': 'off',
         '@typescript-eslint/interface-name-prefix': 'off',

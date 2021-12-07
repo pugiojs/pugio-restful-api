@@ -11,6 +11,10 @@ import {
 import { passportJwtSecret } from 'jwks-rsa';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import * as _ from 'lodash';
+import { UserService } from '../user/user.service';
+import { UserDAO } from 'src/user/dao/user.dao';
+import { UtilService } from 'src/util/util.service';
+import { UserDTO } from 'src/user/dto/user.dto';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
@@ -18,14 +22,18 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
         name: 'name',
         nickname: 'nickname',
         picture: 'picture',
-        user_id: 'auth0_open_id',
+        user_id: 'open_id',
         email: 'email',
         email_verified: 'email_verified',
         created_at: 'created_at',
         updated_at: 'updated_at',
     };
 
-    public constructor(private readonly configService: ConfigService) {
+    public constructor(
+        private readonly configService: ConfigService,
+        private readonly userService: UserService,
+        private readonly utilService: UtilService,
+    ) {
         super({
             secretOrKeyProvider: passportJwtSecret({
                 cache: true,
@@ -65,10 +73,11 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
                 result[currentKeyName] = currentValue;
             }
             return result;
-        }, {
-            permissions,
-        });
+        }, {} as UserDAO);
 
-        return user;
+        const currentUserDTO = this.utilService.transformDAOToDTO<UserDAO, UserDTO>(user);
+        this.userService.syncUserInformation(_.omit(currentUserDTO, ['createdAt', 'updatedAt']));
+
+        return { ...user, permissions };
     }
 }

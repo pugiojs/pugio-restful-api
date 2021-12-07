@@ -1,32 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import {
-    AuthenticationClient,
-    AuthenticationClientOptions,
-} from 'auth0';
+import { Auth0Service } from 'src/auth0/auth0.service';
 
 @Injectable()
 export class AuthService {
-    private authenticationClient: AuthenticationClient;
-
-    public constructor(private readonly configService: ConfigService) {
-        const authenticationClientOptions = [
-            'domain',
-            'clientId',
-            'clientSecret',
-        ].reduce((result, currentKey) => {
-            result[currentKey] = this.configService.get(`auth.${currentKey}`);
-            return result;
-        }, {} as AuthenticationClientOptions);
-
-        this.authenticationClient = new AuthenticationClient(authenticationClientOptions);
-    }
+    public constructor(private readonly auth0Service: Auth0Service) {}
 
     public async getRefreshedToken(refreshToken: string) {
-        if (!this.authenticationClient.oauth || !refreshToken) {
+        if (!this.auth0Service.authenticationClient.oauth || !refreshToken) {
             return {};
         }
-        const codeGrantResult = await this.authenticationClient?.oauth.refreshToken({
+        const codeGrantResult = await this.auth0Service.authenticationClient?.oauth.refreshToken({
             refresh_token: refreshToken,
         });
         return codeGrantResult;
