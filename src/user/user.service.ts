@@ -11,6 +11,7 @@ import { UserDTO } from './dto/user.dto';
 import * as _ from 'lodash';
 import { UserDAO } from './dao/user.dao';
 import { Auth0Service } from 'src/auth0/auth0.service';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class UserService {
@@ -18,6 +19,7 @@ export class UserService {
         @InjectRepository(UserDTO)
         private readonly userRepository: Repository<UserDTO>,
         private readonly auth0Service: Auth0Service,
+        private readonly utilService: UtilService,
     ) {}
 
     /**
@@ -61,11 +63,13 @@ export class UserService {
      * @returns {Promise<UserDTO>}
      */
     public async updateUserInformation(openId: string, updates: Partial<UserDAO>) {
-        return await this.auth0Service.managementClient.updateUser(
+        const result = await this.auth0Service.managementClient.updateUser(
             {
                 id: openId,
             },
             _.pick(updates, ['name', 'nickname', 'picture']),
         );
+
+        return this.utilService.getUserDAOFromAuth0Response(result);
     }
 }

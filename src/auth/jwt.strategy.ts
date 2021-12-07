@@ -18,16 +18,6 @@ import { UserDTO } from 'src/user/dto/user.dto';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
-    private userInfoMap = {
-        name: 'name',
-        nickname: 'nickname',
-        picture: 'picture',
-        user_id: 'open_id',
-        email: 'email',
-        created_at: 'created_at',
-        updated_at: 'updated_at',
-    };
-
     public constructor(
         private readonly configService: ConfigService,
         private readonly userService: UserService,
@@ -65,15 +55,7 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
             throw new UnauthorizedException();
         }
 
-        const currentUserDAO = Object.keys(this.userInfoMap).reduce((result, currentKey) => {
-            const currentKeyName = this.userInfoMap[currentKey];
-            const currentValue = userInfo[currentKey];
-            if (!_.isNull(currentValue) || !_.isUndefined(currentValue)) {
-                result[currentKeyName] = currentValue;
-            }
-            return result;
-        }, {} as UserDAO);
-
+        const currentUserDAO = this.utilService.getUserDAOFromAuth0Response(userInfo);
         const currentUserDTO = this.utilService.transformDAOToDTO<UserDAO, UserDTO>(currentUserDAO);
         this.userService.syncUserInformation(_.omit(currentUserDTO, ['createdAt', 'updatedAt']));
 
