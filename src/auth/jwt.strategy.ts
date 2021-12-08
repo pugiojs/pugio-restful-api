@@ -19,6 +19,7 @@ import {
     ERR_AUTH_EMAIL_NOT_VERIFIED,
 } from 'src/app.constants';
 import { Auth0Service } from 'src/auth0/auth0.service';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
@@ -27,6 +28,7 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
         private readonly userService: UserService,
         private readonly utilService: UtilService,
         private readonly auth0Service: Auth0Service,
+        private readonly authService: AuthService,
     ) {
         super({
             secretOrKeyProvider: passportJwtSecret({
@@ -66,6 +68,10 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
 
         if (!userInfo) {
             throw new UnauthorizedException();
+        }
+
+        if (permissions.length === 0) {
+            permissions = await this.authService.getUserPermissions(id);
         }
 
         if (_.isBoolean(userInfo.email_verified) && !userInfo.email_verified) {

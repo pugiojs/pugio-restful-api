@@ -72,7 +72,10 @@ export class UserService {
             userPatchData,
         );
 
-        if (userPatchData) {
+        /**
+         * if user changes email, then send an verification email to the user
+         */
+        if (userPatchData.email) {
             await this.auth0Service.managementClient.sendEmailVerification({
                 user_id: openId,
             });
