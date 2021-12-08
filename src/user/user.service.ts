@@ -12,6 +12,7 @@ import * as _ from 'lodash';
 import { UserDAO } from './dao/user.dao';
 import { Auth0Service } from 'src/auth0/auth0.service';
 import { UtilService } from 'src/util/util.service';
+import { ResetPasswordOptions } from 'auth0';
 
 @Injectable()
 export class UserService {
@@ -82,5 +83,18 @@ export class UserService {
         }
 
         return this.utilService.getUserDAOFromAuth0Response(result);
+    }
+
+    /**
+     * change user password
+     * @param {Omit<ResetPasswordOptions, 'connection'>} data change password data
+     * @returns {Promise<any} change password result
+     */
+    public async changeUserPassword(data: Omit<ResetPasswordOptions, 'connection'>) {
+        const result = await this.auth0Service.authenticationClient.changePassword({
+            ...data,
+            connection: 'Username-Password-Authentication',
+        });
+        return result;
     }
 }
