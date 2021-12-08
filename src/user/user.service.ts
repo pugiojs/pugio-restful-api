@@ -13,6 +13,8 @@ import { UserDAO } from './dao/user.dao';
 import { Auth0Service } from 'src/auth0/auth0.service';
 import { UtilService } from 'src/util/util.service';
 import { ResetPasswordOptions } from 'auth0';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 @Injectable()
 export class UserService {
@@ -21,6 +23,7 @@ export class UserService {
         private readonly userRepository: Repository<UserDTO>,
         private readonly auth0Service: Auth0Service,
         private readonly utilService: UtilService,
+        private readonly configService: ConfigService,
     ) {}
 
     /**
@@ -90,11 +93,25 @@ export class UserService {
      * @param {Omit<ResetPasswordOptions, 'connection'>} data change password data
      * @returns {Promise<any} change password result
      */
-    public async changeUserPassword(data: Omit<ResetPasswordOptions, 'connection'>) {
-        const result = await this.auth0Service.authenticationClient.changePassword({
-            ...data,
-            connection: 'Username-Password-Authentication',
+    public async changeUserPassword(email: string) {
+        if (!email || !_.isString(email)) {
+            throw new BadRequestException();
+        }
+
+        const domain = this.configService.get('auth.domain');
+        const clientId = this.configService.get('auth.clientId');
+        const connection = this.configService.get('auth.connection') || 'Username-Password-Authentication';
+
+        const changePasswordURL = `https://${domain}/dbconnections/change_password`;
+
+        const { data: responseData } = await axios.post(changePasswordURL, {
+            client_id: clientId,
+            email,
+            connection,
         });
-        return result;
+
+        return {
+            data: responseData,
+        };
     }
 }

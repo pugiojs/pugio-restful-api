@@ -17,6 +17,7 @@ import { Auth0Module } from './auth0/auth0.module';
 // Application configs
 import appConfig from './config/app.config';
 import dbConfig from './config/db.config';
+import authConfig from './config/auth.config';
 
 @Module({
     imports: [
@@ -24,9 +25,11 @@ import dbConfig from './config/db.config';
             load: [
                 appConfig,
                 dbConfig,
+                authConfig,
             ],
         }),
         AuthModule,
+        Auth0Module,
         UserModule,
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],

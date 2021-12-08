@@ -35,14 +35,8 @@ export class UserController {
 
     @UseGuards(AuthGuard())
     @Put('/password')
-    public async changeUserPassword(
-        @CurrentUser() user: UserDTO,
-        @Body('password') password: string,
-    ) {
+    public async changeUserPassword(@CurrentUser() user: UserDTO) {
         const email = user.email;
-        return await this.userService.changeUserPassword({
-            email,
-            password,
-        });
+        return await this.userService.changeUserPassword(email);
     }
 }

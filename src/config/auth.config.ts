@@ -7,4 +7,5 @@ export default registerAs('auth', () => ({
     audience: process.env.AUTH0_AUDIENCE,
     manageAudience: process.env.AUTH0_MANAGE_AUDIENCE,
     userinfoTag: process.env.AUTH0_USERINFO_TAG,
+    connection: process.env.AUTH0_CONNECTION,
 }));
