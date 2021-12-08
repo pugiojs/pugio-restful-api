@@ -30,15 +30,15 @@ export class UserService {
      * @returns {Promise<UserDTO>}
      */
     public async syncUserInformation(userInformation: Partial<UserDTO>) {
-        if (!userInformation || !userInformation.email) {
+        if (!userInformation || !userInformation.openId) {
             throw new BadRequestException(ERR_HTTP_MISSING_BODY_PROPERTY);
         }
 
         const currentUserDTO = await this.userRepository.findOne({
-            email: userInformation.email,
+            openId: userInformation.openId,
         });
 
-        const newPartialCurrentUserDTO = _.omit(userInformation, ['id', 'createdAt', 'updatedAt']);
+        const newPartialCurrentUserDTO = _.omit(userInformation, ['id', 'openId', 'createdAt', 'updatedAt']);
 
         if (currentUserDTO) {
             await this.userRepository.update(
@@ -63,12 +63,20 @@ export class UserService {
      * @returns {Promise<UserDTO>}
      */
     public async updateUserInformation(openId: string, updates: Partial<UserDAO>) {
+        const userPatchData: Partial<UserDAO> = _.pick(updates, ['name', 'nickname', 'picture', 'email']);
+
         const result = await this.auth0Service.managementClient.updateUser(
             {
                 id: openId,
             },
-            _.pick(updates, ['name', 'nickname', 'picture']),
+            userPatchData,
         );
+
+        if (userPatchData) {
+            await this.auth0Service.managementClient.sendEmailVerification({
+                user_id: openId,
+            });
+        }
 
         return this.utilService.getUserDAOFromAuth0Response(result);
     }

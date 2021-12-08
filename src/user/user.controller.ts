@@ -2,7 +2,7 @@ import {
     Body,
     Controller,
     Get,
-    Put,
+    Patch,
     UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -23,7 +23,7 @@ export class UserController {
     }
 
     @UseGuards(AuthGuard())
-    @Put('/profile')
+    @Patch('/profile')
     public async updateUserProfile(@CurrentUser() user, @Body() userInformation: UserDAO) {
         return await this.userService.updateUserInformation(user.openId, userInformation);
     }
