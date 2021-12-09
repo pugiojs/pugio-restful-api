@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import {
+    Injectable,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
     AuthenticationClient,
@@ -6,6 +9,16 @@ import {
     ManagementClient,
     ManagementClientOptions,
 } from 'auth0';
+import {
+    ERR_AUTH_CLIENT_CREATION,
+    ERR_AUTH_CLIENT_NOT_FOUND,
+} from 'src/app.constants';
+
+interface ClientOptions {
+    clientId: string;
+    clientSecret: string;
+    domain: string;
+}
 
 @Injectable()
 export class Auth0Service {
@@ -42,5 +55,51 @@ export class Auth0Service {
 
     public get managementClient() {
         return this.management;
+    }
+
+    public async createAuthenticationClient(clientId: string) {
+        const clientOptions = await this.getClientOptions(clientId);
+
+        if (!clientOptions) {
+            throw new InternalServerErrorException(ERR_AUTH_CLIENT_CREATION);
+        }
+
+        return new AuthenticationClient(clientOptions);
+    }
+
+    public async createManagementClient(clientId: string) {
+        const clientOptions = await this.getClientOptions(clientId);
+
+        if (!clientOptions) {
+            throw new InternalServerErrorException(ERR_AUTH_CLIENT_CREATION);
+        }
+
+        return new ManagementClient(clientOptions);
+    }
+
+    private async getClientOptions(clientId: string): Promise<ClientOptions> {
+        if (!clientId) {
+            return null;
+        }
+
+        const clientInfo = await this.managementClient.getClient({
+            client_id: clientId,
+        });
+
+        if (!clientInfo) {
+            throw new InternalServerErrorException(ERR_AUTH_CLIENT_NOT_FOUND);
+        }
+
+        const domain = this.configService.get('auth.domain');
+
+        const {
+            client_secret: clientSecret,
+        } = clientInfo;
+
+        return {
+            clientId,
+            clientSecret,
+            domain,
+        };
     }
 }

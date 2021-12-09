@@ -18,6 +18,7 @@ import { Auth0Module } from './auth0/auth0.module';
 import appConfig from './config/app.config';
 import dbConfig from './config/db.config';
 import authConfig from './config/auth.config';
+import signConfig from './config/sign.config';
 
 @Module({
     imports: [
@@ -26,6 +27,7 @@ import authConfig from './config/auth.config';
                 appConfig,
                 dbConfig,
                 authConfig,
+                signConfig,
             ],
         }),
         AuthModule,
