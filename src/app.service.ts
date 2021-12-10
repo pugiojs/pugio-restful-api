@@ -11,7 +11,6 @@ export class AppService {
 
     public createKeyPair() {
         const {
-            passphrase,
             keyPairPathname,
             publicKeyPathname,
             privateKeyPathname,
@@ -29,8 +28,6 @@ export class AppService {
             privateKeyEncoding: {
                 type: 'pkcs8',
                 format: 'pem',
-                cipher: 'aes-256-cbc',
-                passphrase,
             },
         });
 

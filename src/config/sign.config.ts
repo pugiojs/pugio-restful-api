@@ -15,5 +15,6 @@ export default registerAs('sign', () => {
         publicKeyPathname: path.resolve(keyPairPathname, publicKeyFilename),
         privateKeyPathname: path.resolve(keyPairPathname, privateKeyFilename),
         passphrase: process.env.SIGN_PASSPHRASE,
+        issuer: process.env.SIGN_ISSUER,
     };
 });

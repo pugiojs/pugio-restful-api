@@ -5,9 +5,13 @@ import {
     Inject,
     Post,
     Query,
+    Req,
     Res,
 } from '@nestjs/common';
-// import { Response } from 'express';
+import {
+    Response,
+    Request,
+} from 'express';
 import { AuthService } from './auth.service';
 
 @Controller('/auth')
@@ -15,10 +19,10 @@ export class AuthController {
     @Inject()
     protected authService: AuthService;
 
-    // TODO
-    @Post('/exchange_token')
-    public async getExchangeToken() {
-
+    @Get('/exchange_token')
+    public async getExchangeAccessToken(@Req() request: Request) {
+        const jwtContent = request.headers.authorization.replace('Bearer ', '');
+        return await this.authService.getExchangedAccessToken(jwtContent);
     }
 
     @Post('/refresh_token')
@@ -34,11 +38,12 @@ export class AuthController {
         @Query('code') code: string,
         @Query('client_id') clientId: string,
         @Query('redirect_uri') redirectURI: string,
+        @Res() response: Response,
     ) {
-        return {
-            code,
-            clientId,
-            redirectURI,
-        };
+        response.cookie('id', 'fuck', {
+            domain: '.permbase.lenconda.top',
+            sameSite: 'none',
+        });
+        return response.redirect('https://permbase.lenconda.top');
     }
 }

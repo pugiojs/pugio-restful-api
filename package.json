@@ -1,5 +1,5 @@
 {
-    "name": "@permbase/pb-restful-api",
+    "name": "@lenconda/account-restful-api",
     "private": true,
     "version": "0.0.1",
     "description": "Permbase back-end API services",

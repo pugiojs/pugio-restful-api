@@ -1,11 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { Auth0Service } from 'src/auth0/auth0.service';
 import * as _ from 'lodash';
+import { UtilService } from 'src/util/util.service';
+import {
+    ERR_AUTH_OPEN_ID_INVALID,
+    ERR_AUTH_TOKEN_PARSE_ERROR,
+    ERR_SIGN_PAYLOAD_NOT_FOUND,
+} from 'src/app.constants';
 
 @Injectable()
 export class AuthService {
     public constructor(
         private readonly auth0Service: Auth0Service,
+        private readonly utilService: UtilService,
     ) {}
 
     /**
@@ -34,37 +45,39 @@ export class AuthService {
         return codeGrantResult;
     }
 
-    public async getExchangedAccessToken() {}
+    /**
+     * use Auth0 access token to generate a new token that can be recognized
+     * by Lenconda Account Center
+     * @param {string} token access token from Auth0 tenants
+     * @returns {Promise}
+     */
+    public async getExchangedAccessToken(token: string) {
+        if (!token) {
+            throw new BadRequestException();
+        }
 
-    // /**
-    //  * get user permissions in current audience
-    //  * @param {string} id user_id from auth0
-    //  * @param {string} audience current auth client audience API URI
-    //  * @returns {Promise<string[]>} user permissions names
-    //  */
-    // public async getUserPermissions(id: string, audience: string) {
-    //     if (!id || !_.isString(id)) {
-    //         return [];
-    //     }
+        const [, payload] = token.split('.');
+        let audience: string;
 
-    //     const userPermissions = (await this.auth0Service.managementClient.getUserPermissions({ id }) || [])
-    //         .filter((permission) => {
-    //             const {
-    //                 permission_name: permissionName,
-    //                 resource_server_identifier: resourceServerIdentifier,
-    //             } = permission;
+        if (!payload) {
+            throw new InternalServerErrorException(ERR_SIGN_PAYLOAD_NOT_FOUND);
+        }
 
-    //             /**
-    //              * filter empty permission name and resource server identifier
-    //              */
-    //             if (!permissionName || !resourceServerIdentifier) {
-    //                 return false;
-    //             }
+        try {
+            const { aud } = JSON.parse(Buffer.from(payload, 'base64').toString());
+            audience = aud;
+        } catch (e) {
+            throw new InternalServerErrorException(ERR_AUTH_TOKEN_PARSE_ERROR);
+        }
 
-    //             return resourceServerIdentifier === audience;
-    //         })
-    //         .map((permission) => permission.permission_name);
+        const { sub: openId } = await this.utilService.validateAuth0AccessToken(token, audience);
 
-    //     return userPermissions;
-    // }
+        if (!openId) {
+            throw new InternalServerErrorException(ERR_AUTH_OPEN_ID_INVALID);
+        }
+
+        return {
+            token: this.utilService.signAccountCenterToken(openId),
+        };
+    }
 }
