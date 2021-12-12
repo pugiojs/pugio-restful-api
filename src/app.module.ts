@@ -13,6 +13,7 @@ import { getMetadataArgsStorage } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UtilModule } from './util/util.module';
 import { Auth0Module } from './auth0/auth0.module';
+import { VendorModule } from './vendor/vendor.module';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -49,6 +50,7 @@ import signConfig from './config/sign.config';
         }),
         UtilModule,
         Auth0Module,
+        VendorModule,
     ],
     controllers: [AppController],
     providers: [

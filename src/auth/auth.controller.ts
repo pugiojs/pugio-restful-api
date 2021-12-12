@@ -1,9 +1,7 @@
 import {
-    Body,
     Controller,
     Get,
     Inject,
-    Post,
     Query,
     Req,
     Res,
@@ -23,14 +21,6 @@ export class AuthController {
     public async getExchangeAccessToken(@Req() request: Request) {
         const jwtContent = request.headers.authorization.replace('Bearer ', '');
         return await this.authService.getExchangedAccessToken(jwtContent);
-    }
-
-    @Post('/refresh_token')
-    public async getRefreshedToken(
-        @Body('refresh_token') refreshToken: string,
-        @Body('client_id') clientId: string,
-    ) {
-        return await this.authService.getRefreshedToken(refreshToken, clientId);
     }
 
     @Get('/callback')

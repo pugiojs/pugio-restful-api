@@ -3,7 +3,6 @@ import {
     Injectable,
     InternalServerErrorException,
 } from '@nestjs/common';
-import { Auth0Service } from 'src/auth0/auth0.service';
 import * as _ from 'lodash';
 import { UtilService } from 'src/util/util.service';
 import {
@@ -15,35 +14,8 @@ import {
 @Injectable()
 export class AuthService {
     public constructor(
-        private readonly auth0Service: Auth0Service,
         private readonly utilService: UtilService,
     ) {}
-
-    /**
-     * refresh access token use refresh token
-     * @param {string} refreshToken refresh token content
-     * @param {string} clientId auth client id
-     * @returns {Promise<TokenResponse>} refresh token response
-     */
-    public async getRefreshedToken(refreshToken: string, clientId?: string) {
-        const authenticationClient = clientId
-            ? await this.auth0Service.createAuthenticationClient(clientId)
-            : this.auth0Service.authenticationClient;
-
-        if (
-            !refreshToken ||
-            !authenticationClient ||
-            !authenticationClient.oauth
-        ) {
-            return {};
-        }
-
-        const codeGrantResult = await authenticationClient?.oauth.refreshToken({
-            refresh_token: refreshToken,
-        });
-
-        return codeGrantResult;
-    }
 
     /**
      * use Auth0 access token to generate a new token that can be recognized
