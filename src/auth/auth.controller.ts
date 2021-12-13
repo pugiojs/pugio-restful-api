@@ -5,7 +5,9 @@ import {
     Query,
     Req,
     Res,
+    UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
     Response,
     Request,
@@ -23,17 +25,18 @@ export class AuthController {
         return await this.authService.getExchangedAccessToken(jwtContent);
     }
 
+    // TODO
+    @UseGuards(AuthGuard())
+    @Get('/refresh_token')
+    public async refreshToken() {}
+
     @Get('/callback')
     public async handleAuthenticationCallback(
         @Query('code') code: string,
-        @Query('client_id') clientId: string,
-        @Query('redirect_uri') redirectURI: string,
+        @Query('state') state: string,
         @Res() response: Response,
     ) {
-        response.cookie('id', 'fuck', {
-            domain: '.permbase.lenconda.top',
-            sameSite: 'none',
-        });
-        return response.redirect('https://permbase.lenconda.top');
+        const redirectURI = await this.authService.authenticationHandler(code, state);
+        return response.redirect(redirectURI);
     }
 }

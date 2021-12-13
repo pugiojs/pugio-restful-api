@@ -2,6 +2,7 @@ import {
     Controller,
     Post,
     Body,
+    Get,
 } from '@nestjs/common';
 import { VendorService } from './vendor.service';
 
@@ -18,4 +19,8 @@ export class VendorController {
     ) {
         return await this.vendorService.getRefreshedToken(refreshToken, clientId);
     }
+
+    // TODO
+    @Get('/check_in')
+    public async checkIn() {}
 }

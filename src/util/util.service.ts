@@ -154,7 +154,7 @@ export class UtilService {
             {
                 algorithm: 'RS256',
                 audience: this.configService.get('auth.audience'),
-                expiresIn: '24h',
+                expiresIn: this.configService.get('sign.expiration'),
                 issuer: this.configService.get('sign.issuer'),
             },
         );
