@@ -7,6 +7,7 @@ import * as _ from 'lodash';
 import { UtilService } from 'src/util/util.service';
 import {
     ERR_AUTH_CLIENT_NOT_FOUND,
+    ERR_AUTH_INVALID_GRANT,
     ERR_AUTH_OPEN_ID_INVALID,
     ERR_AUTH_TOKEN_PARSE_ERROR,
     ERR_PARAM_PARSE_FAILED,
@@ -148,6 +149,10 @@ export class AuthService {
                 responseType: 'json',
             },
         );
+
+        if (oauthTokenResponseData.error) {
+            throw new InternalServerErrorException(ERR_AUTH_INVALID_GRANT, oauthTokenResponseData.error_description);
+        }
 
         const callbackURLParser = new URL(stateParams.vendor.origin);
         callbackURLParser.pathname = _.get(stateParams, 'vendor.pathname') || '';
