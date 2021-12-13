@@ -131,36 +131,36 @@ export class AuthService {
             throw new InternalServerErrorException(ERR_AUTH_CLIENT_NOT_FOUND);
         }
 
-        const {
-            data: oauthTokenResponseData,
-        } = await axios.post(
-            `https://${this.configService.get('auth.domain')}/oauth/token`,
-            qs.stringify(this.utilService.transformDTOToDAO({
-                code,
-                clientId: stateParams.clientId,
-                clientSecret,
-                grantType: 'authorization_code',
-                redirectUri: `${this.configService.get('auth.audience')}auth/callback`,
-            })),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+        try {
+            const {
+                data: oauthTokenResponseData,
+            } = await axios.post(
+                `https://${this.configService.get('auth.domain')}/oauth/token`,
+                qs.stringify(this.utilService.transformDTOToDAO({
+                    code,
+                    clientId: stateParams.clientId,
+                    clientSecret,
+                    grantType: 'authorization_code',
+                    redirectUri: `${this.configService.get('auth.audience')}auth/callback`,
+                })),
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    responseType: 'json',
                 },
-                responseType: 'json',
-            },
-        );
+            );
 
-        if (oauthTokenResponseData.error) {
-            throw new InternalServerErrorException(ERR_AUTH_INVALID_GRANT, oauthTokenResponseData.error_description);
+            const callbackURLParser = new URL(stateParams.vendor.origin);
+            callbackURLParser.pathname = _.get(stateParams, 'vendor.pathname') || '';
+            callbackURLParser.search = '?' + qs.stringify({
+                data: stateParams.vendor.data,
+                ...oauthTokenResponseData,
+            });
+
+            return callbackURLParser.toString();
+        } catch (e) {
+            throw new InternalServerErrorException(ERR_AUTH_INVALID_GRANT, e.message || e.toString());
         }
-
-        const callbackURLParser = new URL(stateParams.vendor.origin);
-        callbackURLParser.pathname = _.get(stateParams, 'vendor.pathname') || '';
-        callbackURLParser.search = '?' + qs.stringify({
-            data: stateParams.vendor.data,
-            ...oauthTokenResponseData,
-        });
-
-        return callbackURLParser.toString();
     }
 }
