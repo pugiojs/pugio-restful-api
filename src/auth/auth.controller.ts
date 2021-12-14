@@ -12,6 +12,8 @@ import {
     Response,
     Request,
 } from 'express';
+import { UserDTO } from 'src/user/dto/user.dto';
+import { CurrentUser } from 'src/user/user.decorator';
 import { AuthService } from './auth.service';
 
 @Controller('/auth')
@@ -25,10 +27,11 @@ export class AuthController {
         return await this.authService.getExchangedAccessToken(jwtContent);
     }
 
-    // TODO
     @UseGuards(AuthGuard())
     @Get('/refresh_token')
-    public async refreshToken() {}
+    public refreshToken(@CurrentUser() user: UserDTO) {
+        return this.authService.generateNewToken(user.openId);
+    }
 
     @Get('/callback')
     public async handleAuthenticationCallback(

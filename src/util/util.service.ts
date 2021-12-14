@@ -29,7 +29,7 @@ export class UtilService {
     ) {}
 
     public transformCaseStyle = <T extends DataType, R extends T | DataType>(data: Partial<T>, targetCaseStyleType: CaseStyleType): R => {
-        if (!data) {
+        if (!_.isNumber(data) && !data) {
             return;
         }
 
@@ -76,6 +76,8 @@ export class UtilService {
         if (_.isPlainObject(data) || _.isString(data)) {
             return _.cloneDeep<R>(data as R);
         }
+
+        return data;
     };
 
     public transformDAOToDTO<DAOType, DTOType>(daoData: Partial<DAOType>): DTOType {

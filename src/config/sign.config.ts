@@ -16,6 +16,10 @@ export default registerAs('sign', () => {
         privateKeyPathname: path.resolve(keyPairPathname, privateKeyFilename),
         passphrase: process.env.SIGN_PASSPHRASE || 'lenconda+account+center',
         issuer: process.env.SIGN_ISSUER || 'https://account.lenconda.top/',
-        expiration: process.env.SIGN_EXPIRATION || 86400,
+        expiration: (
+            process.env.SIGN_EXPIRATION
+                ? parseInt(process.env.SIGN_EXPIRATION, 10)
+                : 86400
+        ),
     };
 });

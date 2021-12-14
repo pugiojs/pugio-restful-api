@@ -71,6 +71,19 @@ export class AuthService {
             throw new InternalServerErrorException(ERR_AUTH_OPEN_ID_INVALID);
         }
 
+        console.log('LENCONDA', this.configService.get('sign.expiration'));
+
+        return {
+            token: this.utilService.signAccountCenterToken(openId),
+            expiresIn: this.configService.get('sign.expiration'),
+        };
+    }
+
+    public generateNewToken(openId: string) {
+        if (!openId) {
+            return {};
+        }
+
         return {
             token: this.utilService.signAccountCenterToken(openId),
             expiresIn: this.configService.get('sign.expiration'),

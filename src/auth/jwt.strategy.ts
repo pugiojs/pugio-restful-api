@@ -1,4 +1,5 @@
 import {
+    ForbiddenException,
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
@@ -55,7 +56,7 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
         }
 
         if (_.isBoolean(userInfo.email_verified) && !userInfo.email_verified) {
-            throw new UnauthorizedException(ERR_AUTH_EMAIL_NOT_VERIFIED);
+            throw new ForbiddenException(ERR_AUTH_EMAIL_NOT_VERIFIED);
         }
 
         const currentUserDAO = this.utilService.getUserDAOFromAuth0Response(userInfo);
