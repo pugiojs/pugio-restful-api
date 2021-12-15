@@ -180,7 +180,7 @@ export class AuthService {
                     clientId: stateParams.clientId,
                     clientSecret,
                     grantType: 'authorization_code',
-                    redirectUri: `${this.configService.get('auth.audience')}auth/callback`,
+                    redirectUri: this.configService.get('auth.defaultRedirectUri'),
                 })),
                 {
                     headers: {

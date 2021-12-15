@@ -7,10 +7,22 @@ import { UserDAO } from './dao/user.dao';
 // import { Auth0Service } from 'src/auth0/auth0.service';
 import { UtilService } from 'src/util/util.service';
 import { ConfigService } from '@nestjs/config';
+import { UserDTO } from './dto/user.dto';
 // import axios from 'axios';
 
 @Injectable()
 export class UserService {
+    private allowedUserInfoKeyList = {
+        fullName: 'fullName',
+        firstName: 'firstName',
+        middleName: 'middleName',
+        lastName: 'lastName',
+        id: 'openId',
+        email: 'email',
+        active: 'active',
+        verified: 'verified',
+    };
+
     public constructor(
         // private readonly auth0Service: Auth0Service,
         private readonly utilService: UtilService,
@@ -41,7 +53,7 @@ export class UserService {
         //     });
         // }
 
-        // return this.utilService.getUserDAOFromAuth0Response(result);
+        // return this.utilService.getUserDAOFromOAuth2ServerResponse(result);
     }
 
     /**
@@ -58,8 +70,6 @@ export class UserService {
         // const clientId = this.configService.get('auth.clientId');
         // const connection = this.configService.get('auth.connection') || 'Username-Password-Authentication';
 
-        // console.log('LENCONDA', email);
-
         // const changePasswordURL = `https://${domain}/dbconnections/change_password`;
 
         // const { data: responseData } = await axios.post(changePasswordURL, {
@@ -71,5 +81,16 @@ export class UserService {
         // return {
         //     data: responseData,
         // };
+    }
+
+    public getUserDTOFromOAuth2ServerResponse(userInfo: Object) {
+        return Object.keys(this.allowedUserInfoKeyList).reduce((result, currentKey) => {
+            const currentKeyName = this.allowedUserInfoKeyList[currentKey];
+            const currentValue = userInfo[currentKey];
+            if (!_.isNull(currentValue) || !_.isUndefined(currentValue)) {
+                result[currentKeyName] = currentValue;
+            }
+            return result;
+        }, {} as UserDTO);
     }
 }

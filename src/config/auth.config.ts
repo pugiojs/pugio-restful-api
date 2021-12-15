@@ -9,4 +9,7 @@ export default registerAs('auth', () => ({
     userinfoTag: process.env.OAUTH2_USERINFO_TAG,
     connection: process.env.OAUTH2_CONNECTION,
     tokenEndpoint: process.env.OAUTH2_TOKEN_ENDPOINT,
+    apiKey: process.env.OAUTH2_TENANT_API_KEY,
+    defaultRedirectUri: process.env.OAUTH2_DEFAULT_REDIRECT_URI,
+    jwtIssuer: process.env.OAUTH2_JWT_ISSUER,
 }));

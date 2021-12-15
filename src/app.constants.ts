@@ -19,4 +19,4 @@ export const ERR_PARAM_VALIDATION_FAILED = 'ERR_PARAM_VALIDATION_FAILED';
 // param parse failure
 export const ERR_PARAM_PARSE_FAILED = 'ERR_PARAM_PARSE_FAILED';
 // authorization grant error
-export const ERR_AUTH_INVALID_GRANT = 'ERROR_AUTH_INVALID_GRANT';
+export const ERR_AUTH_INVALID_GRANT = 'ERR_AUTH_INVALID_GRANT';

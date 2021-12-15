@@ -11,21 +11,19 @@ import {
 } from 'passport-jwt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import * as _ from 'lodash';
-import { UserDAO } from 'src/user/dao/user.dao';
-import { UtilService } from 'src/util/util.service';
-import { UserDTO } from 'src/user/dto/user.dto';
 import {
     ERR_AUTH_EMAIL_NOT_VERIFIED,
 } from 'src/app.constants';
 import * as fs from 'fs-extra';
 import { Oauth2Service } from 'src/oauth2/oauth2.service';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
     public constructor(
         private readonly configService: ConfigService,
-        private readonly utilService: UtilService,
         private readonly oauth2Service: Oauth2Service,
+        private readonly userService: UserService,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -56,9 +54,7 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
             throw new ForbiddenException(ERR_AUTH_EMAIL_NOT_VERIFIED);
         }
 
-        const currentUserDAO = this.utilService.getUserDAOFromAuth0Response(userInfo);
-        const currentUserDTO = this.utilService.transformDAOToDTO<UserDAO, UserDTO>(currentUserDAO);
-
+        const currentUserDTO = this.userService.getUserDTOFromOAuth2ServerResponse(userInfo);
         return currentUserDTO;
     }
 }

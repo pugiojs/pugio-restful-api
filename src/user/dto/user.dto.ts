@@ -1,10 +1,11 @@
 export class UserDTO {
     public id: number;
-    public email: string;
-    public picture: string;
-    public name: string;
-    public nickname: string;
     public openId: string;
-    public createdAt: Date;
-    public updatedAt: Date;
+    public email: string;
+    public fullName: string;
+    public firstName: string;
+    public middleName: string;
+    public lastName: string;
+    public active: boolean;
+    public verified: boolean;
 }

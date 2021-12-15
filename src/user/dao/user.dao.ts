@@ -1,10 +1,11 @@
 export abstract class UserDAO {
     public id: number;
-    public email: string;
-    public picture: string;
-    public nickname: string;
-    public name: string;
     public open_id: string;
-    public created_at: Date;
-    public updated_at: Date;
+    public email: string;
+    public full_name: string;
+    public first_name: string;
+    public middle_name: string;
+    public last_name: string;
+    public active: boolean;
+    public verified: boolean;
 }

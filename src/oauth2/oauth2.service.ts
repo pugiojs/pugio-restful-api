@@ -15,7 +15,7 @@ export class Oauth2Service {
         private readonly configService: ConfigService,
     ) {
         this.client = new FusionAuthClient(
-            this.configService.get('auth.clientId'),
+            this.configService.get('auth.apiKey'),
             `https://${this.configService.get('auth.domain')}`,
         );
     }
@@ -41,19 +41,23 @@ export class Oauth2Service {
                             reject(error);
                         }
 
-                        const signingKey = key.getPublicKey();
+                        try {
+                            const signingKey = key.getPublicKey();
 
-                        if (!signingKey) {
-                            reject(new Error(ERR_SIGN_KEY_NOT_FOUND));
+                            if (!signingKey) {
+                                reject(new Error(ERR_SIGN_KEY_NOT_FOUND));
+                            }
+
+                            callback(error, signingKey);
+                        } catch (e) {
+                            reject(e);
                         }
-
-                        callback(error, signingKey);
                     });
                 },
                 {
                     audience,
                     algorithms: ['RS256'],
-                    issuer: `https://${this.configService.get('auth.domain')}/`,
+                    issuer: this.configService.get('auth.jwtIssuer'),
                 },
                 (error, payload) => {
                     if (error) {
