@@ -37,7 +37,6 @@
         "@nestjs/passport": "^7.1.0",
         "@nestjs/platform-express": "^7.6.5",
         "@nestjs/typeorm": "^7.1.5",
-        "auth0": "^2.37.0",
         "axios": "^0.24.0",
         "crypto": "^1.0.1",
         "dotenv": "^8.6.0",

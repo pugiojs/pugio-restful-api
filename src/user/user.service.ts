@@ -1,14 +1,18 @@
 import {
     Injectable,
-    // BadRequestException,
+    BadRequestException,
+    InternalServerErrorException,
 } from '@nestjs/common';
 import * as _ from 'lodash';
 import { UserDAO } from './dao/user.dao';
-// import { Auth0Service } from 'src/auth0/auth0.service';
 import { UtilService } from 'src/util/util.service';
 import { ConfigService } from '@nestjs/config';
 import { UserDTO } from './dto/user.dto';
-// import axios from 'axios';
+import { Oauth2Service } from 'src/oauth2/oauth2.service';
+import { UserRequest } from '@fusionauth/typescript-client';
+import {
+    ERR_FORGOT_PASSWORD_FLOW_FAILED,
+} from 'src/app.constants';
 
 @Injectable()
 export class UserService {
@@ -24,9 +28,9 @@ export class UserService {
     };
 
     public constructor(
-        // private readonly auth0Service: Auth0Service,
         private readonly utilService: UtilService,
         private readonly configService: ConfigService,
+        private readonly oauth2Service: Oauth2Service,
     ) {}
 
     /**
@@ -35,25 +39,28 @@ export class UserService {
      * @returns {Promise<UserDTO>}
      */
     public async updateUserInformation(openId: string, updates: Partial<UserDAO>) {
-        // const userPatchData: Partial<UserDAO> = _.pick(updates, ['name', 'nickname', 'picture', 'email']);
+        const userPatchData: Partial<Omit<UserDTO, 'id'>> = this.utilService.transformDAOToDTO(_.pick(
+            updates,
+            [
+                'full_name',
+                'first_name',
+                'middle_name',
+                'last_name',
+                'email',
+            ],
+        ));
 
-        // const result = await this.auth0Service.managementClient.updateUser(
-        //     {
-        //         id: openId,
-        //     },
-        //     userPatchData,
-        // );
+        const result = await this.oauth2Service
+            .getClient()
+            .updateUser(openId, {
+                user: {
+                    ...userPatchData,
+                },
+                skipVerification: !userPatchData.email,
+            } as UserRequest)
+            .then((response) => response.response?.user);
 
-        // /**
-        //  * if user changes email, then send an verification email to the user
-        //  */
-        // if (userPatchData.email) {
-        //     await this.auth0Service.managementClient.sendEmailVerification({
-        //         user_id: openId,
-        //     });
-        // }
-
-        // return this.utilService.getUserDAOFromOAuth2ServerResponse(result);
+        return result;
     }
 
     /**
@@ -62,25 +69,24 @@ export class UserService {
      * @returns {Promise<any} change password result
      */
     public async changeUserPassword(email: string) {
-        // if (!email || !_.isString(email)) {
-        //     throw new BadRequestException();
-        // }
+        if (!email || !_.isString(email)) {
+            throw new BadRequestException();
+        }
 
-        // const domain = this.configService.get('auth.domain');
-        // const clientId = this.configService.get('auth.clientId');
-        // const connection = this.configService.get('auth.connection') || 'Username-Password-Authentication';
+        const changePasswordId = await this.oauth2Service
+            .getClient()
+            .forgotPassword({
+                email,
+            })
+            .then((response) => response.response?.changePasswordId);
 
-        // const changePasswordURL = `https://${domain}/dbconnections/change_password`;
+        if (!changePasswordId || !_.isString(changePasswordId)) {
+            throw new InternalServerErrorException(ERR_FORGOT_PASSWORD_FLOW_FAILED);
+        }
 
-        // const { data: responseData } = await axios.post(changePasswordURL, {
-        //     client_id: clientId,
-        //     email,
-        //     connection,
-        // });
-
-        // return {
-        //     data: responseData,
-        // };
+        return {
+            id: changePasswordId,
+        };
     }
 
     public getUserDTOFromOAuth2ServerResponse(userInfo: Object) {

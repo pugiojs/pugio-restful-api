@@ -20,3 +20,5 @@ export const ERR_PARAM_VALIDATION_FAILED = 'ERR_PARAM_VALIDATION_FAILED';
 export const ERR_PARAM_PARSE_FAILED = 'ERR_PARAM_PARSE_FAILED';
 // authorization grant error
 export const ERR_AUTH_INVALID_GRANT = 'ERR_AUTH_INVALID_GRANT';
+// oauth2 forgot password request failed
+export const ERR_FORGOT_PASSWORD_FLOW_FAILED = 'ERR_FORGOT_PASSWORD_FLOW_FAILED';
