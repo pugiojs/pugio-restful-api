@@ -12,8 +12,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { getMetadataArgsStorage } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UtilModule } from './util/util.module';
-import { Auth0Module } from './auth0/auth0.module';
 import { VendorModule } from './vendor/vendor.module';
+import { Oauth2Module } from './oauth2/oauth2.module';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -32,7 +32,6 @@ import signConfig from './config/sign.config';
             ],
         }),
         AuthModule,
-        Auth0Module,
         UserModule,
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -49,8 +48,8 @@ import signConfig from './config/sign.config';
             inject: [ConfigService],
         }),
         UtilModule,
-        Auth0Module,
         VendorModule,
+        Oauth2Module,
     ],
     controllers: [AppController],
     providers: [

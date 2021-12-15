@@ -17,15 +17,15 @@ import { UserDTO } from 'src/user/dto/user.dto';
 import {
     ERR_AUTH_EMAIL_NOT_VERIFIED,
 } from 'src/app.constants';
-import { Auth0Service } from 'src/auth0/auth0.service';
 import * as fs from 'fs-extra';
+import { Oauth2Service } from 'src/oauth2/oauth2.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
     public constructor(
         private readonly configService: ConfigService,
         private readonly utilService: UtilService,
-        private readonly auth0Service: Auth0Service,
+        private readonly oauth2Service: Oauth2Service,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -43,19 +43,16 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
             throw new UnauthorizedException();
         }
 
-        const userInfoTag = this.configService.get('auth.userinfoTag');
-        let userInfo: Record<string, any>;
-        userInfo = payload[userInfoTag] as Record<string, any>;
-
-        if (!userInfo) {
-            userInfo = await this.auth0Service.managementClient.getUser({ id });
-        }
+        const userInfo = await this.oauth2Service
+            .getClient()
+            .retrieveUser(id)
+            .then((response) => response.response?.user);
 
         if (!userInfo) {
             throw new UnauthorizedException();
         }
 
-        if (_.isBoolean(userInfo.email_verified) && !userInfo.email_verified) {
+        if (_.isBoolean(userInfo.verified) && !userInfo.verified) {
             throw new ForbiddenException(ERR_AUTH_EMAIL_NOT_VERIFIED);
         }
 

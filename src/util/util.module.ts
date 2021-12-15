@@ -7,7 +7,6 @@ import { UtilService } from './util.service';
 
 @Global()
 @Module({
-    imports: [ConfigModule],
     providers: [UtilService],
     exports: [UtilService],
 })

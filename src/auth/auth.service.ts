@@ -16,10 +16,12 @@ import {
 } from 'src/app.constants';
 import { ConfigService } from '@nestjs/config';
 import * as yup from 'yup';
-import { Auth0Service } from 'src/auth0/auth0.service';
 import axios from 'axios';
 import * as qs from 'qs';
 import { URL } from 'url';
+import { Oauth2Service } from 'src/oauth2/oauth2.service';
+import * as fs from 'fs-extra';
+import * as jwt from 'jsonwebtoken';
 
 interface CallbackStateSchema {
     clientId: string;
@@ -35,8 +37,31 @@ export class AuthService {
     public constructor(
         private readonly utilService: UtilService,
         private readonly configService: ConfigService,
-        private readonly auth0Service: Auth0Service,
+        private readonly oauth2Service: Oauth2Service,
     ) {}
+
+    public signAccountCenterToken(openId: string) {
+        const privateKey = fs.readFileSync(this.configService.get('sign.privateKeyPathname'));
+
+        if (!openId || !privateKey) {
+            return null;
+        }
+
+        const token = jwt.sign(
+            {
+                sub: openId,
+            },
+            privateKey,
+            {
+                algorithm: 'RS256',
+                audience: this.configService.get('auth.audience'),
+                expiresIn: this.configService.get('sign.expiration'),
+                issuer: this.configService.get('sign.issuer'),
+            },
+        );
+
+        return token;
+    }
 
     /**
      * use Auth0 access token to generate a new token that can be recognized
@@ -65,16 +90,14 @@ export class AuthService {
 
         const {
             sub: openId,
-        } = await this.utilService.validateAuth0AccessToken(token, audience);
+        } = await this.oauth2Service.validateOauth2AccessToken(token, audience);
 
         if (!openId) {
             throw new InternalServerErrorException(ERR_AUTH_OPEN_ID_INVALID);
         }
 
-        console.log('LENCONDA', this.configService.get('sign.expiration'));
-
         return {
-            token: this.utilService.signAccountCenterToken(openId),
+            token: this.signAccountCenterToken(openId),
             expiresIn: this.configService.get('sign.expiration'),
         };
     }
@@ -85,7 +108,7 @@ export class AuthService {
         }
 
         return {
-            token: this.utilService.signAccountCenterToken(openId),
+            token: this.signAccountCenterToken(openId),
             expiresIn: this.configService.get('sign.expiration'),
         };
     }
@@ -131,13 +154,16 @@ export class AuthService {
         if (stateParams.clientId === defaultClientId) {
             clientSecret = this.configService.get('auth.clientSecret');
         } else {
-            const {
-                client_secret,
-            } = await this.auth0Service.managementClient.getClient({
-                client_id: stateParams.clientId,
-            });
+            const application = await this.oauth2Service
+                .getClient()
+                .retrieveApplication(stateParams.clientId)
+                .then((response) => response.response?.application);
 
-            clientSecret = client_secret;
+            if (!application) {
+                throw new InternalServerErrorException(ERR_AUTH_CLIENT_NOT_FOUND);
+            }
+
+            clientSecret = application?.oauthConfiguration?.clientSecret;
         }
 
         if (!clientSecret) {
@@ -148,7 +174,7 @@ export class AuthService {
             const {
                 data: oauthTokenResponseData,
             } = await axios.post(
-                `https://${this.configService.get('auth.domain')}/oauth/token`,
+                `https://${this.configService.get('auth.domain')}${this.configService.get('auth.tokenEndpoint')}`,
                 qs.stringify(this.utilService.transformDTOToDAO({
                     code,
                     clientId: stateParams.clientId,
