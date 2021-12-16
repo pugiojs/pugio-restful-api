@@ -11,10 +11,10 @@
 <script>
     window.onload = function() {
         var search = window.location.search;
-        var searchParams = new SearchParams(search);
+        var searchParams = new URLSearchParams(search);
         var accessToken = searchParams.get('access_token');
         var refreshToken = searchParams.get('refresh_token');
-        var expiresIn = parseInt(searchParams.get('expires_in') || '3600', 10);
+        var expiresIn = parseInt(searchParams.get('expires_in') || '3600', 10) * 1000;
         var returnUrl = decodeURIComponent(searchParams.get('return_to') || '%2F');
         var expireDate = new Date(Date.now() + expiresIn);
 
