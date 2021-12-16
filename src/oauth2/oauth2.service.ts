@@ -24,7 +24,10 @@ export class Oauth2Service {
         return this.client;
     }
 
-    public async validateOauth2AccessToken(token: string, audience: string): Promise<jwt.JwtPayload> {
+    public async validateOauth2AccessToken(
+        token: string,
+        audience: string | string[],
+    ): Promise<jwt.JwtPayload> {
         return new Promise((resolve, reject) => {
             const jwksClient = JwksClient({
                 rateLimit: true,

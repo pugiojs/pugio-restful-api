@@ -22,13 +22,14 @@ import { URL } from 'url';
 import { Oauth2Service } from 'src/oauth2/oauth2.service';
 import * as fs from 'fs-extra';
 import * as jwt from 'jsonwebtoken';
+import * as urlJoin from 'url-join/lib/url-join';
 
 interface CallbackStateSchema {
     clientId: string;
     vendor?: {
         origin?: string;
-        pathname?: string;
-        data?: string;
+        check_in_path?: string;
+        checked_in_redirect_path?: string;
     };
 }
 
@@ -75,14 +76,16 @@ export class AuthService {
         }
 
         const [, payload] = token.split('.');
-        let audience: string;
+        let audience: string | string[];
 
         if (!payload) {
             throw new InternalServerErrorException(ERR_SIGN_PAYLOAD_NOT_FOUND);
         }
 
         try {
-            const { aud } = JSON.parse(Buffer.from(payload, 'base64').toString());
+            const {
+                aud,
+            } = JSON.parse(Buffer.from(payload, 'base64').toString()) as jwt.JwtPayload;
             audience = aud;
         } catch (e) {
             throw new InternalServerErrorException(ERR_AUTH_TOKEN_PARSE_ERROR);
@@ -116,11 +119,10 @@ export class AuthService {
     public async authenticationHandler(code: string, state: string) {
         const stateSchema = yup.object().shape({
             clientId: yup.string().required(),
-            redirectUri: yup.string().required(),
             vendor: yup.object().shape({
                 origin: yup.string().optional(),
-                pathname: yup.string().optional(),
-                data: yup.string().optional(),
+                check_in_path: yup.string().optional(),
+                checked_in_redirect_path: yup.string().optional(),
             }).optional(),
         });
 
@@ -132,8 +134,9 @@ export class AuthService {
         let stateParams: CallbackStateSchema = {
             clientId: defaultClientId,
             vendor: {
-                origin: this.configService.get('sign.issuer'),
-                pathname: '/vendor/check_in',
+                origin: this.configService.get('app.origin'),
+                check_in_path: '/check_in',
+                checked_in_redirect_path: '/',
             },
         };
 
@@ -190,13 +193,16 @@ export class AuthService {
                 },
             );
 
-            const callbackURLParser = new URL(stateParams.vendor.origin);
-            callbackURLParser.pathname = _.get(stateParams, 'vendor.pathname') || '';
+            const callbackURLParser = new URL(
+                urlJoin(
+                    'https://' + stateParams.vendor.origin,
+                    stateParams.vendor.check_in_path,
+                ),
+            );
             callbackURLParser.search = '?' + qs.stringify({
-                data: stateParams.vendor.data,
                 ...oauthTokenResponseData,
+                return_to: stateParams.vendor.checked_in_redirect_path,
             });
-
             return callbackURLParser.toString();
         } catch (e) {
             throw new InternalServerErrorException(ERR_AUTH_INVALID_GRANT, e.message || e.toString());

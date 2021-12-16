@@ -4,9 +4,6 @@ import {
     InternalServerErrorException,
 } from '@nestjs/common';
 import * as _ from 'lodash';
-import { UserDAO } from './dao/user.dao';
-import { UtilService } from 'src/util/util.service';
-import { ConfigService } from '@nestjs/config';
 import { UserDTO } from './dto/user.dto';
 import { Oauth2Service } from 'src/oauth2/oauth2.service';
 import { UserRequest } from '@fusionauth/typescript-client';
@@ -25,38 +22,40 @@ export class UserService {
         email: 'email',
         active: 'active',
         verified: 'verified',
+        insertInstant: 'createdAt',
+        lastUpdateInstant: 'updatedAt',
     };
 
     public constructor(
-        private readonly utilService: UtilService,
-        private readonly configService: ConfigService,
         private readonly oauth2Service: Oauth2Service,
     ) {}
 
     /**
      * update user information
-     * @param {Partial<UserDTO>} updates
+     * @param {string} openId user open id
+     * @param {Partial<UserDTO>} updates the data to be updated
      * @returns {Promise<UserDTO>}
      */
-    public async updateUserInformation(openId: string, updates: Partial<UserDAO>) {
-        const userPatchData: Partial<Omit<UserDTO, 'id'>> = this.utilService.transformDAOToDTO(_.pick(
+    public async updateUserInformation(email: string, openId: string, updates: Partial<UserDTO>) {
+        const userPatchData: Partial<Omit<UserDTO, 'id'>> = _.pick(
             updates,
             [
-                'full_name',
-                'first_name',
-                'middle_name',
-                'last_name',
+                'fullName',
+                'firstName',
+                'middleName',
+                'lastName',
                 'email',
             ],
-        ));
+        );
 
         const result = await this.oauth2Service
             .getClient()
             .updateUser(openId, {
                 user: {
                     ...userPatchData,
+                    email: userPatchData.email || email,
                 },
-                skipVerification: !userPatchData.email,
+                skipVerification: email === userPatchData.email,
             } as UserRequest)
             .then((response) => response.response?.user);
 

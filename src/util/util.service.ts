@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
+import { CaseStyleType } from 'src/app.interface';
 
 type DataType = Array<any> | Object | string;
-type CaseStyleType = 'snake' | 'camel' | 'kebab';
 
 @Injectable()
 export class UtilService {
-    public transformCaseStyle = <T extends DataType, R extends T | DataType>(data: Partial<T>, targetCaseStyleType: CaseStyleType): R => {
+    public transformCaseStyle = <T extends DataType, R extends T | DataType>(
+        data: Partial<T>,
+        targetCaseStyleType: CaseStyleType,
+    ): R => {
         if (!_.isNumber(data) && !data) {
             return;
         }
