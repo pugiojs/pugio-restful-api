@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { Module } from '@nestjs/common';
 import {
     ConfigModule,
@@ -14,6 +15,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UtilModule } from './util/util.module';
 import { VendorModule } from './vendor/vendor.module';
 import { Oauth2Module } from './oauth2/oauth2.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -50,6 +52,10 @@ import signConfig from './config/sign.config';
         UtilModule,
         VendorModule,
         Oauth2Module,
+        ServeStaticModule.forRoot({
+            rootPath: path.resolve(__dirname, '../static'),
+            serveRoot: '/endpoints',
+        }),
     ],
     controllers: [AppController],
     providers: [
