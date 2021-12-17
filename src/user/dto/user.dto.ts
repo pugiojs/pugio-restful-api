@@ -1,11 +1,34 @@
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
+} from 'typeorm';
+
+@Entity({ name: 'users' })
 export class UserDTO {
+    @PrimaryGeneratedColumn()
     public id: number;
-    public openId: string;
+
+    @Column()
     public email: string;
-    public fullName: string;
-    public firstName: string;
-    public middleName: string;
-    public lastName: string;
-    public active: boolean;
-    public verified: boolean;
+
+    @Column()
+    public picture: string;
+
+    @Column()
+    public name: string;
+
+    @Column()
+    public nickname: string;
+
+    @Column({ name: 'open_id' })
+    public openId: string;
+
+    @CreateDateColumn({ name: 'created_at' })
+    public createdAt: Date;
+
+    @UpdateDateColumn({ name: 'updated_at' })
+    public updatedAt: Date;
 }

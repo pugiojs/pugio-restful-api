@@ -129,6 +129,3 @@ dist/
 
 # Code coverage reports
 coverage/
-
-# Key pairs
-.keys/
