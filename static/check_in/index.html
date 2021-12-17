@@ -15,14 +15,18 @@
         var accessToken = searchParams.get('access_token');
         var refreshToken = searchParams.get('refresh_token');
         var expiresIn = parseInt(searchParams.get('expires_in') || '3600', 10) * 1000;
-        var returnUrl = decodeURIComponent(searchParams.get('return_to') || '%2F');
+        var returnPath = decodeURIComponent(searchParams.get('return_to') || '%2F');
         var expireDate = new Date(Date.now() + expiresIn);
 
-        localStorage.setItem('ACCESS_TOKEN', accessToken);
-        localStorage.setItem('REFRESH_TOKEN', refreshToken);
         localStorage.setItem('ACCESS_TOKEN_EXPIRE_DATE', expireDate.toISOString());
 
-        window.location.href = returnUrl;
+        if (!accessToken || !refreshToken) {
+            document.write('Cannot find token!');
+        } else {
+            localStorage.setItem('ACCESS_TOKEN', accessToken);
+            localStorage.setItem('REFRESH_TOKEN', refreshToken);
+            window.location.href = returnPath;
+        }
     }
 </script>
 </html>

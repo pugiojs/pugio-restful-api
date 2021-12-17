@@ -135,7 +135,7 @@ export class AuthService {
             clientId: defaultClientId,
             vendor: {
                 origin: this.configService.get('app.origin'),
-                check_in_path: '/check_in',
+                check_in_path: '/endpoints/check_in',
                 checked_in_redirect_path: '/',
             },
         };
