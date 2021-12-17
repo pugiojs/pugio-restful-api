@@ -1,24 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
-import { UserDAO } from 'src/user/dao/user.dao';
+import { CaseStyleType } from 'src/app.interface';
 
 type DataType = Array<any> | Object | string;
-type CaseStyleType = 'snake' | 'camel' | 'kebab';
 
 @Injectable()
 export class UtilService {
-    private userDAOKeyMap = {
-        name: 'name',
-        nickname: 'nickname',
-        picture: 'picture',
-        user_id: 'open_id',
-        email: 'email',
-        created_at: 'created_at',
-        updated_at: 'updated_at',
-    };
-
-    public transformCaseStyle = <T extends DataType, R extends T | DataType>(data: Partial<T>, targetCaseStyleType: CaseStyleType): R => {
-        if (!data) {
+    public transformCaseStyle = <T extends DataType, R extends T | DataType>(
+        data: Partial<T>,
+        targetCaseStyleType: CaseStyleType,
+    ): R => {
+        if (!_.isNumber(data) && !data) {
             return;
         }
 
@@ -65,6 +57,8 @@ export class UtilService {
         if (_.isPlainObject(data) || _.isString(data)) {
             return _.cloneDeep<R>(data as R);
         }
+
+        return data;
     };
 
     public transformDAOToDTO<DAOType, DTOType>(daoData: Partial<DAOType>): DTOType {
@@ -73,16 +67,5 @@ export class UtilService {
 
     public transformDTOToDAO<DTOType, DAOType>(dtoData: Partial<DTOType>): DAOType {
         return this.transformCaseStyle<DTOType, DAOType>(dtoData, 'snake');
-    }
-
-    public getUserDAOFromAuth0Response(userInfo: Object) {
-        return Object.keys(this.userDAOKeyMap).reduce((result, currentKey) => {
-            const currentKeyName = this.userDAOKeyMap[currentKey];
-            const currentValue = userInfo[currentKey];
-            if (!_.isNull(currentValue) || !_.isUndefined(currentValue)) {
-                result[currentKeyName] = currentValue;
-            }
-            return result;
-        }, {} as UserDAO);
     }
 }

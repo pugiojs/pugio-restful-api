@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check In | Lenconda Account Center</title>
+</head>
+<body>
+</body>
+<script>
+    window.onload = function() {
+        var search = window.location.search;
+        var searchParams = new URLSearchParams(search);
+        var accessToken = searchParams.get('access_token');
+        var refreshToken = searchParams.get('refresh_token');
+        var expiresIn = parseInt(searchParams.get('expires_in') || '3600', 10) * 1000;
+        var returnPath = decodeURIComponent(searchParams.get('return_to') || '%2F');
+        var expireDate = new Date(Date.now() + expiresIn);
+
+        localStorage.setItem('ACCESS_TOKEN_EXPIRE_DATE', expireDate.toISOString());
+
+        if (!accessToken || !refreshToken) {
+            document.write('Cannot find token!');
+        } else {
+            localStorage.setItem('ACCESS_TOKEN', accessToken);
+            localStorage.setItem('REFRESH_TOKEN', refreshToken);
+            window.location.href = returnPath;
+        }
+    }
+</script>
+</html>

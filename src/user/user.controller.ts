@@ -7,7 +7,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { UserDAO } from './dao/user.dao';
+import { CamelCasePipe } from 'src/case.pipe';
 import { UserDTO } from './dto/user.dto';
 import { CurrentUser } from './user.decorator';
 import { UserService } from './user.service';
@@ -28,9 +28,13 @@ export class UserController {
     @Patch('/profile')
     public async updateUserProfile(
         @CurrentUser() user: UserDTO,
-        @Body() userInformation: UserDAO,
+        @Body(CamelCasePipe) userInformation: UserDTO,
     ) {
-        return await this.userService.updateUserInformation(user.openId, userInformation);
+        return await this.userService.updateUserInformation(
+            user.email,
+            user.openId,
+            userInformation,
+        );
     }
 
     @UseGuards(AuthGuard())
