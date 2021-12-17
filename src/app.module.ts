@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { Module } from '@nestjs/common';
 import {
     ConfigModule,
@@ -13,15 +12,12 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { getMetadataArgsStorage } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UtilModule } from './util/util.module';
-import { VendorModule } from './vendor/vendor.module';
-import { Oauth2Module } from './oauth2/oauth2.module';
-import { ServeStaticModule } from '@nestjs/serve-static';
+import { Auth0Module } from './auth0/auth0.module';
 
 // Application configs
 import appConfig from './config/app.config';
 import dbConfig from './config/db.config';
 import authConfig from './config/auth.config';
-import signConfig from './config/sign.config';
 
 @Module({
     imports: [
@@ -30,10 +26,10 @@ import signConfig from './config/sign.config';
                 appConfig,
                 dbConfig,
                 authConfig,
-                signConfig,
             ],
         }),
         AuthModule,
+        Auth0Module,
         UserModule,
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -50,12 +46,7 @@ import signConfig from './config/sign.config';
             inject: [ConfigService],
         }),
         UtilModule,
-        VendorModule,
-        Oauth2Module,
-        ServeStaticModule.forRoot({
-            rootPath: path.resolve(__dirname, '../static'),
-            serveRoot: '/endpoints',
-        }),
+        Auth0Module,
     ],
     controllers: [AppController],
     providers: [

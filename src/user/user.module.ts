@@ -1,11 +1,16 @@
 import { Module } from '@nestjs/common';
-import { Oauth2Module } from 'src/oauth2/oauth2.module';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserDTO } from './dto/user.dto';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
 @Module({
     imports: [
-        Oauth2Module,
+        TypeOrmModule.forFeature([
+            UserDTO,
+        ]),
+        ConfigModule,
     ],
     controllers: [UserController],
     providers: [UserService],
