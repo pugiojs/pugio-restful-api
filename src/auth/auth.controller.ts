@@ -1,9 +1,6 @@
 import {
-    Body,
     Controller,
-    Get,
     Inject,
-    Post,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
@@ -11,15 +8,4 @@ import { AuthService } from './auth.service';
 export class AuthController {
     @Inject()
     protected authService: AuthService;
-
-    @Post('/refresh')
-    public async getRefreshedToken(@Body('refresh_token') refreshToken: string) {
-        return await this.authService.getRefreshedToken(refreshToken);
-    }
-
-    // TODO remove
-    @Get('/callback')
-    public async handleCallback() {
-        return {};
-    }
 }

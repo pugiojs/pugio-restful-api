@@ -10,7 +10,6 @@ import { UserService } from './user.service';
         TypeOrmModule.forFeature([
             UserDTO,
         ]),
-        ConfigModule,
     ],
     controllers: [UserController],
     providers: [UserService],

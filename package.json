@@ -30,6 +30,7 @@
         "test:e2e": "jest --config ./test/jest-e2e.json"
     },
     "dependencies": {
+        "@fusionauth/typescript-client": "^1.32.1",
         "@nestjs/common": "^7.6.13",
         "@nestjs/config": "^0.5.0",
         "@nestjs/core": "^7.6.13",
@@ -43,6 +44,7 @@
         "lodash": "^4.17.21",
         "mysql": "^2.18.1",
         "passport": "^0.4.1",
+        "passport-headerapikey": "^1.2.2",
         "passport-jwt": "^4.0.0",
         "reflect-metadata": "^0.1.13",
         "rimraf": "^3.0.2",
