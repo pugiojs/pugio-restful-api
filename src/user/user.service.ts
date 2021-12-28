@@ -43,6 +43,8 @@ export class UserService {
             ],
         );
 
+        let data;
+
         if (currentUserDTO) {
             await this.userRepository.update(
                 {
@@ -50,13 +52,15 @@ export class UserService {
                 },
                 newPartialCurrentUserDTO,
             );
-            return {
+            data = {
                 ...currentUserDTO,
                 ...newPartialCurrentUserDTO,
             };
         } else {
             const newUserInformation = this.userRepository.create(userInformation);
-            return await this.userRepository.save(newUserInformation);
+            data = await this.userRepository.save(newUserInformation);
         }
+
+        return data;
     }
 }
