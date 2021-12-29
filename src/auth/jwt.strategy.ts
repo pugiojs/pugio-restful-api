@@ -66,9 +66,9 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
             }
 
             const userInfoData = this.utilService.transformDAOToDTO<UserDAO, UserDTO>(data);
-            this.userService.syncUserInformation(userInfoData);
+            const result = await this.userService.syncUserInformation(userInfoData);
 
-            return data;
+            return result;
         } catch (e) {
             throw new InternalServerErrorException(e);
         }

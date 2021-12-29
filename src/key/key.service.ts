@@ -20,11 +20,12 @@ export class KeyService {
                 id,
             ].join(':'),
         ).toString('base64');
-        return await this.keyRepository.create({
+        const newAPIKey = this.keyRepository.create({
             owner: {
                 id,
             },
             keyId: content,
         });
+        return await this.keyRepository.save(newAPIKey);
     }
 }
