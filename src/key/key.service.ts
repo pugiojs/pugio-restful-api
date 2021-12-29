@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import {
+    Injectable,
+    UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { Repository } from 'typeorm';
@@ -27,5 +30,20 @@ export class KeyService {
             keyId: content,
         });
         return await this.keyRepository.save(newAPIKey);
+    }
+
+    public async validateApiKey(apiKey: string) {
+        const result = await this.keyRepository.findOne({
+            where: {
+                keyId: apiKey,
+            },
+            relations: ['owner'],
+        });
+
+        if (!result) {
+            throw new UnauthorizedException();
+        }
+
+        return result.owner;
     }
 }
