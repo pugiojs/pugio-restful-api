@@ -1,6 +1,7 @@
 import {
     ForbiddenException,
     Injectable,
+    InternalServerErrorException,
     UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -18,12 +19,15 @@ import {
     ERR_AUTH_EMAIL_NOT_VERIFIED,
 } from 'src/app.constants';
 import axios from 'axios';
+import { UserDAO } from 'src/user/dao/user.dao';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(BaseStrategy) {
     public constructor(
         private readonly configService: ConfigService,
         private readonly userService: UserService,
+        private readonly utilService: UtilService,
     ) {
         super({
             secretOrKeyProvider: passportJwtSecret({
@@ -37,7 +41,7 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
 
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             audience: configService.get<string>('auth.audience'),
-            issuer: `https://${configService.get<string>('auth.domain')}/`,
+            issuer: configService.get<string>('auth.jwtIssuer'),
             algorithms: ['RS256'],
         });
     }
@@ -49,19 +53,24 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
             throw new UnauthorizedException();
         }
 
-        const { data } = await axios.get<UserDTO>(
-            `https://account.lenconda.top/api/v1/vendor/profile?id=${id}&key=${this.configService.get('auth.apiKey')}`,
-            {
-                responseType: 'json',
-            },
-        );
+        try {
+            const { data } = await axios.get<UserDAO>(
+                `https://account.lenconda.top/api/v1/vendor/profile?id=${id}&key=${this.configService.get('auth.apiKey')}`,
+                {
+                    responseType: 'json',
+                },
+            );
 
-        if (!data.verified) {
-            throw new ForbiddenException(ERR_AUTH_EMAIL_NOT_VERIFIED);
+            if (!data.verified) {
+                throw new ForbiddenException(ERR_AUTH_EMAIL_NOT_VERIFIED);
+            }
+
+            const userInfoData = this.utilService.transformDAOToDTO<UserDAO, UserDTO>(data);
+            this.userService.syncUserInformation(userInfoData);
+
+            return data;
+        } catch (e) {
+            throw new InternalServerErrorException(e);
         }
-
-        this.userService.syncUserInformation(data);
-
-        return data;
     }
 }

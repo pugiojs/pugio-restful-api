@@ -65,6 +65,8 @@ export class UtilService {
         if (_.isPlainObject(data) || _.isString(data)) {
             return _.cloneDeep<R>(data as R);
         }
+
+        return data;
     };
 
     public transformDAOToDTO<DAOType, DTOType>(daoData: Partial<DAOType>): DTOType {

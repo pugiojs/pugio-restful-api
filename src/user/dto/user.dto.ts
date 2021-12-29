@@ -1,7 +1,9 @@
+import { KeyDTO } from 'src/key/dto/key.dto';
 import {
     Column,
     CreateDateColumn,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
@@ -20,13 +22,16 @@ export class UserDTO {
     @Column()
     public picture: string;
 
-    @Column({ name: 'full_name' })
+    @Column({ name: 'full_name', nullable: true })
     public fullName: string;
 
-    @Column({ name: 'first_name' })
+    @Column({ name: 'first_name', nullable: true })
     public firstName: string;
 
-    @Column({ name: 'last_name' })
+    @Column({ name: 'middle_name', nullable: true })
+    public middleName: string;
+
+    @Column({ name: 'last_name', nullable: true })
     public lastName: string;
 
     @Column()
@@ -34,6 +39,9 @@ export class UserDTO {
 
     @Column()
     public verified: boolean;
+
+    @OneToMany(() => KeyDTO, (keyDTO) => keyDTO.owner)
+    public keys: KeyDTO[];
 
     @CreateDateColumn({ name: 'created_at' })
     public createdAt: Date;

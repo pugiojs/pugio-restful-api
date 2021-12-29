@@ -57,7 +57,15 @@ export class UserService {
                 ...newPartialCurrentUserDTO,
             };
         } else {
-            const newUserInformation = this.userRepository.create(userInformation);
+            const newUserInformation = this.userRepository.create(
+                _.omit(
+                    userInformation,
+                    [
+                        'createdAt',
+                        'updatedAt',
+                    ],
+                ),
+            );
             data = await this.userRepository.save(newUserInformation);
         }
 
