@@ -13,9 +13,9 @@ import {
     Socket,
 } from 'socket.io';
 
-@WebSocketGateway({ namespace: 'central' })
+@WebSocketGateway({ namespace: 'app' })
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-    private logger: Logger = new Logger('CentralGateway');
+    private logger: Logger = new Logger('AppGateway');
 
     @SubscribeMessage('message')
     public handleMessage(client: any, payload: any): string {
