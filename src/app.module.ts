@@ -16,8 +16,7 @@ import { GroupModule } from './group/group.module';
 import { KeyModule } from './key/key.module';
 import { ApplicationModule } from './application/application.module';
 import { AccountModule } from './account/account.module';
-import { AppGateway } from './app.gateway';
-import { MessageModule } from './message/message.module';
+// import { AppGateway } from './app.gateway';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -55,7 +54,6 @@ import authConfig from './config/auth.config';
         KeyModule,
         ApplicationModule,
         AccountModule,
-        MessageModule,
     ],
     controllers: [AppController],
     providers: [
@@ -64,7 +62,7 @@ import authConfig from './config/auth.config';
             provide: APP_INTERCEPTOR,
             useClass: AppInterceptor,
         },
-        AppGateway,
+        // AppGateway,
     ],
 })
 export class AppModule {}

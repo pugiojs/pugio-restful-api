@@ -52,7 +52,8 @@
         "rimraf": "^3.0.2",
         "rxjs": "^6.6.3",
         "socket.io-client": "^4.4.0",
-        "typeorm": "^0.2.29"
+        "typeorm": "^0.2.29",
+        "ws": "^8.4.0"
     },
     "devDependencies": {
         "@nestjs/cli": "^7.5.4",
@@ -68,6 +69,7 @@
         "@types/passport-jwt": "^3.0.3",
         "@types/socket.io": "^2.1.13",
         "@types/supertest": "^2.0.10",
+        "@types/ws": "^8.2.2",
         "@typescript-eslint/eslint-plugin": "^4.15.2",
         "@typescript-eslint/parser": "^4.15.2",
         "eslint": "^7.20.0",
