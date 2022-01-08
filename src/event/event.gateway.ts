@@ -16,7 +16,7 @@ import { Server } from 'ws';
 })
 export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
-    private server: Server;
+    public server: Server;
 
     private logger: Logger = new Logger('AppGateway');
 
