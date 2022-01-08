@@ -11,7 +11,8 @@ export class EventController {
 
     @Get('/test')
     public async test() {
-        return this.eventsGateway.server.emit('execute', new Date().toISOString());
+        this.eventsGateway.server.emit('execute', new Date().toISOString());
+        return this.eventsGateway.server.clients;
         // return await this.eventService.test();
     }
 }

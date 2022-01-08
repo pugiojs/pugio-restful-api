@@ -3,16 +3,16 @@ import * as WebSocket from 'ws';
 
 @Injectable()
 export class EventService {
-    private ws: WebSocket
 
     // public constructor(
     //     private readonly
     // ) {}
 
     public async test() {
-        this.ws.send(JSON.stringify({
+        const ws = new WebSocket('ws://127.0.0.1:5000/api/v1/websocket');
+        ws.send(JSON.stringify({
             event: 'execute',
-            data: new Date().toISOString(),
+            
         }));
     }
 }
