@@ -6,7 +6,7 @@ export class EventService {
     private ws: WebSocket
 
     public constructor() {
-        this.ws = new WebSocket('ws://127.0.0.1:5000/api/v1/websocket');
+        this.ws = new WebSocket('wss://pugio-dev.lenconda.top/ws');
     }
 
     public async test() {
