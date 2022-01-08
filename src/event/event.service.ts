@@ -5,9 +5,9 @@ import * as WebSocket from 'ws';
 export class EventService {
     private ws: WebSocket
 
-    public constructor() {
-        this.ws = new WebSocket('wss://pugio-dev.lenconda.top/ws');
-    }
+    // public constructor() {
+    // this.ws = new WebSocket('wss://pugio-dev.lenconda.top/ws');
+    // }
 
     public async test() {
         this.ws.send(JSON.stringify({
