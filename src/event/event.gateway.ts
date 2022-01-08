@@ -11,7 +11,9 @@ import {
 import { Observable } from 'rxjs';
 import { Server } from 'ws';
 
-@WebSocketGateway()
+@WebSocketGateway({
+    path: '/api/v1/websocket',
+})
 export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     private server: Server;
