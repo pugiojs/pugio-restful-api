@@ -1,4 +1,14 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
+import { EventService } from './event.service';
 
 @Controller('/event')
-export class EventController {}
+export class EventController {
+    public constructor(
+        private readonly eventService: EventService,
+    ) {}
+
+    @Get('/test')
+    public async test() {
+        return await this.eventService.test();
+    }
+}
