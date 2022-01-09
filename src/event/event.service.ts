@@ -1,18 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import * as WebSocket from 'ws';
+import { EventsGateway } from './event.gateway';
 
 @Injectable()
 export class EventService {
-
-    // public constructor(
-    //     private readonly
-    // ) {}
+    public constructor(
+        private readonly eventsGateway: EventsGateway,
+    ) {}
 
     public async test() {
-        const ws = new WebSocket('ws://127.0.0.1:5000/api/v1/websocket');
-        ws.send(JSON.stringify({
-            event: 'execute',
-            
-        }));
+        this.eventsGateway.server.clients.forEach((client) => {
+            client.send(new Date().toISOString());
+        });
+
+        return this.eventsGateway.server.clients.values();
     }
 }
