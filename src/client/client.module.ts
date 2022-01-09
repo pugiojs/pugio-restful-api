@@ -5,6 +5,7 @@ import { ClientGateway } from './client.gateway';
 import { ClientService } from './client.service';
 
 @Module({
+    imports: [EventModule],
     controllers: [ClientController],
     providers: [ClientService, ClientGateway],
     exports: [ClientService, ClientGateway],
