@@ -13,11 +13,10 @@ export class ClientController {
     ) {}
 
     @Get('/test/:id')
-    public sendExecutionResult(
+    public async sendExecutionResult(
         @Param('id') executionId: string,
-        @Query('message') content: string,
+        @Query('command') command: string,
     ) {
-        console.log(executionId, content);
-        return this.clientService.sendExecutionResult(parseInt(executionId, 10), content);
+        return await this.clientService.sendExecutionResult(parseInt(executionId, 10), command);
     }
 }

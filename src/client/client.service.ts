@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventService } from 'src/event/event.service';
+import * as child_process from 'child_process';
 
 @Injectable()
 export class ClientService {
@@ -7,7 +8,14 @@ export class ClientService {
         private readonly eventService: EventService,
     ) {}
 
-    public sendExecutionResult(executionId: number, content: string) {
-        return this.eventService.sendExecutionResult(executionId, content);
+    public async sendExecutionResult(executionId: number, command: string) {
+        return new Promise((resolve, reject) => {
+            const [mainCommand, ...args] = command.split(' ');
+            const proc = child_process.spawn(mainCommand, args);
+            proc.stdout.on('data', (data) => {
+                this.eventService.sendExecutionResult(executionId, data.toString());
+            });
+            proc.on('close', () => resolve(undefined));
+        });
     }
 }

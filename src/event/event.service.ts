@@ -47,7 +47,8 @@ export class EventService {
         const clientReadyStateList = [];
 
         this.eventsGateway.server.clients.forEach((client) => {
-            client.emit(eventName, JSON.stringify({
+            client.send(JSON.stringify({
+                event: eventName,
                 content: messageContent,
                 timestamp: Date.now(),
             }));
