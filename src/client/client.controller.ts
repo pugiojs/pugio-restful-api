@@ -17,6 +17,7 @@ export class ClientController {
         @Param('id') executionId: string,
         @Query('message') content: string,
     ) {
+        console.log(executionId, content);
         return this.clientService.sendExecutionResult(parseInt(executionId, 10), content);
     }
 }

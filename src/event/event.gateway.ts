@@ -3,10 +3,10 @@ import {
     OnGatewayConnection,
     OnGatewayDisconnect,
     OnGatewayInit,
-    SubscribeMessage,
+    // SubscribeMessage,
     WebSocketGateway,
     WebSocketServer,
-    WsResponse,
+    // WsResponse,
 } from '@nestjs/websockets';
 import { Observable } from 'rxjs';
 import { Server } from 'ws';
@@ -20,14 +20,14 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
     private logger: Logger = new Logger('AppGateway');
 
-    @SubscribeMessage('execution_result')
-    public handleExecutionResult(client: any, data: any): Observable<WsResponse<number>> {
-        this.server.clients.forEach((client) => {
-            this.logger.log(`Send data: ${data}`);
-            client.send(data);
-        });
-        return data;
-    }
+    // @SubscribeMessage('execution_result')
+    // public handleExecutionResult(client: any, data: any): Observable<WsResponse<number>> {
+    //     this.server.clients.forEach((client) => {
+    //         this.logger.log(`Send data: ${data}`);
+    //         client.send(data);
+    //     });
+    //     return data;
+    // }
 
     public afterInit(server: Server) {
         this.logger.log('WebSocket server initialized');

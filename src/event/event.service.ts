@@ -20,9 +20,9 @@ export class EventService {
     public async sendExecutionResult(executionId: number, content: string) {
         const message = {
             executionId,
-            content: new Date().toISOString(),
+            content,
         };
-        return this.send('execution_result', message);
+        return this.broadcast('execution_result', message);
     }
 
     private broadcast(eventName: string, message: Object | string) {
@@ -47,9 +47,9 @@ export class EventService {
         const clientReadyStateList = [];
 
         this.eventsGateway.server.clients.forEach((client) => {
-            client.send(JSON.stringify({
-                event: eventName,
+            client.emit(eventName, JSON.stringify({
                 content: messageContent,
+                timestamp: Date.now(),
             }));
             clientReadyStateList.push(client.readyState);
         });
@@ -57,30 +57,5 @@ export class EventService {
         return {
             amount: clientReadyStateList.filter((readyState) => readyState === 1).length,
         };
-    }
-
-    private send(eventName: string, message: Object | string) {
-        let messageContent;
-
-        try {
-            messageContent = _.isString(message)
-                ? message
-                : JSON.stringify(message);
-        } catch (e) {
-            throw new InternalServerErrorException(ERR_WS_INVALID_MESSAGE_BODY);
-        }
-
-        if (!messageContent) {
-            throw new BadRequestException(ERR_WS_EMPTY_MESSAGE_BODY);
-        }
-
-        if (!_.get(this.eventsGateway, 'server.clients')) {
-            throw new InternalServerErrorException(ERR_WS_SERVER_NOT_CONNECTED);
-        }
-
-        this.eventsGateway.server.emit('message', JSON.stringify({
-            event: eventName,
-            data: messageContent,
-        }));
     }
 }
