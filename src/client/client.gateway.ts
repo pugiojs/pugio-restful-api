@@ -19,11 +19,11 @@ export class ClientGateway implements Gateway {
         this.logger.log('WebSocket server initialized');
     }
 
-    public handleConnection(client) {
-        this.logger.log(`Client connected ${client.toString()}`);
+    public handleConnection() {
+        this.logger.log('Client connected');
     }
 
-    public handleDisconnect(client) {
-        this.logger.log(`Client disconnected ${client.toString()}`);
+    public handleDisconnect() {
+        this.logger.log('Client disconnected');
     }
 }
