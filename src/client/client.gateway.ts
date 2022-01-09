@@ -20,10 +20,10 @@ export class ClientGateway implements Gateway {
     }
 
     public handleConnection(client) {
-        this.logger.log(`Client connected ${client}`);
+        this.logger.log(`Client connected ${client.toString()}`);
     }
 
     public handleDisconnect(client) {
-        this.logger.log(`Client disconnected ${client}`);
+        this.logger.log(`Client disconnected ${client.toString()}`);
     }
 }
