@@ -78,6 +78,9 @@ export class EventService {
             throw new InternalServerErrorException(ERR_WS_SERVER_NOT_CONNECTED);
         }
 
-        this.eventsGateway.server.emit(eventName, messageContent);
+        this.eventsGateway.server.emit('message', JSON.stringify({
+            event: eventName,
+            data: messageContent,
+        }));
     }
 }
