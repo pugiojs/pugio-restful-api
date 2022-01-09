@@ -8,10 +8,15 @@ export class EventService {
     ) {}
 
     public async test() {
+        const result = [];
+
         this.eventsGateway.server.clients.forEach((client) => {
             client.send(new Date().toISOString());
+            result.push(client.readyState);
         });
 
-        return this.eventsGateway.server.clients.values();
+        return {
+            amount: result.filter((item) => item === 1).length,
+        };
     }
 }
