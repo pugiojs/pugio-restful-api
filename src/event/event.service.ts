@@ -3,29 +3,23 @@ import {
     Injectable,
     InternalServerErrorException,
 } from '@nestjs/common';
-import { EventsGateway } from './event.gateway';
 import * as _ from 'lodash';
 import {
     ERR_WS_EMPTY_MESSAGE_BODY,
     ERR_WS_INVALID_MESSAGE_BODY,
     ERR_WS_SERVER_NOT_CONNECTED,
 } from 'src/app.constants';
+import { Gateway } from 'src/app.interfaces';
 
 @Injectable()
 export class EventService {
-    public constructor(
-        private readonly eventsGateway: EventsGateway,
-    ) {}
+    private gateway: Gateway;
 
-    public async sendExecutionResult(executionId: number, content: string) {
-        const message = {
-            executionId,
-            content,
-        };
-        return this.broadcast('execution_result', message);
+    public setGateway(gateway: Gateway) {
+        this.gateway = gateway;
     }
 
-    private broadcast(eventName: string, message: Object | string) {
+    public broadcast(eventName: string, message: Object | string) {
         let messageContent;
 
         try {
@@ -40,13 +34,13 @@ export class EventService {
             throw new BadRequestException(ERR_WS_EMPTY_MESSAGE_BODY);
         }
 
-        if (!_.get(this.eventsGateway, 'server.clients')) {
+        if (!_.get(this.gateway, 'server.clients')) {
             throw new InternalServerErrorException(ERR_WS_SERVER_NOT_CONNECTED);
         }
 
         const clientReadyStateList = [];
 
-        this.eventsGateway.server.clients.forEach((client) => {
+        this.gateway.server.clients.forEach((client) => {
             client.send(JSON.stringify({
                 event: eventName,
                 content: messageContent,
