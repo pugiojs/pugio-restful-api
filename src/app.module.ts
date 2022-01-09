@@ -17,6 +17,7 @@ import { KeyModule } from './key/key.module';
 import { ApplicationModule } from './application/application.module';
 import { AccountModule } from './account/account.module';
 import { EventModule } from './event/event.module';
+import { ClientModule } from './client/client.module';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -55,6 +56,7 @@ import authConfig from './config/auth.config';
         ApplicationModule,
         AccountModule,
         EventModule,
+        ClientModule,
     ],
     controllers: [AppController],
     providers: [

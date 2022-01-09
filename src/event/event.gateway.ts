@@ -20,9 +20,12 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
     private logger: Logger = new Logger('AppGateway');
 
-    @SubscribeMessage('execute')
-    public onEvent(client: any, data: any): Observable<WsResponse<number>> {
-        this.server.clients.forEach((client) => client.send(data));
+    @SubscribeMessage('execution_result')
+    public handleExecutionResult(client: any, data: any): Observable<WsResponse<number>> {
+        this.server.clients.forEach((client) => {
+            this.logger.log(`Send data: ${data}`);
+            client.send(data);
+        });
         return data;
     }
 

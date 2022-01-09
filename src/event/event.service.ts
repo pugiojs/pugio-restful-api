@@ -1,5 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { EventsGateway } from './event.gateway';
+import * as _ from 'lodash';
+import {
+    ERR_WS_EMPTY_MESSAGE_BODY,
+    ERR_WS_INVALID_MESSAGE_BODY,
+    ERR_WS_SERVER_NOT_CONNECTED,
+} from 'src/app.constants';
 
 @Injectable()
 export class EventService {
@@ -7,16 +17,67 @@ export class EventService {
         private readonly eventsGateway: EventsGateway,
     ) {}
 
-    public async test() {
-        const result = [];
+    public async sendExecutionResult(executionId: number, content: string) {
+        const message = {
+            executionId,
+            content: new Date().toISOString(),
+        };
+        return this.send('execution_result', message);
+    }
+
+    private broadcast(eventName: string, message: Object | string) {
+        let messageContent;
+
+        try {
+            messageContent = _.isString(message)
+                ? message
+                : JSON.stringify(message);
+        } catch (e) {
+            throw new InternalServerErrorException(ERR_WS_INVALID_MESSAGE_BODY);
+        }
+
+        if (!messageContent) {
+            throw new BadRequestException(ERR_WS_EMPTY_MESSAGE_BODY);
+        }
+
+        if (!_.get(this.eventsGateway, 'server.clients')) {
+            throw new InternalServerErrorException(ERR_WS_SERVER_NOT_CONNECTED);
+        }
+
+        const clientReadyStateList = [];
 
         this.eventsGateway.server.clients.forEach((client) => {
-            client.send(new Date().toISOString());
-            result.push(client.readyState);
+            client.send(JSON.stringify({
+                event: eventName,
+                content: messageContent,
+            }));
+            clientReadyStateList.push(client.readyState);
         });
 
         return {
-            amount: result.filter((item) => item === 1).length,
+            amount: clientReadyStateList.filter((readyState) => readyState === 1).length,
         };
+    }
+
+    private send(eventName: string, message: Object | string) {
+        let messageContent;
+
+        try {
+            messageContent = _.isString(message)
+                ? message
+                : JSON.stringify(message);
+        } catch (e) {
+            throw new InternalServerErrorException(ERR_WS_INVALID_MESSAGE_BODY);
+        }
+
+        if (!messageContent) {
+            throw new BadRequestException(ERR_WS_EMPTY_MESSAGE_BODY);
+        }
+
+        if (!_.get(this.eventsGateway, 'server.clients')) {
+            throw new InternalServerErrorException(ERR_WS_SERVER_NOT_CONNECTED);
+        }
+
+        this.eventsGateway.server.emit(eventName, messageContent);
     }
 }
