@@ -1,7 +1,9 @@
 import { Logger } from '@nestjs/common';
 import {
+    SubscribeMessage,
     WebSocketGateway,
     WebSocketServer,
+    // WsResponse,
 } from '@nestjs/websockets';
 import { Gateway } from 'src/app.interfaces';
 import {
@@ -29,4 +31,14 @@ export class ClientGateway implements Gateway {
     public handleDisconnect(client: Socket) {
         this.logger.log(`Client disconnected: ${client.id}`);
     }
+
+	@SubscribeMessage('join')
+    public handleJoinRoom(client: Socket, roomId: string) {
+        client.join(roomId);
+    }
+
+	@SubscribeMessage('leave')
+	public handleLeftRoom(client: Socket, roomId: string) {
+	    client.leave(roomId);
+	}
 }
