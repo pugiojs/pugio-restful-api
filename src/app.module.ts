@@ -64,6 +64,7 @@ import redisConfig from './config/redis.config';
         EventModule,
         ClientModule,
         RedisModule.forRootAsync({
+            imports: [ConfigModule],
             useFactory: (configService: ConfigService) => {
                 const logger = new Logger('RedisClient');
 

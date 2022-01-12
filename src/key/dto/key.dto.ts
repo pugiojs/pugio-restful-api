@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'keys' })
-@Index(['created_at', 'id'])
+@Index(['createdAt', 'id'])
 export class KeyDTO {
     @PrimaryGeneratedColumn('uuid')
     public id: string;
