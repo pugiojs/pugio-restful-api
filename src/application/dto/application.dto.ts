@@ -11,8 +11,8 @@ import {
 
 @Entity({ name: 'applications' })
 export class ApplicationDTO {
-    @PrimaryGeneratedColumn()
-    public id: number;
+    @PrimaryGeneratedColumn('uuid')
+    public id: string;
 
     @Column()
     public name: string;

@@ -84,6 +84,7 @@ import redisConfig from './config/redis.config';
             provide: APP_INTERCEPTOR,
             useClass: AppInterceptor,
         },
+        ConfigService,
     ],
 })
 export class AppModule {}

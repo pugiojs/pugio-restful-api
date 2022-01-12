@@ -25,4 +25,8 @@ export class ClientService {
             proc.on('close', () => resolve(undefined));
         });
     }
+
+    public async sendExecutionTask(clientId: string) {
+        
+    }
 }

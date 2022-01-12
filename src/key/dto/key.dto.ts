@@ -3,6 +3,7 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    Index,
     JoinColumn,
     ManyToOne,
     PrimaryGeneratedColumn,
@@ -10,8 +11,9 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'keys' })
+@Index(['created_at', 'id'])
 export class KeyDTO {
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn('uuid')
     public id: string;
 
     @Column({ name: 'key_id' })
