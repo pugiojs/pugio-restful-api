@@ -19,7 +19,7 @@ export class EventService {
         this.gateway = gateway;
     }
 
-    public broadcast(eventName: string, message: Object | string) {
+    public broadcast(roomName: string, eventName: string, message: Object | string) {
         let messageContent;
 
         try {
@@ -40,14 +40,11 @@ export class EventService {
 
         const clientReadyStateList = [];
 
-        this.gateway.server.clients.forEach((client) => {
-            client.send(JSON.stringify({
-                event: eventName,
-                content: messageContent,
-                timestamp: Date.now(),
-            }));
-            clientReadyStateList.push(client.readyState);
-        });
+        this.gateway.server.to(roomName).emit(eventName, JSON.stringify({
+            event: eventName,
+            content: messageContent,
+            timestamp: Date.now(),
+        }));
 
         return {
             amount: clientReadyStateList.filter((readyState) => readyState === 1).length,

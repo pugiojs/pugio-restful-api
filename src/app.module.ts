@@ -1,4 +1,7 @@
-import { Module } from '@nestjs/common';
+import {
+    Logger,
+    Module,
+} from '@nestjs/common';
 import {
     ConfigModule,
     ConfigService,
@@ -18,11 +21,13 @@ import { ApplicationModule } from './application/application.module';
 import { AccountModule } from './account/account.module';
 import { EventModule } from './event/event.module';
 import { ClientModule } from './client/client.module';
+import { RedisModule } from 'nestjs-redis';
 
 // Application configs
 import appConfig from './config/app.config';
 import dbConfig from './config/db.config';
 import authConfig from './config/auth.config';
+import redisConfig from './config/redis.config';
 
 @Module({
     imports: [
@@ -31,6 +36,7 @@ import authConfig from './config/auth.config';
                 appConfig,
                 dbConfig,
                 authConfig,
+                redisConfig,
             ],
         }),
         AuthModule,
@@ -57,6 +63,20 @@ import authConfig from './config/auth.config';
         AccountModule,
         EventModule,
         ClientModule,
+        RedisModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: (configService: ConfigService) => {
+                const logger = new Logger('RedisClient');
+
+                return {
+                    ...configService.get('redis'),
+                    onClientReady: () => {
+                        logger.log('Redis client ready');
+                    },
+                };
+            },
+            inject: [ConfigService],
+        }),
     ],
     controllers: [AppController],
     providers: [
@@ -65,6 +85,7 @@ import authConfig from './config/auth.config';
             provide: APP_INTERCEPTOR,
             useClass: AppInterceptor,
         },
+        ConfigService,
     ],
 })
 export class AppModule {}

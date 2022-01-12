@@ -17,12 +17,16 @@ export class ClientService {
             const [mainCommand, ...args] = command.split(' ');
             const proc = child_process.spawn(mainCommand, args);
             proc.stdout.on('data', (data) => {
-                this.eventService.broadcast('execution_result', {
+                this.eventService.broadcast(`execution@${executionId}`, 'execution_result', {
                     from: executionId,
                     block: data.toString(),
                 });
             });
             proc.on('close', () => resolve(undefined));
         });
+    }
+
+    public async sendExecutionTask(clientId: string) {
+        
     }
 }
