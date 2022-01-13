@@ -87,6 +87,7 @@ export class UtilService {
             return result;
         }, {} as UserDAO);
     }
+
     public async sleep(timeout = 500) {
         return new Promise((resolve) => {
             setTimeout(() => {
