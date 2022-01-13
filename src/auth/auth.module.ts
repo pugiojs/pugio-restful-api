@@ -10,6 +10,7 @@ import { UserModule } from 'src/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { ApiKeyStrategy } from './api-key.strategy';
 import { KeyModule } from 'src/key/key.module';
+import { ClientKeyStrategy } from './client-key.strategy';
 
 @Global()
 @Module({
@@ -30,6 +31,7 @@ import { KeyModule } from 'src/key/key.module';
         PassportModule,
         JwtStrategy,
         ApiKeyStrategy,
+        ClientKeyStrategy,
         AuthService,
     ],
     controllers: [AuthController],

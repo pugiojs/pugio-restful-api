@@ -12,3 +12,5 @@ export const ERR_WS_INVALID_MESSAGE_BODY = 'ERR_WS_INVALID_MESSAGE_BODY';
 export const ERR_WS_EMPTY_MESSAGE_BODY = 'ERR_WS_EMPTY_MESSAGE_BODY';
 // websocket server not connected
 export const ERR_WS_SERVER_NOT_CONNECTED = 'ERR_WS_SERVER_NOT_CONNECTED';
+// have no permission to access current client
+export const ERR_CLIENT_ACCESS_DENIED = 'ERR_CLIENT_ACCESS_DENIED';

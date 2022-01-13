@@ -4,13 +4,13 @@ import { Injectable } from '@nestjs/common';
 import { KeyService } from 'src/key/key.service';
 
 @Injectable()
-export class ApiKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'api-key') {
+export class ClientKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'client-key') {
     public constructor(
         private readonly keyService: KeyService,
     ) {
         super(
             {
-                header: 'API-KEY',
+                header: 'CLIENT-KEY',
                 prefix: '',
             },
             true,

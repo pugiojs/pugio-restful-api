@@ -27,6 +27,6 @@ export class ClientController {
     // TODO
     // @UseGuards(AuthGuard())
     public async sendExecutionTask(@Param('client_id') clientId: string) {
-        
+        return await this.sendExecutionTask(clientId);
     }
 }
