@@ -1,13 +1,13 @@
+import * as _ from 'lodash';
 import {
     createParamDecorator,
     ExecutionContext,
 } from '@nestjs/common';
-import { UserDTO } from './dto/user.dto';
-import * as _ from 'lodash';
+import { UserDTO } from '../user/dto/user.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 
-export const CurrentUser = createParamDecorator(
-    (data: string, context: ExecutionContext): UserDTO => {
+export const CurrentClient = createParamDecorator(
+    (data: string, context: ExecutionContext): ClientDTO => {
         const user = context.switchToHttp().getRequest().user;
 
         if (!user) {
@@ -16,6 +16,6 @@ export const CurrentUser = createParamDecorator(
 
         const userData = (data ? user[data] : user) as UserDTO & { client: ClientDTO };
 
-        return _.omit(userData, ['client']);
+        return _.get(userData, 'client');
     },
 );

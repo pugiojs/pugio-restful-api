@@ -2,16 +2,21 @@ import {
     Injectable,
     UnauthorizedException,
 } from '@nestjs/common';
+import * as _ from 'lodash';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { Repository } from 'typeorm';
 import { KeyDTO } from './dto/key.dto';
+import { UserClientDTO } from 'src/relations/user-client.dto';
+import { ClientDTO } from 'src/client/dto/client.dto';
 
 @Injectable()
 export class KeyService {
     public constructor(
         @InjectRepository(KeyDTO)
         private readonly keyRepository: Repository<KeyDTO>,
+        @InjectRepository(UserClientDTO)
+        private readonly userClientRepository: Repository<UserClientDTO>,
     ) {}
 
     public async createApiKey(user: UserDTO) {
@@ -45,5 +50,52 @@ export class KeyService {
         }
 
         return result.owner;
+    }
+
+    public async validateClientKey(encodedClientKey: string) {
+        const result: {
+            user?: UserDTO,
+            client?: ClientDTO,
+        } = {
+            user: null,
+            client: null,
+        };
+
+        if (!encodedClientKey || !_.isString(encodedClientKey)) {
+            return result;
+        }
+
+        const [
+            apiKey,
+            clientId,
+        ] = Buffer.from(encodedClientKey, 'base64').toString().split(':');
+
+        const user = await this.validateApiKey(apiKey);
+
+        if (!user) {
+            return result;
+        }
+
+        result.user = user;
+
+        const userClient = await this.userClientRepository.findOne({
+            where: {
+                user: {
+                    id: user.id,
+                },
+                client: {
+                    id: clientId,
+                },
+            },
+            relations: ['client'],
+        });
+
+        if (!userClient) {
+            return result;
+        }
+
+        result.client = userClient.client;
+
+        return result;
     }
 }

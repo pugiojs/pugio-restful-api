@@ -14,13 +14,17 @@ export class ClientKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'c
                 prefix: '',
             },
             true,
-            async (apiKey, done) => {
+            async (encodedClientKey, done) => {
                 try {
-                    const user = await this.keyService.validateApiKey(apiKey);
-                    if (!user) {
+                    const {
+                        user,
+                        client,
+                    } = await this.keyService.validateClientKey(encodedClientKey);
+
+                    if (!user || !client) {
                         return done(null, false);
                     } else {
-                        return done(null, user);
+                        return done(null, { ...user, client });
                     }
                 } catch (error) {
                     return done(error);
