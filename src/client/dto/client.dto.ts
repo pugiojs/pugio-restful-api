@@ -1,3 +1,4 @@
+import { HookDTO } from 'src/hook/dto/hook.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import {
     Column,
@@ -37,6 +38,9 @@ export class ClientDTO {
 
     @OneToMany(() => UserClientDTO, (userClientDTO) => userClientDTO.client)
     public clientUsers: UserClientDTO[];
+
+    @OneToMany(() => HookDTO, (hookDTO) => hookDTO.client)
+    public hooks: HookDTO[];
 
     @CreateDateColumn({ name: 'created_at' })
     public createdAt: Date;
