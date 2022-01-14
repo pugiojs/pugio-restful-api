@@ -18,9 +18,9 @@ export class ClientService {
         private readonly userClientRepository: Repository<UserClientDTO>,
     ) {}
 
-    public async lockExecutionTaskChannel(clientId: string) {
+    public async lockExecutionTaskChannel(clientId: string, retryTimes?: number) {
         const lockName = this.utilService.generateExecutionTaskLockName(clientId);
-        return await this.lockerService.lock(lockName);
+        return await this.lockerService.lock(lockName, retryTimes);
     }
 
     public async unlockExecutionTaskChannel(clientId: string, value: string) {

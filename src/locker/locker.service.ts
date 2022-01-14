@@ -24,7 +24,10 @@ export class LockerService {
         this.expiration = this.configService.get('app.lockerExpiration');
     }
 
-    public async lock(lockName: string) {
+    public async lock(
+        lockName: string,
+        maximumRetryTimes = Math.floor((this.expiration + 10000) / 500),
+    ) {
         let retryTimes = 0;
         const lockData = uuidv5(new Date().toISOString(), lockName);
 
@@ -38,8 +41,7 @@ export class LockerService {
                         data: lockData,
                     };
                 } else {
-                    const expirationMs = this.expiration * 1000;
-                    if (retryTimes > Math.floor((expirationMs + 10000) / 500)) {
+                    if (retryTimes > maximumRetryTimes) {
                         return {
                             error: 0,
                             data: null,

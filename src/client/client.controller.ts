@@ -3,9 +3,11 @@ import {
     Controller,
     Delete,
     Post,
+    Query,
     UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { PermanentlyParseInt } from 'src/app.pipe';
 import { CurrentClient } from './client.decorator';
 import { ClientService } from './client.service';
 import { ClientDTO } from './dto/client.dto';
@@ -18,8 +20,14 @@ export class ClientController {
 
     @Post('/locker')
     @UseGuards(AuthGuard('client-key'))
-    public async lockExecutionTaskChannel(@CurrentClient() client: ClientDTO) {
-        return await this.clientService.lockExecutionTaskChannel(client.id);
+    public async lockExecutionTaskChannel(
+        @CurrentClient() client: ClientDTO,
+        @Query('maximum_retry_times', PermanentlyParseInt) maximumRetryTimes: number,
+    ) {
+        return await this.clientService.lockExecutionTaskChannel(
+            client.id,
+            maximumRetryTimes,
+        );
     }
 
     @Delete('/locker')
