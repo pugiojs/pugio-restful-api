@@ -24,6 +24,7 @@ import { ClientKeyStrategy } from './client-key.strategy';
     ],
     providers: [
         ApiKeyStrategy,
+        ClientKeyStrategy,
         JwtStrategy,
         AuthService,
     ],
