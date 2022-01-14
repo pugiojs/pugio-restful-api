@@ -27,6 +27,12 @@ export class HookDTO {
     @Column()
     public schema: string;
 
+    @Column({
+        name: 'config_execution_cwd',
+        nullable: true,
+    })
+    public configExecutionCwd: string;
+
     @ManyToOne(() => ClientDTO, (clientDTO) => clientDTO.hooks, {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',

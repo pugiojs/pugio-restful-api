@@ -25,6 +25,12 @@ export class TaskDTO {
     })
     public postCommandSegment: string;
 
+    @Column({
+        name: 'execution_cwd',
+        nullable: true,
+    })
+    public executionCwd: string;
+
     @ManyToOne(() => HookDTO, (hookDTO) => hookDTO.tasks, {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
