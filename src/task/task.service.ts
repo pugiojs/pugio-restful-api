@@ -97,6 +97,7 @@ export class TaskService {
         })();
 
         // TODO sync process
+        // TODO create task
         const result = await new Promise((resolve) => {
             setTimeout(() => {
                 resolve({
@@ -105,6 +106,7 @@ export class TaskService {
             }, 3000);
         });
 
+        // TODO return task id
         return result;
     }
 }
