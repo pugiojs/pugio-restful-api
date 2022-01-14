@@ -1,6 +1,8 @@
 import {
+    ForbiddenException,
     Injectable,
     InternalServerErrorException,
+    NotFoundException,
 } from '@nestjs/common';
 import { RedisService } from 'nestjs-redis';
 import { UtilService } from 'src/util/util.service';
@@ -8,7 +10,11 @@ import { Redis } from 'ioredis';
 import { ClientService } from 'src/client/client.service';
 import { ERR_FAILED_TO_GET_LOCK } from 'src/app.constants';
 import { EventService } from 'src/event/event.service';
-import { ClientGateway } from 'src/client/client.gateway';
+import { TaskGateway } from './task.gateway';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { HookDTO } from 'src/hook/dto/hook.dto';
+import { UserDTO } from 'src/user/dto/user.dto';
 
 @Injectable()
 export class TaskService {
@@ -16,12 +22,16 @@ export class TaskService {
 
     public constructor(
         private readonly eventService: EventService,
-        private readonly clientGateway: ClientGateway,
+        private readonly taskGateway: TaskGateway,
         private readonly utilService: UtilService,
         private readonly redisService: RedisService,
         private readonly clientService: ClientService,
+        // @InjectRepository(TaskDTO)
+        // private readonly taskRepository: Repository<TaskDTO>,
+        @InjectRepository(HookDTO)
+        private readonly hookRepository: Repository<HookDTO>,
     ) {
-        this.eventService.setGateway(this.clientGateway);
+        this.eventService.setGateway(this.taskGateway);
         this.redisClient = this.redisService.getClient();
     }
 
@@ -34,7 +44,25 @@ export class TaskService {
         };
     }
 
-    public async sendExecutionTask(clientId: string) {
+    public async sendExecutionTask(hookId: string, user: UserDTO) {
+        const hook = await this.hookRepository
+            .findOne({
+                where: {
+                    id: hookId,
+                },
+                relations: ['client'],
+            });
+
+        if (!hook || !hook.client) {
+            throw new NotFoundException();
+        }
+
+        const clientId = hook.client.id;
+
+        if (!(await this.clientService.checkPermission(user.id, clientId, -1))) {
+            throw new ForbiddenException();
+        }
+
         const clientTaskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
         const clientTaskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
 

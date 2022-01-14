@@ -3,7 +3,6 @@ import {
     SubscribeMessage,
     WebSocketGateway,
     WebSocketServer,
-    // WsResponse,
 } from '@nestjs/websockets';
 import { Gateway } from 'src/app.interfaces';
 import {
@@ -12,13 +11,13 @@ import {
 } from 'socket.io';
 
 @WebSocketGateway({
-    namespace: 'client',
+    namespace: 'task',
 })
-export class ClientGateway implements Gateway {
+export class TaskGateway implements Gateway {
     @WebSocketServer()
     public server: Server;
 
-    private logger: Logger = new Logger('ClientGateway');
+    private logger: Logger = new Logger('TaskGateway');
 
     public afterInit() {
         this.logger.log('Socket.io server initialized');

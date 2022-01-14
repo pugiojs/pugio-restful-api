@@ -1,14 +1,18 @@
 import { Module } from '@nestjs/common';
-import { EventModule } from 'src/event/event.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { LockerModule } from 'src/locker/locker.module';
+import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientController } from './client.controller';
-import { ClientGateway } from './client.gateway';
 import { ClientService } from './client.service';
+import { ClientDTO } from './dto/client.dto';
 
 @Module({
-    imports: [LockerModule],
+    imports: [
+        LockerModule,
+        TypeOrmModule.forFeature([UserClientDTO, ClientDTO]),
+    ],
     controllers: [ClientController],
-    providers: [ClientService, ClientGateway],
-    exports: [ClientService, ClientGateway],
+    providers: [ClientService],
+    exports: [ClientService],
 })
 export class ClientModule {}
