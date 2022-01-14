@@ -1,13 +1,14 @@
 import {
+    Body,
     Controller,
-    Get,
-    Param,
+    Delete,
     Post,
-    Query,
-    // UseGuards,
+    UseGuards,
 } from '@nestjs/common';
-// import { AuthGuard } from '@nestjs/passport';
+import { AuthGuard } from '@nestjs/passport';
+import { CurrentClient } from './client.decorator';
 import { ClientService } from './client.service';
+import { ClientDTO } from './dto/client.dto';
 
 @Controller('/client')
 export class ClientController {
@@ -15,18 +16,18 @@ export class ClientController {
         private readonly clientService: ClientService,
     ) {}
 
-    @Get('/test/:id')
-    public async sendExecutionResult(
-        @Param('id') executionId: string,
-        @Query('command') command: string,
-    ) {
-        return await this.clientService.sendExecutionResult(parseInt(executionId, 10), command);
+    @Post('/locker')
+    @UseGuards(AuthGuard('client-key'))
+    public async lockExecutionTaskChannel(@CurrentClient() client: ClientDTO) {
+        return await this.clientService.lockExecutionTaskChannel(client.id);
     }
 
-    @Post('/:client_id/task')
-    // TODO
-    // @UseGuards(AuthGuard())
-    public async sendExecutionTask(@Param('client_id') clientId: string) {
-        return await this.sendExecutionTask(clientId);
+    @Delete('/locker')
+    @UseGuards(AuthGuard('client-key'))
+    public async unlockExecutionTaskChannel(
+        @CurrentClient() client: ClientDTO,
+        @Body('validation') validationValue: string,
+    ) {
+        return await this.clientService.unlockExecutionTaskChannel(client.id, validationValue);
     }
 }

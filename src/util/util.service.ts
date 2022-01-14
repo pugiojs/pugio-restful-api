@@ -95,4 +95,16 @@ export class UtilService {
             }, timeout);
         });
     }
+
+    public generateExecutionTaskChannelName(clientId: string) {
+        return `${clientId}@execution`;
+    }
+
+    public generateExecutionTaskQueueName(clientId: string) {
+        return `${clientId}:task_queue`;
+    }
+
+    public generateExecutionTaskLockName(clientId: string) {
+        return `${clientId}:task_queue_lock`;
+    }
 }

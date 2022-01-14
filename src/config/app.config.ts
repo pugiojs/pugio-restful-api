@@ -6,4 +6,7 @@ export default registerAs('app', () => ({
         : 3000,
     host: process.env.APP_HOST ?? '0.0.0.0',
     redisHost: process.env.APP_REDIS_HOST,
+    lockerExpiration: process.env.APP_LOCKER_EXPIRATION
+        ? parseInt(process.env.APP_LOCKER_EXPIRATION, 10)
+        : 30,
 }));

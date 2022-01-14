@@ -1,6 +1,9 @@
 import { HeaderAPIKeyStrategy } from 'passport-headerapikey';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+} from '@nestjs/common';
 import { KeyService } from 'src/key/key.service';
 
 @Injectable()
@@ -21,8 +24,10 @@ export class ClientKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'c
                         client,
                     } = await this.keyService.validateClientKey(encodedClientKey);
 
-                    if (!user || !client) {
+                    if (!user) {
                         return done(null, false);
+                    } else if (!client) {
+                        return done(new ForbiddenException());
                     } else {
                         return done(null, { ...user, client });
                     }

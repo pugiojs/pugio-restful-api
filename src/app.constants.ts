@@ -14,3 +14,5 @@ export const ERR_WS_EMPTY_MESSAGE_BODY = 'ERR_WS_EMPTY_MESSAGE_BODY';
 export const ERR_WS_SERVER_NOT_CONNECTED = 'ERR_WS_SERVER_NOT_CONNECTED';
 // have no permission to access current client
 export const ERR_CLIENT_ACCESS_DENIED = 'ERR_CLIENT_ACCESS_DENIED';
+// failed to get lock
+export const ERR_FAILED_TO_GET_LOCK = 'ERR_FAILED_TO_GET_LOCK';

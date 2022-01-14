@@ -19,6 +19,8 @@ import { KeyModule } from './key/key.module';
 import { EventModule } from './event/event.module';
 import { ClientModule } from './client/client.module';
 import { RedisModule } from 'nestjs-redis';
+import { LockerModule } from './locker/locker.module';
+import { TaskModule } from './task/task.module';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -71,6 +73,8 @@ import redisConfig from './config/redis.config';
             },
             inject: [ConfigService],
         }),
+        LockerModule,
+        TaskModule,
     ],
     controllers: [AppController],
     providers: [

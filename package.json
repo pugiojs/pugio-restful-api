@@ -53,6 +53,7 @@
         "rimraf": "^3.0.2",
         "rxjs": "^6.6.3",
         "typeorm": "^0.2.29",
+        "uuid": "^8.3.2",
         "ws": "^8.4.0"
     },
     "devDependencies": {
@@ -69,6 +70,7 @@
         "@types/passport-jwt": "^3.0.3",
         "@types/socket.io": "^2.1.13",
         "@types/supertest": "^2.0.10",
+        "@types/uuid": "^8.3.4",
         "@types/ws": "^8.2.2",
         "@typescript-eslint/eslint-plugin": "^4.15.2",
         "@typescript-eslint/parser": "^4.15.2",
