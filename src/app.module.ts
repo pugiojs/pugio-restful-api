@@ -15,10 +15,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { getMetadataArgsStorage } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UtilModule } from './util/util.module';
-import { GroupModule } from './group/group.module';
 import { KeyModule } from './key/key.module';
-import { ApplicationModule } from './application/application.module';
-import { AccountModule } from './account/account.module';
 import { EventModule } from './event/event.module';
 import { ClientModule } from './client/client.module';
 import { RedisModule } from 'nestjs-redis';
@@ -51,16 +48,13 @@ import redisConfig from './config/redis.config';
                     ),
                     keepConnectionAlive: true,
                     synchronize: true,
-                    entityPrefix: 'pb__',
+                    entityPrefix: 'pg__',
                 };
             },
             inject: [ConfigService],
         }),
         UtilModule,
-        GroupModule,
         KeyModule,
-        ApplicationModule,
-        AccountModule,
         EventModule,
         ClientModule,
         RedisModule.forRootAsync({
@@ -85,7 +79,6 @@ import redisConfig from './config/redis.config';
             provide: APP_INTERCEPTOR,
             useClass: AppInterceptor,
         },
-        ConfigService,
     ],
 })
 export class AppModule {}

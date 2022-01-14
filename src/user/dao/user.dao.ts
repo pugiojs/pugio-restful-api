@@ -1,5 +1,5 @@
 export abstract class UserDAO {
-    public id: number;
+    public id: string;
     public open_id: string;
     public email: string;
     public picture: string;

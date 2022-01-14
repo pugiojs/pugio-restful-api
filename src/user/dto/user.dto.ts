@@ -1,17 +1,20 @@
 import { KeyDTO } from 'src/key/dto/key.dto';
+import { UserClientDTO } from 'src/relations/user-client.dto';
 import {
     Column,
     CreateDateColumn,
     Entity,
+    Index,
     OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
 
 @Entity({ name: 'users' })
+@Index(['createdAt', 'id'])
 export class UserDTO {
-    @PrimaryGeneratedColumn()
-    public id: number;
+    @PrimaryGeneratedColumn('uuid')
+    public id: string;
 
     @Column({ name: 'open_id' })
     public openId: string;
@@ -42,6 +45,9 @@ export class UserDTO {
 
     @OneToMany(() => KeyDTO, (keyDTO) => keyDTO.owner)
     public keys: KeyDTO[];
+
+    @OneToMany(() => UserClientDTO, (userClientDTO) => userClientDTO.user)
+    public userClients: UserClientDTO[];
 
     @CreateDateColumn({ name: 'created_at' })
     public createdAt: Date;
