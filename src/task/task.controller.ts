@@ -10,7 +10,7 @@ import { CurrentClient } from 'src/client/client.decorator';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import { TaskService } from './task.service';
 
-@Controller('task')
+@Controller('/task')
 export class TaskController {
     public constructor(
         private readonly taskService: TaskService,
