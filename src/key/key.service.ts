@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { KeyDTO } from './dto/key.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
+import { v5 as uuidv5 } from 'uuid';
 
 @Injectable()
 export class KeyService {
@@ -24,19 +25,23 @@ export class KeyService {
 
     public async createApiKey(user: UserDTO) {
         const { id } = user;
-        const content = Buffer.from(
+        const seed = Buffer.from(
             [
                 Math.random().toString(32),
                 Date.now().toString(),
                 id,
             ].join(':'),
         ).toString('base64');
+
+        const content = uuidv5(id, seed);
+
         const newAPIKey = this.keyRepository.create({
             owner: {
                 id,
             },
             keyId: content,
         });
+
         return await this.keyRepository.save(newAPIKey);
     }
 
