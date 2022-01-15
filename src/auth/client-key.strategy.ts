@@ -26,10 +26,12 @@ export class ClientKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'c
 
                     if (!user) {
                         return done(null, false);
-                    } else if (!client) {
-                        return done(new ForbiddenException());
                     } else {
-                        return done(null, { ...user, client });
+                        if (!client) {
+                            return done(new ForbiddenException());
+                        } else {
+                            return done(null, { ...user, client });
+                        }
                     }
                 } catch (error) {
                     return done(error);
