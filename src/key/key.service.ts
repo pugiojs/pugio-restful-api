@@ -1,5 +1,6 @@
 import {
     Injectable,
+    NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
 import * as _ from 'lodash';
@@ -17,6 +18,8 @@ export class KeyService {
         private readonly keyRepository: Repository<KeyDTO>,
         @InjectRepository(UserClientDTO)
         private readonly userClientRepository: Repository<UserClientDTO>,
+        @InjectRepository(ClientDTO)
+        private readonly clientRepository: Repository<ClientDTO>,
     ) {}
 
     public async createApiKey(user: UserDTO) {
@@ -71,6 +74,15 @@ export class KeyService {
         ] = Buffer.from(encodedClientKey, 'base64').toString().split(':');
 
         const user = await this.validateApiKey(apiKey);
+        const client = await this.clientRepository.findOne({
+            where: {
+                id: clientId,
+            },
+        });
+
+        if (!client) {
+            throw new NotFoundException();
+        }
 
         if (!user) {
             return result;
