@@ -2,6 +2,7 @@ import {
     Body,
     Controller,
     Delete,
+    Get,
     Post,
     Query,
     UseGuards,
@@ -17,6 +18,12 @@ export class ClientController {
     public constructor(
         private readonly clientService: ClientService,
     ) {}
+
+    @Get('/info')
+    @UseGuards(AuthGuard('client-key'))
+    public getClientInfo(@CurrentClient() client: ClientDTO) {
+        return client;
+    }
 
     @Post('/locker')
     @UseGuards(AuthGuard('client-key'))

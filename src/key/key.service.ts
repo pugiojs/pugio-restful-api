@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 import {
     Injectable,
     NotFoundException,
@@ -33,7 +34,7 @@ export class KeyService {
             ].join(':'),
         ).toString('base64');
 
-        const content = uuidv5(id, seed);
+        const content = uuidv5(seed, id);
 
         const newAPIKey = this.keyRepository.create({
             owner: {
