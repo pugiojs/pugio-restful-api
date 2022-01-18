@@ -4,6 +4,11 @@ import {
     OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import {
+    FindConditions,
+    ObjectLiteral,
+    Repository,
+} from 'typeorm';
 
 export interface GatewayServer {
     server: Server;
@@ -13,3 +18,18 @@ export type Gateway =
     OnGatewayConnection &
     OnGatewayDisconnect &
     GatewayServer;
+
+export type WhereOptions<D> = FindConditions<D>[] | FindConditions<D> | ObjectLiteral | string;
+export interface PaginationQueryOptions<D> {
+    repository: Repository<D>;
+    whereOptions?: WhereOptions<D>;
+    lastCursor?: string;
+    size?: number;
+}
+
+export interface PaginationResponse<D> {
+    items: D[];
+    total: number;
+    lastCursor?: string;
+    size?: number;
+}

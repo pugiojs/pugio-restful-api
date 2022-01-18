@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
+import {
+    PaginationQueryOptions,
+    PaginationResponse,
+} from 'src/app.interfaces';
 import { UserDAO } from 'src/user/dao/user.dao';
+import {
+    LessThan,
+    LessThanOrEqual,
+} from 'typeorm';
 
 type DataType = Array<any> | Object | string | Date;
 type CaseStyleType = 'snake' | 'camel' | 'kebab';
@@ -110,5 +118,59 @@ export class UtilService {
 
     public generateExecutionTaskLockName(clientId: string) {
         return `${clientId}:task_queue_lock`;
+    }
+
+    public async queryWithPagination<D>(
+        {
+            repository,
+            whereOptions: userWhereOptions = {},
+            lastCursor = null,
+            size = 10,
+        }: PaginationQueryOptions<D>,
+    ): Promise<PaginationResponse<D>> {
+        let lastCursorRecord: any;
+
+        if (lastCursor && _.isString(lastCursor)) {
+            try {
+                lastCursorRecord = await repository.findOne({
+                    where: {
+                        id: lastCursor,
+                    },
+                });
+            } catch (e) {}
+        }
+
+        const [total = 0, items = []] = await Promise.all([
+            repository.count({
+                where: userWhereOptions,
+            }),
+            repository.find({
+                where: [
+                    _.merge(userWhereOptions, (
+                        lastCursorRecord
+                            ? {
+                                createdAt: LessThan(lastCursorRecord.createdAt),
+                            }
+                            : {}
+                    )),
+                    {
+                        createdAt: lastCursorRecord.createdAt,
+                        id: LessThan(lastCursor),
+                    },
+                ],
+                take: size,
+                order: {
+                    createdAt: 'DESC',
+                    id: 'DESC',
+                } as any,
+            }),
+        ]);
+
+        return {
+            items,
+            total,
+            lastCursor,
+            size,
+        };
     }
 }

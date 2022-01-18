@@ -4,16 +4,16 @@ import {
 } from '@nestjs/common';
 
 @Injectable()
-export class PermanentlyParseInt implements PipeTransform {
+export class PermanentlyParseIntPipe implements PipeTransform {
     public transform(value: any) {
         if (!value) {
-            return null;
+            return undefined;
         }
 
         try {
             return parseInt(value, 10);
         } catch (e) {
-            return null;
+            return undefined;
         }
     }
 }

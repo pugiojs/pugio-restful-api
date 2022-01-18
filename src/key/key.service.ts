@@ -12,6 +12,7 @@ import { KeyDTO } from './dto/key.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import { v5 as uuidv5 } from 'uuid';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class KeyService {
@@ -22,6 +23,7 @@ export class KeyService {
         private readonly userClientRepository: Repository<UserClientDTO>,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
+        private readonly utilService: UtilService,
     ) {}
 
     public async createApiKey(user: UserDTO) {
@@ -113,6 +115,21 @@ export class KeyService {
         }
 
         result.client = userClient.client;
+
+        return result;
+    }
+
+    public async queryApiKeys(user: UserDTO, lastCursor: string, size = 10) {
+        const result = await this.utilService.queryWithPagination<KeyDTO>({
+            lastCursor,
+            size,
+            repository: this.keyRepository,
+            whereOptions: {
+                owner: {
+                    id: user.id,
+                },
+            },
+        });
 
         return result;
     }

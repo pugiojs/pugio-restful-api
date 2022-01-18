@@ -8,7 +8,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { PermanentlyParseInt } from 'src/app.pipe';
+import { PermanentlyParseIntPipe } from 'src/app.pipe';
 import { CurrentClient } from './client.decorator';
 import { ClientService } from './client.service';
 import { ClientDTO } from './dto/client.dto';
@@ -29,7 +29,7 @@ export class ClientController {
     @UseGuards(AuthGuard('client-key'))
     public async lockExecutionTaskChannel(
         @CurrentClient() client: ClientDTO,
-        @Query('maximum_retry_times', PermanentlyParseInt) maximumRetryTimes: number,
+        @Query('maximum_retry_times', PermanentlyParseIntPipe) maximumRetryTimes: number,
     ) {
         return await this.clientService.lockExecutionTaskChannel(
             client.id,
