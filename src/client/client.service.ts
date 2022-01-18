@@ -6,14 +6,17 @@ import { LockerService } from 'src/locker/locker.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserClientDTO } from 'src/relations/user-client.dto';
+import { ClientDTO } from './dto/client.dto';
+import { UserDTO } from 'src/user/dto/user.dto';
+import { ClientDAO } from './dao/client.dao';
 
 @Injectable()
 export class ClientService {
     public constructor(
         private readonly utilService: UtilService,
         private readonly lockerService: LockerService,
-        // @InjectRepository(ClientDTO)
-        // private readonly clientRepository: Repository<ClientDTO>,
+        @InjectRepository(ClientDTO)
+        private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(UserClientDTO)
         private readonly userClientRepository: Repository<UserClientDTO>,
     ) {}
@@ -54,5 +57,35 @@ export class ClientService {
         }
 
         return relations.some((relation) => relation.roleType === permission);
+    }
+
+    public async createClient(user: UserDTO, configuration: ClientDAO) {
+        const {
+            name,
+            description,
+            deviceId,
+            publicKey,
+            privateKey,
+        } = this.utilService.transformDAOToDTO<ClientDAO, ClientDTO>(configuration);
+
+        const client = await this.clientRepository.save(
+            this.clientRepository.create({
+                name,
+                description,
+                deviceId,
+                publicKey,
+                privateKey,
+            }),
+        );
+
+        const userClientRelationship = this.userClientRepository.create({
+            user,
+            client,
+            roleType: 0,
+        });
+
+        await this.userClientRepository.save(userClientRelationship);
+
+        return client;
     }
 }
