@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
 import { UserDAO } from 'src/user/dao/user.dao';
 
-type DataType = Array<any> | Object | string;
+type DataType = Array<any> | Object | string | Date;
 type CaseStyleType = 'snake' | 'camel' | 'kebab';
 
 @Injectable()
@@ -20,6 +20,10 @@ export class UtilService {
     public transformCaseStyle = <T extends DataType, R extends T | DataType>(data: Partial<T>, targetCaseStyleType: CaseStyleType): R => {
         if (!data) {
             return;
+        }
+
+        if (_.isDate(data)) {
+            return data as R;
         }
 
         if (_.isArray(data)) {
