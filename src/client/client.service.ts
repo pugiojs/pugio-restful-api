@@ -1,5 +1,7 @@
 import {
+    ForbiddenException,
     Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { UtilService } from 'src/util/util.service';
 import { LockerService } from 'src/locker/locker.service';
@@ -87,5 +89,30 @@ export class ClientService {
         await this.userClientRepository.save(userClientRelationship);
 
         return client;
+    }
+
+    public async getClientInfoFromNetwork(clientId: string, user: UserDTO) {
+        const userClientRelationshipList = await this.userClientRepository.find({
+            where: {
+                client: {
+                    id: clientId,
+                },
+            },
+            relations: ['user', 'client'],
+        });
+
+        if (userClientRelationshipList.length === 0) {
+            throw new NotFoundException();
+        }
+
+        const result = userClientRelationshipList.find((relationship) => {
+            return relationship.user.id === user.id;
+        });
+
+        if (!result) {
+            throw new ForbiddenException();
+        }
+
+        return result.client;
     }
 }

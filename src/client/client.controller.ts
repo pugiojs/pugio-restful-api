@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    Param,
     Post,
     Query,
     UseGuards,
@@ -24,7 +25,7 @@ export class ClientController {
 
     @Get('/info')
     @UseGuards(AuthGuard('client-key'))
-    public getClientInfo(@CurrentClient() client: ClientDTO) {
+    public getClientInfoFromClient(@CurrentClient() client: ClientDTO) {
         return client;
     }
 
@@ -56,5 +57,14 @@ export class ClientController {
         @CurrentUser() user: UserDTO,
     ) {
         return await this.clientService.createClient(user, configuration);
+    }
+
+    @Get('/:client_id')
+    @UseGuards(AuthGuard())
+    public async getClientInfoFromNetwork(
+        @Param('client_id') clientId: string,
+        @CurrentUser() user: UserDTO,
+    ) {
+        return await this.clientService.getClientInfoFromNetwork(clientId, user);
     }
 }
