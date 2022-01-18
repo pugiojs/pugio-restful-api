@@ -23,8 +23,9 @@ export class KeyController {
         @CurrentUser() user: UserDTO,
         @Query('last_cursor') lastCursor: string,
         @Query('size', PermanentlyParseIntPipe) size = 10,
+        @Query('search') searchContent: string,
     ) {
-        return await this.keyService.queryApiKeys(user, lastCursor, size);
+        return await this.keyService.queryApiKeys(user, lastCursor, size, searchContent);
     }
 
     @UseGuards(AuthGuard())

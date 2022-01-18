@@ -25,6 +25,8 @@ export interface PaginationQueryOptions<D> {
     whereOptions?: WhereOptions<D>;
     lastCursor?: string;
     size?: number;
+    searchKeys?: Array<keyof D | 'nil'>;
+    searchContent?: string;
 }
 
 export interface PaginationResponse<D> {

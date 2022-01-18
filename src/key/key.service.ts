@@ -119,7 +119,7 @@ export class KeyService {
         return result;
     }
 
-    public async queryApiKeys(user: UserDTO, lastCursor: string, size = 10) {
+    public async queryApiKeys(user: UserDTO, lastCursor: string, size = 10, searchContent = '') {
         const result = await this.utilService.queryWithPagination<KeyDTO>({
             lastCursor,
             size,
@@ -129,6 +129,14 @@ export class KeyService {
                     id: user.id,
                 },
             },
+            ...(
+                (searchContent && _.isString(searchContent))
+                    ? {
+                        searchKeys: ['keyId', 'id'],
+                        searchContent,
+                    }
+                    : {}
+            ),
         });
 
         return result;

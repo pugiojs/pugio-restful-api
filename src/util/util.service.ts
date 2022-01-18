@@ -8,6 +8,7 @@ import { UserDAO } from 'src/user/dao/user.dao';
 import {
     LessThan,
     LessThanOrEqual,
+    Like,
 } from 'typeorm';
 
 type DataType = Array<any> | Object | string | Date;
@@ -126,6 +127,8 @@ export class UtilService {
             whereOptions: userWhereOptions = {},
             lastCursor = null,
             size = 10,
+            searchContent = '',
+            searchKeys: userSearchKeys = [],
         }: PaginationQueryOptions<D>,
     ): Promise<PaginationResponse<D>> {
         let lastCursorRecord: any;
@@ -140,24 +143,65 @@ export class UtilService {
             } catch (e) {}
         }
 
-        const [total = 0, items = []] = await Promise.all([
-            repository.count({
-                where: userWhereOptions,
-            }),
-            repository.find({
-                where: [
-                    _.merge(userWhereOptions, (
+        const searchKeys = Array.from(userSearchKeys);
+
+        if (searchKeys.length === 0) {
+            searchKeys.push('nil');
+        }
+
+        const baseWhereConditionList = searchKeys.map((searchKey) => {
+            return [
+                _.merge(
+                    _.cloneDeep(userWhereOptions),
+                    (
                         lastCursorRecord
                             ? {
                                 createdAt: LessThan(lastCursorRecord.createdAt),
                             }
                             : {}
-                    )),
-                    {
-                        createdAt: lastCursorRecord.createdAt,
-                        id: LessThan(lastCursor),
-                    },
-                ],
+                    ),
+                    (
+                        (searchKey !== 'nil' && searchContent && _.isString(searchContent))
+                            ? {
+                                [searchKey]: Like(`%${searchContent}%`),
+                            }
+                            : {}
+                    ),
+                ),
+                (
+                    lastCursorRecord
+                        ? {
+                            createdAt: lastCursorRecord.createdAt,
+                            id: LessThan(lastCursor),
+                        }
+                        : {}
+                ),
+            ];
+        });
+
+        const whereQueryConditionList = baseWhereConditionList.map((condition) => {
+            const [mainSearchCondition, paginationSearchCondition] = condition;
+
+            if (!paginationSearchCondition || _.isPlainObject(paginationSearchCondition)) {
+                return mainSearchCondition;
+            }
+
+            return condition;
+        });
+
+        const whereCountConditionList = baseWhereConditionList.map((condition) => {
+            const [mainSearchCondition] = condition;
+            return _.omit(mainSearchCondition, 'createdAt');
+        });
+
+        const [total = 0, items = []] = await Promise.all([
+            repository.count({
+                where: whereCountConditionList,
+            }),
+            repository.find({
+                where: whereQueryConditionList.length === 1
+                    ? whereQueryConditionList[0]
+                    : whereQueryConditionList,
                 take: size,
                 order: {
                     createdAt: 'DESC',
