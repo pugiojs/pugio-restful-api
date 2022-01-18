@@ -31,10 +31,22 @@ export class ClientDTO {
     })
     public deviceId: string;
 
-    @Column({
-        default: true,
-    })
+    @Column({ default: true })
     public verified: boolean;
+
+    @Column({
+        name: 'public_key',
+        nullable: true,
+        default: null,
+    })
+    public publicKey: string;
+
+    @Column({
+        name: 'private_key',
+        nullable: true,
+        default: null,
+    })
+    public privateKey: string;
 
     @OneToMany(() => UserClientDTO, (userClientDTO) => userClientDTO.client)
     public clientUsers: UserClientDTO[];

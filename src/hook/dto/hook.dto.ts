@@ -27,6 +27,9 @@ export class HookDTO {
     @Column()
     public schema: string;
 
+    @Column({ default: '{}' })
+    public mapper: string;
+
     @Column({
         name: 'config_execution_cwd',
         nullable: true,
