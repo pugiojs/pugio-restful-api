@@ -25,7 +25,7 @@ export interface PaginationQueryOptions<D> {
     whereOptions?: WhereOptions<D>;
     lastCursor?: string;
     size?: number;
-    searchKeys?: Array<keyof D | 'nil'>;
+    searchKeys?: Array<keyof D | '@sys_nil@'>;
     searchContent?: string;
 }
 

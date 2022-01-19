@@ -146,7 +146,7 @@ export class UtilService {
         const searchKeys = Array.from(userSearchKeys);
 
         if (searchKeys.length === 0) {
-            searchKeys.push('nil');
+            searchKeys.push('@sys_nil@');
         }
 
         const baseWhereConditionList = searchKeys.map((searchKey) => {
@@ -161,7 +161,7 @@ export class UtilService {
                             : {}
                     ),
                     (
-                        (searchKey !== 'nil' && searchContent && _.isString(searchContent))
+                        (searchKey !== '@sys_nil@' && searchContent && _.isString(searchContent))
                             ? {
                                 [searchKey]: Like(`%${searchContent}%`),
                             }
