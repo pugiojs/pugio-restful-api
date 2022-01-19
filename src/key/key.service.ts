@@ -119,9 +119,9 @@ export class KeyService {
         return result;
     }
 
-    public async queryApiKeys(user: UserDTO, lastCursor: string, size = 10, searchContent = '') {
+    public async queryApiKeys(user: UserDTO, page = 1, size = 10, timestamp = -1, searchContent = '') {
         const result = await this.utilService.queryWithPagination<KeyDTO>({
-            lastCursor,
+            page,
             size,
             repository: this.keyRepository,
             whereOptions: {
@@ -129,6 +129,7 @@ export class KeyService {
                     id: user.id,
                 },
             },
+            timestamp,
             ...(
                 (searchContent && _.isString(searchContent))
                     ? {
@@ -137,6 +138,9 @@ export class KeyService {
                     }
                     : {}
             ),
+            // range: {
+            //     createdAt: [new Date('2022-01-18T03:05:56.687Z'), new Date('2022-01-18T03:05:56.689Z')],
+            // },
         });
 
         return result;

@@ -19,19 +19,26 @@ export type Gateway =
     OnGatewayDisconnect &
     GatewayServer;
 
+export type TRangeItem = number | string | Date;
+export type TRangeMap<D> = Partial<Record<keyof D, TRangeItem[]>>;
+export type TRange<D> = TRangeMap<D> | TRangeMap<D>[];
+
 export type WhereOptions<D> = FindConditions<D>[] | FindConditions<D> | ObjectLiteral | string;
+
 export interface PaginationQueryOptions<D> {
     repository: Repository<D>;
+    timestamp?: number;
     whereOptions?: WhereOptions<D>;
-    lastCursor?: string;
+    page?: number;
     size?: number;
     searchKeys?: Array<keyof D | '@sys_nil@'>;
     searchContent?: string;
+    range?: TRange<D>;
 }
 
-export interface PaginationResponse<D> {
+export interface PaginationQueryResponse<D> {
     items: D[];
     total: number;
-    lastCursor?: string;
+    page?: number;
     size?: number;
 }

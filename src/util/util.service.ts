@@ -1,14 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
 import {
+    // CursorQueryOptions,
+    // CursorQueryResponse,
     PaginationQueryOptions,
-    PaginationResponse,
+    PaginationQueryResponse,
+    TRangeItem,
+    TRangeMap,
 } from 'src/app.interfaces';
 import { UserDAO } from 'src/user/dao/user.dao';
 import {
+    Between,
     LessThan,
     LessThanOrEqual,
     Like,
+    MoreThan,
 } from 'typeorm';
 
 type DataType = Array<any> | Object | string | Date;
@@ -26,7 +32,10 @@ export class UtilService {
         updated_at: 'updated_at',
     };
 
-    public transformCaseStyle = <T extends DataType, R extends T | DataType>(data: Partial<T>, targetCaseStyleType: CaseStyleType): R => {
+    public transformCaseStyle = <T extends DataType, R extends T | DataType>(
+        data: Partial<T>,
+        targetCaseStyleType: CaseStyleType,
+    ): R => {
         if (!data) {
             return;
         }
@@ -125,96 +134,189 @@ export class UtilService {
         {
             repository,
             whereOptions: userWhereOptions = {},
-            lastCursor = null,
+            page = 1,
             size = 10,
             searchContent = '',
             searchKeys: userSearchKeys = [],
+            range = {},
+            timestamp = -1,
         }: PaginationQueryOptions<D>,
-    ): Promise<PaginationResponse<D>> {
-        let lastCursorRecord: any;
+    ): Promise<PaginationQueryResponse<D>> {
+        const searchKeys = Array.from(userSearchKeys);
+        let rangeMapList: TRangeMap<D>[] = [];
+        let cursorDate: Date;
 
-        if (lastCursor && _.isString(lastCursor)) {
-            try {
-                lastCursorRecord = await repository.findOne({
-                    where: {
-                        id: lastCursor,
-                    },
-                });
-            } catch (e) {}
+        if (_.isArray(range)) {
+            rangeMapList = range;
+        } else {
+            rangeMapList = [range];
         }
 
-        const searchKeys = Array.from(userSearchKeys);
-
-        if (searchKeys.length === 0) {
-            searchKeys.push('@sys_nil@');
+        if (timestamp > 0) {
+            cursorDate = new Date(timestamp);
         }
 
         const baseWhereConditionList = searchKeys.map((searchKey) => {
-            return [
-                _.merge(
-                    _.cloneDeep(userWhereOptions),
-                    (
-                        lastCursorRecord
-                            ? {
-                                createdAt: LessThan(lastCursorRecord.createdAt),
-                            }
-                            : {}
-                    ),
-                    (
-                        (searchKey !== '@sys_nil@' && searchContent && _.isString(searchContent))
-                            ? {
-                                [searchKey]: Like(`%${searchContent}%`),
-                            }
-                            : {}
-                    ),
-                ),
+            return _.merge(
+                _.cloneDeep(userWhereOptions),
                 (
-                    lastCursorRecord
+                    (searchKey !== '@sys_nil@' && searchContent && _.isString(searchContent))
                         ? {
-                            createdAt: lastCursorRecord.createdAt,
-                            id: LessThan(lastCursor),
+                            [searchKey]: Like(`%${searchContent}%`),
                         }
                         : {}
                 ),
-            ];
+            );
         });
 
-        const whereQueryConditionList = baseWhereConditionList.map((condition) => {
-            const [mainSearchCondition, paginationSearchCondition] = condition;
+        console.log('222', baseWhereConditionList);
 
-            if (!paginationSearchCondition || _.isPlainObject(paginationSearchCondition)) {
-                return mainSearchCondition;
-            }
+        const whereConditionList = baseWhereConditionList.reduce((resultList, condition) => {
+            const currentResultList = _.cloneDeep(resultList);
 
-            return condition;
-        });
+            Object.keys(currentResultList).forEach((listName) => {
+                currentResultList[listName] = currentResultList[listName].concat(
+                    rangeMapList
+                        .map((rangeMap) => {
+                            return _.merge(
+                                condition,
+                                (
+                                    (listName === 'items' && _.isDate(cursorDate))
+                                        ? {
+                                            createdAt: LessThan(cursorDate),
+                                        }
+                                        : {}
+                                ),
+                                this.parseRange<D>(rangeMap, cursorDate, listName === 'count'),
+                            );
+                        })
+                        .filter((query) => Boolean(query)),
+                );
+            });
 
-        const whereCountConditionList = baseWhereConditionList.map((condition) => {
-            const [mainSearchCondition] = condition;
-            return _.omit(mainSearchCondition, 'createdAt');
+            console.log('333', currentResultList.items);
+
+            return currentResultList;
+        }, {
+            items: [],
+            count: [],
         });
 
         const [total = 0, items = []] = await Promise.all([
             repository.count({
-                where: whereCountConditionList,
+                where: whereConditionList.count,
             }),
             repository.find({
-                where: whereQueryConditionList.length === 1
-                    ? whereQueryConditionList[0]
-                    : whereQueryConditionList,
+                where: whereConditionList.items,
                 take: size,
                 order: {
                     createdAt: 'DESC',
                     id: 'DESC',
                 } as any,
+                skip: (page - 1) * size,
             }),
         ]);
 
         return {
             items,
             total,
-            lastCursor,
+            page,
             size,
         };
+    }
+
+    private generateCreatedAtRange(dateRange: Date[], cursorDate: Date) {
+        if (
+            !_.isArray(dateRange) ||
+            dateRange.length !== 2 ||
+            dateRange.some((rangeItem) => !_.isDate(rangeItem) && !_.isNull(rangeItem))
+        ) {
+            return null;
+        }
+
+        const [minDate, maxDate] = dateRange;
+
+        if (!_.isDate(cursorDate)) {
+            return {
+                min: minDate,
+                max: maxDate,
+            };
+        }
+
+        if (minDate && maxDate) {
+            if (cursorDate <= minDate) {
+                return null;
+            }
+
+            return {
+                min: minDate,
+                max: _.min([maxDate, cursorDate]),
+            };
+        } else if (!minDate && maxDate) {
+            return {
+                min: null,
+                max: _.min([maxDate, cursorDate]),
+            };
+        } else if (minDate && !maxDate) {
+            if (cursorDate <= minDate) {
+                return null;
+            }
+
+            return {
+                min: minDate,
+                max: cursorDate,
+            };
+        } else {
+            return {
+                min: null,
+                max: cursorDate,
+            };
+        }
+    }
+
+    private generateORMRangeQuery(range: TRangeItem[]) {
+        if (!_.isArray(range) || range.length !== 2) {
+            return null;
+        }
+
+        const [minValue, maxValue] = range;
+
+        if (minValue && maxValue) {
+            return Between(minValue, maxValue);
+        } else if (!minValue && maxValue) {
+            return LessThan(maxValue);
+        } else if (minValue && !maxValue) {
+            return MoreThan(minValue);
+        } else {
+            return null;
+        }
+    }
+
+    private parseRange<D>(rangeMap: TRangeMap<D>, cursorDate?: Date, countMode = false) {
+        if (!rangeMap || !_.isObject(rangeMap) || Object.keys(rangeMap).length === 0) {
+            return {};
+        }
+
+        return Object.keys(rangeMap).reduce((result, key) => {
+            let currentRange;
+
+            if (!countMode && key === 'createdAt') {
+                const result = this.generateCreatedAtRange(rangeMap[key], cursorDate);
+
+                if (result) {
+                    currentRange = this.generateORMRangeQuery([result.min, result.max]);
+                }
+            } else {
+                currentRange = this.generateORMRangeQuery(rangeMap[key]);
+            }
+
+            if (currentRange) {
+                result[key] = currentRange;
+            }
+
+            console.log('111', currentRange);
+
+            return result;
+        }, {});
     }
 }

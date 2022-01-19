@@ -21,11 +21,18 @@ export class KeyController {
     @Get('')
     public async queryApiKeys(
         @CurrentUser() user: UserDTO,
-        @Query('last_cursor') lastCursor: string,
         @Query('size', PermanentlyParseIntPipe) size = 10,
+        @Query('page', PermanentlyParseIntPipe) page = 10,
+        @Query('timestamp', PermanentlyParseIntPipe) timestamp = -1,
         @Query('search') searchContent: string,
     ) {
-        return await this.keyService.queryApiKeys(user, lastCursor, size, searchContent);
+        return await this.keyService.queryApiKeys(
+            user,
+            page,
+            size,
+            timestamp,
+            searchContent,
+        );
     }
 
     @UseGuards(AuthGuard())
