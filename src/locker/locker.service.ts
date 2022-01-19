@@ -60,17 +60,24 @@ export class LockerService {
     }
 
     public async unlock(lockName, value) {
-        const lockData = await this.redisClient.get(lockName);
+        try {
+            const lockData = await this.redisClient.get(lockName);
 
-        if (lockData !== value) {
-            throw new ForbiddenException();
+            if (lockData !== value) {
+                throw new ForbiddenException();
+            }
+
+            await this.redisClient.del(lockName);
+
+            return {
+                error: 0,
+                data: lockData,
+            };
+        } catch (e) {
+            return {
+                error: 1,
+                data: (e.message || e.toString()) as string,
+            };
         }
-
-        await this.redisClient.del(lockName);
-
-        return {
-            error: 0,
-            data: lockData,
-        };
     }
 }
