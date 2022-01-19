@@ -42,3 +42,5 @@ export interface PaginationQueryResponse<D> {
     lastCursor?: string;
     timestamp?: Date;
 }
+
+export type NestedConditionList<D> = Array<TRangeMap<D> | NestedConditionList<D>>;

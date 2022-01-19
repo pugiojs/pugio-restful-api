@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
 import {
+    NestedConditionList,
     PaginationQueryOptions,
     PaginationQueryResponse,
     TRangeItem,
@@ -180,12 +181,12 @@ export class UtilService {
             })
             : [_.cloneDeep(userWhereOptions)];
 
-        const whereConditionList = baseWhereConditionList.reduce((resultList: WhereOptions<D>[], condition) => {
+        const whereNestedConditionList = baseWhereConditionList.reduce((resultList: WhereOptions<D>[], condition) => {
             const currentResultList = Array.from(resultList);
 
             const currentItem = rangeMapList
                 .map((rangeMap) => {
-                    return _.merge(
+                    const currentCondition = _.merge(
                         condition,
                         (
                             _.isDate(cursorDate)
@@ -196,12 +197,24 @@ export class UtilService {
                         ),
                         this.parseRange<D>(rangeMap, cursorDate, false),
                     );
+
+                    return _.isDate(cursorDate)
+                        ? [
+                            currentCondition,
+                            {
+                                createdAt: cursorDate,
+                                id: LessThan(lastCursor),
+                            },
+                        ]
+                        : currentCondition;
                 });
 
             currentResultList.push((currentItem.length === 1 ? currentItem[0] : currentItem));
 
             return currentResultList;
-        }, [] as WhereOptions<D>[]) as WhereOptions<D>[];
+        }, [] as WhereOptions<D>[]) as NestedConditionList<D>;
+
+        const whereConditionList = this.flatWhereCondition(whereNestedConditionList);
 
         const whereCondition = whereConditionList.length === 1
             ? whereConditionList[0]
@@ -321,5 +334,19 @@ export class UtilService {
 
             return result;
         }, {});
+    }
+
+    private flatWhereCondition<D>(conditionList: NestedConditionList<D>): TRangeMap<D>[] {
+        let result: TRangeMap<D>[] = [];
+
+        for (const conditionListItem of conditionList) {
+            if (!_.isArray(conditionListItem)) {
+                result.push(conditionListItem);
+            } else {
+                result = result.concat(this.flatWhereCondition(conditionListItem));
+            }
+        }
+
+        return result;
     }
 }
