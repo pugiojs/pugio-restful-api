@@ -1,4 +1,3 @@
-/* eslint-disable no-useless-catch */
 import {
     Injectable,
     NotFoundException,
@@ -7,7 +6,10 @@ import {
 import * as _ from 'lodash';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserDTO } from 'src/user/dto/user.dto';
-import { Repository } from 'typeorm';
+import {
+    In,
+    Repository,
+} from 'typeorm';
 import { KeyDTO } from './dto/key.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
@@ -144,5 +146,28 @@ export class KeyService {
         });
 
         return result;
+    }
+
+    public async deleteApiKeys(user: UserDTO, keyIdentifierList: string[]) {
+        const keys = await this.keyRepository.find({
+            where: [
+                {
+                    owner: {
+                        id: user.id,
+                    },
+                    id: In(keyIdentifierList),
+                },
+                {
+                    owner: {
+                        id: user.id,
+                    },
+                    keyId: In(keyIdentifierList),
+                },
+            ],
+        });
+
+        await this.keyRepository.delete(keys.map((key) => key.id));
+
+        return keys;
     }
 }

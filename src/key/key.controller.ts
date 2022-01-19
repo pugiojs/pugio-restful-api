@@ -1,6 +1,9 @@
 import {
+    Body,
     Controller,
+    Delete,
     Get,
+    Param,
     Post,
     Query,
     UseGuards,
@@ -9,7 +12,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { TRangeItem } from 'src/app.interfaces';
 import {
     ParseDateRangePipe,
-    ParseTimestampPipe,
     PermanentlyParseIntPipe,
 } from 'src/app.pipe';
 import { UserDTO } from 'src/user/dto/user.dto';
@@ -44,5 +46,23 @@ export class KeyController {
     @Post('')
     public async createApiKey(@CurrentUser() user: UserDTO) {
         return await this.keyService.createApiKey(user);
+    }
+
+    @UseGuards(AuthGuard())
+    @Delete('/:id')
+    public async deleteApiKey(
+        @CurrentUser() user: UserDTO,
+        @Param('id') keyId: string,
+    ) {
+        return await this.keyService.deleteApiKeys(user, [keyId]);
+    }
+
+    @UseGuards(AuthGuard())
+    @Delete('')
+    public async deleteApiKeys(
+        @CurrentUser() user: UserDTO,
+        @Body('keys') keyIdentifierList: string[],
+    ) {
+        return await this.keyService.deleteApiKeys(user, keyIdentifierList);
     }
 }
