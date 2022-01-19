@@ -6,7 +6,12 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { PermanentlyParseIntPipe } from 'src/app.pipe';
+import { TRangeItem } from 'src/app.interfaces';
+import {
+    ParseDateRangePipe,
+    ParseTimestampPipe,
+    PermanentlyParseIntPipe,
+} from 'src/app.pipe';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
 import { KeyService } from './key.service';
@@ -22,16 +27,16 @@ export class KeyController {
     public async queryApiKeys(
         @CurrentUser() user: UserDTO,
         @Query('size', PermanentlyParseIntPipe) size = 10,
-        @Query('page', PermanentlyParseIntPipe) page = 10,
-        @Query('timestamp', PermanentlyParseIntPipe) timestamp = -1,
         @Query('search') searchContent: string,
+        @Query('last_cursor') lastCursor: string,
+        @Query('create_date_range', ParseDateRangePipe) createDateRange: TRangeItem[],
     ) {
         return await this.keyService.queryApiKeys(
             user,
-            page,
             size,
-            timestamp,
+            lastCursor,
             searchContent,
+            createDateRange,
         );
     }
 

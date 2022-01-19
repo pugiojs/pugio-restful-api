@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import * as _ from 'lodash';
 import {
-    // CursorQueryOptions,
-    // CursorQueryResponse,
     PaginationQueryOptions,
     PaginationQueryResponse,
     TRangeItem,
     TRangeMap,
+    WhereOptions,
 } from 'src/app.interfaces';
 import { UserDAO } from 'src/user/dao/user.dao';
 import {
     Between,
     LessThan,
-    LessThanOrEqual,
     Like,
     MoreThan,
 } from 'typeorm';
@@ -36,6 +34,10 @@ export class UtilService {
         data: Partial<T>,
         targetCaseStyleType: CaseStyleType,
     ): R => {
+        if (_.isNumber(data) && data === 0) {
+            return data as any;
+        }
+
         if (!data) {
             return;
         }
@@ -134,12 +136,11 @@ export class UtilService {
         {
             repository,
             whereOptions: userWhereOptions = {},
-            page = 1,
             size = 10,
             searchContent = '',
             searchKeys: userSearchKeys = [],
             range = {},
-            timestamp = -1,
+            lastCursor = '',
         }: PaginationQueryOptions<D>,
     ): Promise<PaginationQueryResponse<D>> {
         const searchKeys = Array.from(userSearchKeys);
@@ -152,76 +153,80 @@ export class UtilService {
             rangeMapList = [range];
         }
 
-        if (timestamp > 0) {
-            cursorDate = new Date(timestamp);
-        }
-
-        const baseWhereConditionList = searchKeys.map((searchKey) => {
-            return _.merge(
-                _.cloneDeep(userWhereOptions),
-                (
-                    (searchKey !== '@sys_nil@' && searchContent && _.isString(searchContent))
-                        ? {
-                            [searchKey]: Like(`%${searchContent}%`),
-                        }
-                        : {}
-                ),
-            );
-        });
-
-        console.log('222', baseWhereConditionList);
-
-        const whereConditionList = baseWhereConditionList.reduce((resultList, condition) => {
-            const currentResultList = _.cloneDeep(resultList);
-
-            Object.keys(currentResultList).forEach((listName) => {
-                currentResultList[listName] = currentResultList[listName].concat(
-                    rangeMapList
-                        .map((rangeMap) => {
-                            return _.merge(
-                                condition,
-                                (
-                                    (listName === 'items' && _.isDate(cursorDate))
-                                        ? {
-                                            createdAt: LessThan(cursorDate),
-                                        }
-                                        : {}
-                                ),
-                                this.parseRange<D>(rangeMap, cursorDate, listName === 'count'),
-                            );
-                        })
-                        .filter((query) => Boolean(query)),
-                );
+        if (lastCursor) {
+            const cursorItem: any = await repository.findOne({
+                where: {
+                    id: lastCursor,
+                },
             });
 
-            console.log('333', currentResultList.items);
+            if (cursorItem) {
+                cursorDate = cursorItem.createdAt as Date;
+            }
+        }
+
+        const baseWhereConditionList = (searchContent && _.isString(searchContent))
+            ? searchKeys.map((searchKey) => {
+                return _.merge(
+                    _.cloneDeep(userWhereOptions),
+                    (
+                        searchKey !== '@sys_nil@'
+                            ? {
+                                [searchKey]: Like(`%${searchContent}%`),
+                            }
+                            : {}
+                    ),
+                );
+            })
+            : [_.cloneDeep(userWhereOptions)];
+
+        const whereConditionList = baseWhereConditionList.reduce((resultList: WhereOptions<D>[], condition) => {
+            const currentResultList = Array.from(resultList);
+
+            const currentItem = rangeMapList
+                .map((rangeMap) => {
+                    return _.merge(
+                        condition,
+                        (
+                            _.isDate(cursorDate)
+                                ? {
+                                    createdAt: LessThan(cursorDate),
+                                }
+                                : {}
+                        ),
+                        this.parseRange<D>(rangeMap, cursorDate, false),
+                    );
+                });
+
+            currentResultList.push((currentItem.length === 1 ? currentItem[0] : currentItem));
 
             return currentResultList;
-        }, {
-            items: [],
-            count: [],
-        });
+        }, [] as WhereOptions<D>[]) as WhereOptions<D>[];
+
+        const whereCondition = whereConditionList.length === 1
+            ? whereConditionList[0]
+            : whereConditionList;
 
         const [total = 0, items = []] = await Promise.all([
             repository.count({
-                where: whereConditionList.count,
+                where: whereCondition,
             }),
             repository.find({
-                where: whereConditionList.items,
+                where: whereCondition,
                 take: size,
                 order: {
                     createdAt: 'DESC',
                     id: 'DESC',
                 } as any,
-                skip: (page - 1) * size,
             }),
         ]);
 
         return {
             items,
-            total,
-            page,
+            remains: Math.max(total - size, 0),
             size,
+            lastCursor,
+            timestamp: cursorDate,
         };
     }
 
@@ -313,8 +318,6 @@ export class UtilService {
             if (currentRange) {
                 result[key] = currentRange;
             }
-
-            console.log('111', currentRange);
 
             return result;
         }, {});

@@ -13,6 +13,7 @@ import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import { v5 as uuidv5 } from 'uuid';
 import { UtilService } from 'src/util/util.service';
+import { TRangeItem } from 'src/app.interfaces';
 
 @Injectable()
 export class KeyService {
@@ -119,9 +120,14 @@ export class KeyService {
         return result;
     }
 
-    public async queryApiKeys(user: UserDTO, page = 1, size = 10, timestamp = -1, searchContent = '') {
+    public async queryApiKeys(
+        user: UserDTO,
+        size = 10,
+        lastCursor: string,
+        searchContent = '',
+        createDateRange: TRangeItem[],
+    ) {
         const result = await this.utilService.queryWithPagination<KeyDTO>({
-            page,
             size,
             repository: this.keyRepository,
             whereOptions: {
@@ -129,18 +135,12 @@ export class KeyService {
                     id: user.id,
                 },
             },
-            timestamp,
-            ...(
-                (searchContent && _.isString(searchContent))
-                    ? {
-                        searchKeys: ['keyId', 'id'],
-                        searchContent,
-                    }
-                    : {}
-            ),
-            // range: {
-            //     createdAt: [new Date('2022-01-18T03:05:56.687Z'), new Date('2022-01-18T03:05:56.689Z')],
-            // },
+            lastCursor,
+            searchKeys: ['keyId', 'id'],
+            searchContent,
+            range: {
+                createdAt: createDateRange,
+            },
         });
 
         return result;

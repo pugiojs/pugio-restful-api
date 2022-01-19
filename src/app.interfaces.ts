@@ -27,9 +27,8 @@ export type WhereOptions<D> = FindConditions<D>[] | FindConditions<D> | ObjectLi
 
 export interface PaginationQueryOptions<D> {
     repository: Repository<D>;
-    timestamp?: number;
+    lastCursor?: string;
     whereOptions?: WhereOptions<D>;
-    page?: number;
     size?: number;
     searchKeys?: Array<keyof D | '@sys_nil@'>;
     searchContent?: string;
@@ -38,7 +37,8 @@ export interface PaginationQueryOptions<D> {
 
 export interface PaginationQueryResponse<D> {
     items: D[];
-    total: number;
-    page?: number;
+    remains: number;
     size?: number;
+    lastCursor?: string;
+    timestamp?: Date;
 }
