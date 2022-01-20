@@ -4,9 +4,11 @@ import {
     InternalServerErrorException,
     NotFoundException,
 } from '@nestjs/common';
-import { RedisService } from 'nestjs-redis';
+import {
+    Redis,
+    RedisService,
+} from '@lenconda/nestjs-redis';
 import { UtilService } from 'src/util/util.service';
-import { Redis } from 'ioredis';
 import { ClientService } from 'src/client/client.service';
 import { ERR_FAILED_TO_GET_LOCK } from 'src/app.constants';
 import { EventService } from 'src/event/event.service';
@@ -37,7 +39,7 @@ export class TaskService {
 
     public async consumeExecutionTask(clientId: string) {
         const taskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
-        const taskId = await this.redisClient.lpop(taskQueueName);
+        const taskId = await this.redisClient.LPOP(taskQueueName);
 
         return {
             taskId: taskId || null,
@@ -87,7 +89,7 @@ export class TaskService {
                 throw new InternalServerErrorException(ERR_FAILED_TO_GET_LOCK);
             }
 
-            await this.redisClient.rpush(
+            await this.redisClient.RPUSH(
                 clientTaskQueueName,
                 // TODO
                 new Date().toISOString() + Math.random().toString(32).slice(2),

@@ -11,8 +11,10 @@ import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from './dto/client.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { ClientDAO } from './dao/client.dao';
-import { RedisService } from 'nestjs-redis';
-import { Redis } from 'ioredis';
+import {
+    Redis,
+    RedisService,
+} from '@lenconda/nestjs-redis';
 
 @Injectable()
 export class ClientService {

@@ -2,8 +2,10 @@ import {
     ForbiddenException,
     Injectable,
 } from '@nestjs/common';
-import { RedisService } from 'nestjs-redis';
-import { Redis } from 'ioredis';
+import {
+    Redis,
+    RedisService,
+} from '@lenconda/nestjs-redis';
 import { ConfigService } from '@nestjs/config';
 import { UtilService } from 'src/util/util.service';
 import {
@@ -33,7 +35,7 @@ export class LockerService {
 
         while (true) {
             try {
-                const setNXResult = await this.redisClient.setnx(lockName, lockData);
+                const setNXResult = await this.redisClient.setNX(lockName, lockData);
 
                 if (setNXResult) {
                     return {

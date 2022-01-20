@@ -18,7 +18,7 @@ import { UtilModule } from './util/util.module';
 import { KeyModule } from './key/key.module';
 import { EventModule } from './event/event.module';
 import { ClientModule } from './client/client.module';
-import { RedisModule } from 'nestjs-redis';
+import { RedisModule } from '@lenconda/nestjs-redis';
 import { LockerModule } from './locker/locker.module';
 import { TaskModule } from './task/task.module';
 import { HookModule } from './hook/hook.module';
@@ -67,7 +67,7 @@ import redisConfig from './config/redis.config';
 
                 return {
                     ...configService.get('redis'),
-                    onClientReady: () => {
+                    onClientReady: async () => {
                         logger.log('Redis client ready');
                     },
                 };
