@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ForbiddenException,
     Injectable,
     NotFoundException,
@@ -15,6 +16,9 @@ import {
     Redis,
     RedisService,
 } from '@lenconda/nestjs-redis';
+import { v5 as uuidv5 } from 'uuid';
+import * as _ from 'lodash';
+import { SHA256 } from 'crypto-js';
 
 @Injectable()
 export class ClientService {
@@ -125,11 +129,79 @@ export class ClientService {
         return result.client;
     }
 
-    private async setRedisUserAndPassword(
-        username: string,
+    public async handleMakeChallenge(client: ClientDTO) {
+        let clientRedisInfo;
+
+        try {
+            clientRedisInfo = await this.redisClient.aclGetUser(client.id);
+        } catch (e) {}
+
+        const seed = Math.random().toString(32).slice(2) + Date.now().toString();
+
+        const newPassword = Buffer
+            .from(
+                seed +
+                '@' +
+                uuidv5(seed, client.id),
+            )
+            .toString('base64');
+
+        await this.setClientCredential(client.id, newPassword);
+
+        return {
+            credential: newPassword,
+            taskChannel: this.utilService.generateExecutionTaskChannelName(client.id),
+        };
+    }
+
+    public async handleChannelConnection(client: ClientDTO) {
+        // TODO
+    }
+
+    private async setClientCredential(
+        clientId: string,
         newPassword: string,
         oldPassword?: string,
     ) {
-        // const user = this.redisClient.
+        if (!newPassword || !_.isString(newPassword)) {
+            throw new BadRequestException();
+        }
+
+        let clientInfo;
+
+        try {
+            clientInfo = await this.redisClient.aclGetUser(clientId);
+        } catch (e) {
+            throw new NotFoundException();
+        }
+
+        if (clientInfo) {
+            const passwords = _.get(clientInfo, 'passwords') || [];
+
+            if (
+                passwords.length > 0 &&
+                    _.isString(oldPassword) &&
+                    passwords.indexOf(SHA256(oldPassword))
+            ) {
+                throw new ForbiddenException();
+            }
+
+            await Promise.all(passwords.map((password) => {
+                return this.redisClient.aclSetUser(clientId, ['on', '!' + password]);
+            }));
+        }
+
+        await this.redisClient.aclSetUser(
+            clientId,
+            [
+                'on',
+                '>' + newPassword,
+                '~' + clientId + ':*',
+                '-@all',
+            ],
+        );
+
+        const newClientInfo = await this.redisClient.aclGetUser(clientId);
+        return _.omit(newClientInfo, 'passwords');
     }
 }
