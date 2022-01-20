@@ -11,9 +11,13 @@ import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from './dto/client.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { ClientDAO } from './dao/client.dao';
+import { RedisService } from 'nestjs-redis';
+import { Redis } from 'ioredis';
 
 @Injectable()
 export class ClientService {
+    private redisClient: Redis;
+
     public constructor(
         private readonly utilService: UtilService,
         private readonly lockerService: LockerService,
@@ -21,7 +25,10 @@ export class ClientService {
         private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(UserClientDTO)
         private readonly userClientRepository: Repository<UserClientDTO>,
-    ) {}
+        private readonly redisService: RedisService,
+    ) {
+        this.redisClient = this.redisService.getClient();
+    }
 
     public async lockExecutionTaskChannel(clientId: string, retryTimes?: number) {
         const lockName = this.utilService.generateExecutionTaskLockName(clientId);
@@ -114,5 +121,13 @@ export class ClientService {
         }
 
         return result.client;
+    }
+
+    private async setRedisUserAndPassword(
+        username: string,
+        newPassword: string,
+        oldPassword?: string,
+    ) {
+        // const user = this.redisClient.
     }
 }

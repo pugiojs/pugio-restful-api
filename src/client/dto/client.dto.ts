@@ -35,6 +35,13 @@ export class ClientDTO {
     public verified: boolean;
 
     @Column({
+        select: false,
+        nullable: true,
+        default: null,
+    })
+    public credential: string;
+
+    @Column({
         name: 'public_key',
         nullable: true,
         default: null,
