@@ -146,7 +146,7 @@ export class ClientService {
             )
             .toString('base64');
 
-        await this.setClientCredential(client.id, newPassword);
+        await this.updateClientCredential(client.id, newPassword);
 
         return {
             credential: newPassword,
@@ -154,11 +154,11 @@ export class ClientService {
         };
     }
 
-    public async handleChannelConnection(client: ClientDTO) {
+    public async handleChannelConnection(client: ClientDTO, password: string) {
         // TODO
     }
 
-    private async setClientCredential(
+    private async updateClientCredential(
         clientId: string,
         newPassword: string,
         oldPassword?: string,
@@ -171,24 +171,20 @@ export class ClientService {
 
         try {
             clientInfo = await this.redisClient.aclGetUser(clientId);
-        } catch (e) {
-            throw new NotFoundException();
-        }
+        } catch (e) {}
 
         if (clientInfo) {
             const passwords = _.get(clientInfo, 'passwords') || [];
 
             if (
                 passwords.length > 0 &&
-                    _.isString(oldPassword) &&
-                    passwords.indexOf(SHA256(oldPassword))
+                _.isString(oldPassword) &&
+                passwords.indexOf(SHA256(oldPassword)) === -1
             ) {
                 throw new ForbiddenException();
             }
 
-            await Promise.all(passwords.map((password) => {
-                return this.redisClient.aclSetUser(clientId, ['on', '!' + password]);
-            }));
+            await this.redisClient.aclSetUser(clientId, ['on', '<' + oldPassword]);
         }
 
         await this.redisClient.aclSetUser(
