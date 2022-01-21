@@ -15,6 +15,7 @@ import {
     Like,
     MoreThan,
 } from 'typeorm';
+import { v5 as uuidv5 } from 'uuid';
 
 type DataType = Array<any> | Object | string | Date;
 type CaseStyleType = 'snake' | 'camel' | 'kebab';
@@ -241,6 +242,28 @@ export class UtilService {
             lastCursor,
             timestamp: cursorDate,
         };
+    }
+
+    public async generateRandomPassword(namespace?: string) {
+        const seed = [
+            Math.random().toString(32).slice(2),
+            Date.now().toString(),
+            ...(
+                _.isString(namespace)
+                    ? [namespace]
+                    : []
+            ),
+        ];
+
+        let passwordContent = seed.join(':');
+
+        if (_.isString(namespace)) {
+            try {
+                passwordContent = uuidv5(passwordContent, namespace);
+            } catch (e) {}
+        }
+
+        return Buffer.from(passwordContent).toString('base64');
     }
 
     private generateCreatedAtRange(dateRange: Date[], cursorDate: Date) {

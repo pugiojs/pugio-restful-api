@@ -16,7 +16,6 @@ import {
     Redis,
     RedisService,
 } from '@lenconda/nestjs-redis';
-import { v5 as uuidv5 } from 'uuid';
 import * as _ from 'lodash';
 import { SHA256 } from 'crypto-js';
 
@@ -130,43 +129,41 @@ export class ClientService {
     }
 
     public async handleMakeChallenge(client: ClientDTO) {
-        let clientRedisInfo;
-
-        try {
-            clientRedisInfo = await this.redisClient.aclGetUser(client.id);
-        } catch (e) {}
-
-        const seed = Math.random().toString(32).slice(2) + Date.now().toString();
-
-        const newPassword = Buffer
-            .from(
-                seed +
-                '@' +
-                uuidv5(seed, client.id),
-            )
-            .toString('base64');
-
-        await this.updateClientCredential(client.id, newPassword);
-
-        return {
-            credential: newPassword,
-            taskChannel: this.utilService.generateExecutionTaskChannelName(client.id),
-        };
-    }
-
-    public async handleChannelConnection(client: ClientDTO, password: string) {
-        // TODO
-    }
-
-    private async updateClientCredential(
-        clientId: string,
-        newPassword: string,
-        oldPassword?: string,
-    ) {
-        if (!newPassword || !_.isString(newPassword)) {
+        if (!(client)) {
             throw new BadRequestException();
         }
 
+        const clientId = client.id;
+        const credential = await this.utilService.generateRandomPassword(clientId);
+
+        await this.redisClient.aclSetUser(
+            clientId,
+            [
+                'on',
+                '>' + credential,
+                'resetchannels',
+                '~' + clientId + ':*',
+                '-@all',
+            ],
+        );
+        await this.redisClient.aclSetUser(clientId, ['&' + clientId + '@*']);
+
+        const newClientInfo = await this.redisClient.aclGetUser(clientId);
+        const taskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
+
+        return {
+            credential,
+            taskChannelName,
+            clientInfo: _.omit(newClientInfo, 'passwords'),
+        };
+    }
+
+    public async handleChannelConnection(client: ClientDTO, oldCredential: string) {
+        if (!(client) || !_.isString(oldCredential)) {
+            throw new BadRequestException();
+        }
+
+        const clientId = client.id;
         let clientInfo;
 
         try {
@@ -174,30 +171,18 @@ export class ClientService {
         } catch (e) {}
 
         if (clientInfo) {
-            const passwords = _.get(clientInfo, 'passwords') || [];
-
-            if (
-                passwords.length > 0 &&
-                _.isString(oldPassword) &&
-                passwords.indexOf(SHA256(oldPassword)) === -1
-            ) {
-                throw new ForbiddenException();
-            }
-
-            await this.redisClient.aclSetUser(clientId, ['on', '<' + oldPassword]);
+            await this.redisClient.aclSetUser(
+                clientId,
+                ['<' + oldCredential],
+            );
         }
 
-        await this.redisClient.aclSetUser(
-            clientId,
-            [
-                'on',
-                '>' + newPassword,
-                '~' + clientId + ':*',
-                '-@all',
-            ],
-        );
+        await this.redisClient.aclSetUser(clientId, ['off']);
 
         const newClientInfo = await this.redisClient.aclGetUser(clientId);
-        return _.omit(newClientInfo, 'passwords');
+
+        return {
+            clientInfo: _.omit(newClientInfo, 'passwords'),
+        };
     }
 }

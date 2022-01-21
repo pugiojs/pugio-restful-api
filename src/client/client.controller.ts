@@ -67,4 +67,19 @@ export class ClientController {
     ) {
         return await this.clientService.getClientInfoFromNetwork(clientId, user);
     }
+
+    @Post('/challenge')
+    @UseGuards(AuthGuard('client-key'))
+    public async handleMakeChallenge(@CurrentClient() client: ClientDTO) {
+        return await this.clientService.handleMakeChallenge(client);
+    }
+
+    @Post('/connected')
+    @UseGuards(AuthGuard('client-key'))
+    public async handleChannelConnection(
+        @CurrentClient() client: ClientDTO,
+        @Body('credential') oldCredential: string,
+    ) {
+        return await this.clientService.handleChannelConnection(client, oldCredential);
+    }
 }
