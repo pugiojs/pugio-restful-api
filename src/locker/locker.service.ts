@@ -36,6 +36,7 @@ export class LockerService {
         while (true) {
             try {
                 const setNXResult = await this.redisClient.setNX(lockName, lockData);
+                await this.redisClient.EXPIRE(lockName, this.expiration);
 
                 if (setNXResult) {
                     return {

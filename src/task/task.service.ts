@@ -68,35 +68,33 @@ export class TaskService {
         const clientTaskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
         const clientTaskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
 
-        (async () => {
-            await this.redisClient.persist(clientTaskQueueName);
-            let gotLock = false;
+        await this.redisClient.persist(clientTaskQueueName);
+        let gotLock = false;
 
-            const {
-                error,
-                data,
-            } = await this.clientService.lockExecutionTaskChannel(clientId);
+        const {
+            error,
+            data,
+        } = await this.clientService.lockExecutionTaskChannel(clientId);
 
-            if (error) {
-                throw new InternalServerErrorException(data);
-            }
+        if (error) {
+            throw new InternalServerErrorException(data);
+        }
 
-            if (!error && data) {
-                gotLock = true;
-            }
+        if (!error && data) {
+            gotLock = true;
+        }
 
-            if (!gotLock) {
-                throw new InternalServerErrorException(ERR_FAILED_TO_GET_LOCK);
-            }
+        if (!gotLock) {
+            throw new InternalServerErrorException(ERR_FAILED_TO_GET_LOCK);
+        }
 
-            await this.redisClient.RPUSH(
-                clientTaskQueueName,
-                // TODO
-                new Date().toISOString() + Math.random().toString(32).slice(2),
-            );
+        await this.redisClient.RPUSH(
+            clientTaskQueueName,
+            // TODO
+            new Date().toISOString() + Math.random().toString(32).slice(2),
+        );
 
-            this.redisClient.publish(clientTaskChannelName, new Date().toISOString());
-        })();
+        this.redisClient.publish(clientTaskChannelName, new Date().toISOString());
 
         // TODO sync process
         // TODO create task
