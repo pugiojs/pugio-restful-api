@@ -48,6 +48,11 @@ export class TaskService {
             where: {
                 id: taskId,
                 status: 1,
+                hook: {
+                    client: {
+                        id: client.id,
+                    },
+                },
             },
             select: [
                 'id',
