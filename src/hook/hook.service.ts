@@ -17,6 +17,8 @@ import { UserDTO } from 'src/user/dto/user.dto';
 import { UtilService } from 'src/util/util.service';
 import { Repository } from 'typeorm';
 import { HookDTO } from './dto/hook.dto';
+import * as Handlebars from 'handlebars';
+import * as _ from 'lodash';
 
 @Injectable()
 export class HookService {
@@ -36,7 +38,7 @@ export class HookService {
         this.redisClient = this.redisService.getClient();
     }
 
-    public async sendExecutionTask(hookId: string, user: UserDTO, content: Record<string, any>) {
+    public async sendExecutionTask(hookId: string, user: UserDTO, props: Record<string, any> = {}) {
         const hook = await this.hookRepository
             .findOne({
                 where: {
@@ -89,32 +91,39 @@ export class HookService {
         }
 
         const {
-            mapper,
             template,
-            postCommandSegment = '',
-            preCommandSegment = '',
             executionCwd,
         } = hook;
 
-        // TODO mapper map correct props
-        // TODO generate script using template
-        // TODO generate RSA-encrypted script content
+        let scriptContent: string = null;
+        let scriptParseErrored = false;
+
+        if (_.isString(template)) {
+            try {
+                const render = Handlebars.compile(template);
+                scriptContent = render(props);
+            } catch (e) {
+                scriptParseErrored = true;
+            }
+        }
 
         const newTask = await this.taskRepository.save(
             this.taskRepository.create({
-                // TODO encrypted script content here
-                postCommandSegment,
-                preCommandSegment,
+                script: scriptContent,
+                status: scriptParseErrored ? -2 : 1,
                 executionCwd,
+                props: JSON.stringify(props),
             }),
         );
 
-        await this.redisClient.RPUSH(
-            clientTaskQueueName,
-            newTask.id,
-        );
+        if (!scriptParseErrored) {
+            await this.redisClient.RPUSH(
+                clientTaskQueueName,
+                newTask.id,
+            );
 
-        this.redisClient.publish(clientTaskChannelName, new Date().toISOString());
+            this.redisClient.publish(clientTaskChannelName, new Date().toISOString());
+        }
 
         return newTask;
     }

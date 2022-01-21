@@ -16,3 +16,11 @@ export const ERR_WS_SERVER_NOT_CONNECTED = 'ERR_WS_SERVER_NOT_CONNECTED';
 export const ERR_CLIENT_ACCESS_DENIED = 'ERR_CLIENT_ACCESS_DENIED';
 // failed to get lock
 export const ERR_FAILED_TO_GET_LOCK = 'ERR_FAILED_TO_GET_LOCK';
+// client public key not found
+export const ERR_CLIENT_PUB_KEY_NOTFOUND = 'ERR_CLIENT_PUB_KEY_NOTFOUND';
+// client private key not found
+export const ERR_CLIENT_PRIV_KEY_NOTFOUND = 'ERR_CLIENT_PRIV_KEY_NOTFOUND';
+// encrypt failed
+export const ERR_ENCRYPT_FAILED = 'ERR_ENCRYPT_FAILED';
+// decrypt failed
+export const ERR_DECRYPT_FAILED = 'ERR_DECRYPT_FAILED';

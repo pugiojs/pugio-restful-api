@@ -16,6 +16,7 @@ import {
     MoreThan,
 } from 'typeorm';
 import { v5 as uuidv5 } from 'uuid';
+import * as jpath from 'jsonpath';
 
 type DataType = Array<any> | Object | string | Date;
 type CaseStyleType = 'snake' | 'camel' | 'kebab';
@@ -264,6 +265,59 @@ export class UtilService {
         }
 
         return Buffer.from(passwordContent).toString('base64');
+    }
+
+    public validateHookScriptMapper(mapperContent: string) {
+        if (!mapperContent || !_.isString(mapperContent)) {
+            return false;
+        }
+
+        let mapperSchema;
+
+        try {
+            mapperSchema = JSON.parse(mapperContent);
+        } catch (e) {
+            return false;
+        }
+
+        if (!_.isObject(mapperSchema) && !_.isObjectLike(mapperSchema)) {
+            return false;
+        }
+
+        return Object.keys(mapperSchema).every((key) => key.startsWith('$.')) ||
+            Object.keys(mapperSchema).every((key) => _.isString(mapperSchema[key]));
+    }
+
+    public transformHookProps(mapperContent: string, props: Record<string, any>) {
+        if (!this.validateHookScriptMapper(mapperContent)) {
+            return props;
+        }
+
+        const mapperSchema = JSON.parse(mapperContent);
+
+        const originalProps = _.cloneDeep(props);
+        let newProps = _.cloneDeep(props);
+
+        try {
+            for (const queryPattern of Object.keys(mapperSchema)) {
+                const nodeList = jpath.nodes(originalProps, queryPattern);
+
+                for (const node of nodeList) {
+                    const pathSegments = node.path.slice(1);
+                    pathSegments.pop();
+                    pathSegments.push(mapperSchema[queryPattern]);
+                    newProps = _.set(
+                        newProps,
+                        jpath.stringify(pathSegments).slice(2),
+                        node.value,
+                    );
+                }
+            }
+        } catch (e) {
+            return props;
+        }
+
+        return newProps;
     }
 
     private generateCreatedAtRange(dateRange: Date[], cursorDate: Date) {

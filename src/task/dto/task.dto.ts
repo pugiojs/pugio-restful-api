@@ -16,20 +16,18 @@ export class TaskDTO {
     @PrimaryGeneratedColumn('uuid')
     public id: string;
 
-    @Column()
+    @Column({
+        nullable: true,
+        default: null,
+    })
     public script: string;
 
-    @Column({ name: 'pre_command_segment' })
-    public preCommandSegment: string;
-
-    @Column({
-        name: 'post_command_segment',
-        nullable: true,
-    })
-    public postCommandSegment: string;
+    @Column()
+    public props: string;
 
     @Column({
         nullable: true,
+        default: null,
     })
     public template: string;
 
@@ -38,6 +36,18 @@ export class TaskDTO {
         nullable: true,
     })
     public executionCwd: string;
+
+    /**
+     * - -3: key pair failure
+     * - -2: script-parse-errored
+     * - -1: runtime-errored
+     * - 1: queueing
+     * - 2: waiting
+     * - 2: running
+     * - 3: done
+     */
+    @Column({ default: 1 })
+    public status: number;
 
     @ManyToOne(() => HookDTO, (hookDTO) => hookDTO.tasks, {
         onUpdate: 'CASCADE',

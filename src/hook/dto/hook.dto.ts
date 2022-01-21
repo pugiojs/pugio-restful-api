@@ -24,18 +24,20 @@ export class HookDTO {
     @Column({ nullable: true })
     public description: string;
 
-    @Column()
-    public schema: string;
-
     @Column({ default: '{}' })
     public mapper: string;
 
-    @Column({ name: 'pre_command_segment' })
+    @Column({
+        name: 'pre_command_segment',
+        nullable: true,
+        default: null,
+    })
     public preCommandSegment: string;
 
     @Column({
         name: 'post_command_segment',
         nullable: true,
+        default: null,
     })
     public postCommandSegment: string;
 
