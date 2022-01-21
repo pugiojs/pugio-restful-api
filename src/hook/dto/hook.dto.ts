@@ -30,11 +30,25 @@ export class HookDTO {
     @Column({ default: '{}' })
     public mapper: string;
 
+    @Column({ name: 'pre_command_segment' })
+    public preCommandSegment: string;
+
     @Column({
-        name: 'config_execution_cwd',
+        name: 'post_command_segment',
         nullable: true,
     })
-    public configExecutionCwd: string;
+    public postCommandSegment: string;
+
+    @Column({
+        nullable: true,
+    })
+    public template: string;
+
+    @Column({
+        name: 'execution_cwd',
+        nullable: true,
+    })
+    public executionCwd: string;
 
     @ManyToOne(() => ClientDTO, (clientDTO) => clientDTO.hooks, {
         onUpdate: 'CASCADE',

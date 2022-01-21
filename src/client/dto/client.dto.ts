@@ -38,6 +38,7 @@ export class ClientDTO {
         name: 'public_key',
         nullable: true,
         default: null,
+        select: false,
     })
     public publicKey: string;
 
@@ -45,6 +46,7 @@ export class ClientDTO {
         name: 'private_key',
         nullable: true,
         default: null,
+        select: false,
     })
     public privateKey: string;
 
