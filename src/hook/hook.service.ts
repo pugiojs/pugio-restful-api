@@ -3,7 +3,6 @@ import {
     RedisService,
 } from '@lenconda/nestjs-redis';
 import {
-    ForbiddenException,
     Injectable,
     InternalServerErrorException,
     NotFoundException,
@@ -11,7 +10,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ERR_FAILED_TO_GET_LOCK } from 'src/app.constants';
 import { ClientService } from 'src/client/client.service';
-import { ClientDTO } from 'src/client/dto/client.dto';
 import { TaskDTO } from 'src/task/dto/task.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { UtilService } from 'src/util/util.service';
@@ -32,8 +30,6 @@ export class HookService {
         private readonly taskRepository: Repository<TaskDTO>,
         @InjectRepository(HookDTO)
         private readonly hookRepository: Repository<HookDTO>,
-        @InjectRepository(ClientDTO)
-        private readonly clientRepository: Repository<ClientDTO>,
     ) {
         this.redisClient = this.redisService.getClient();
     }
@@ -52,22 +48,8 @@ export class HookService {
         }
 
         const clientId = hook.client.id;
-
-        if (!(await this.clientService.checkPermission(user.id, clientId, -1))) {
-            throw new ForbiddenException();
-        }
-
         const clientTaskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
         const clientTaskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
-
-        const {
-            publicKey: clientPublicKey,
-        } = await this.clientRepository.findOne({
-            where: {
-                id: clientId,
-            },
-            select: ['privateKey', 'publicKey'],
-        });
 
         await this.redisClient.persist(clientTaskQueueName);
 

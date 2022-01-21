@@ -13,7 +13,6 @@ import { HookService } from './hook.service';
         TypeOrmModule.forFeature([
             HookDTO,
             TaskDTO,
-            ClientDTO,
         ]),
     ],
     controllers: [HookController],

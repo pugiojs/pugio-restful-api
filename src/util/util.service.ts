@@ -320,6 +320,28 @@ export class UtilService {
         return newProps;
     }
 
+    public getStringValueFromBody(body: Record<string, any>, keyName: string): string {
+        if (
+            !body ||
+            !_.isObject(body) ||
+            !_.isObjectLike(body) ||
+            _.isEmpty(body)
+        ) {
+            return null;
+        }
+
+        for (const key of Object.keys(body)) {
+            const value = body[key];
+            if (key === keyName && _.isString(value)) {
+                return value;
+            } else if (_.isObject(value) || _.isObjectLike(value)) {
+                return this.getStringValueFromBody(value, keyName);
+            }
+        }
+
+        return null;
+    }
+
     private generateCreatedAtRange(dateRange: Date[], cursorDate: Date) {
         if (
             !_.isArray(dateRange) ||

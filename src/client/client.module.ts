@@ -9,7 +9,10 @@ import { ClientDTO } from './dto/client.dto';
 @Module({
     imports: [
         LockerModule,
-        TypeOrmModule.forFeature([UserClientDTO, ClientDTO]),
+        TypeOrmModule.forFeature([
+            UserClientDTO,
+            ClientDTO,
+        ]),
     ],
     controllers: [ClientController],
     providers: [ClientService],

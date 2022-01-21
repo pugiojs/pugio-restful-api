@@ -47,7 +47,7 @@ export class ClientService {
     public async checkPermission(
         userId: string,
         clientId: string,
-        permission = -1,
+        permission: number | number[] = -1,
     ) {
         const relations = await this.userClientRepository
             .find({
@@ -69,7 +69,11 @@ export class ClientService {
             return true;
         }
 
-        return relations.some((relation) => relation.roleType === permission);
+        const permissionList = _.isNumber(permission)
+            ? [permission]
+            : permission;
+
+        return relations.some((relation) => permissionList.indexOf(relation.roleType) !== -1);
     }
 
     public async createClient(user: UserDTO, configuration: ClientDAO) {

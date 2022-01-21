@@ -21,6 +21,7 @@ export class HookController {
 
     @Post('/:hook_id/task')
     @UseGuards(AuthGuard())
+    @UseInterceptors(HookInterceptor(-1))
     public async sendExecutionTask(
         @Param('hook_id') hookId: string,
         @CurrentUser() user: UserDTO,
@@ -32,6 +33,6 @@ export class HookController {
     // TODO TEST ONLY
     @Get('/:hook_id/test')
     @UseGuards(AuthGuard('client-key'))
-    @UseInterceptors(HookInterceptor)
+    @UseInterceptors(HookInterceptor(-1))
     public test() {}
 }
