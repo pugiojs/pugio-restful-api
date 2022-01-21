@@ -17,6 +17,6 @@ export class TaskController {
     @Get('')
     @UseGuards(AuthGuard('client-key'))
     public async consumeExecutionTask(@CurrentClient() client: ClientDTO) {
-        return await this.taskService.consumeExecutionTask(client.id);
+        return await this.taskService.consumeExecutionTask(client);
     }
 }

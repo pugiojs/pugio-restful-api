@@ -17,7 +17,6 @@ import {
     RedisService,
 } from '@lenconda/nestjs-redis';
 import * as _ from 'lodash';
-import { SHA256 } from 'crypto-js';
 
 @Injectable()
 export class ClientService {
@@ -48,7 +47,7 @@ export class ClientService {
     public async checkPermission(
         userId: string,
         clientId: string,
-        permission: number,
+        permission = -1,
     ) {
         const relations = await this.userClientRepository
             .find({

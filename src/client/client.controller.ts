@@ -7,12 +7,14 @@ import {
     Post,
     Query,
     UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermanentlyParseIntPipe } from 'src/app.pipe';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
 import { CurrentClient } from './client.decorator';
+import { ClientInterceptor } from './client.interceptor';
 import { ClientService } from './client.service';
 import { ClientDAO } from './dao/client.dao';
 import { ClientDTO } from './dto/client.dto';
@@ -61,6 +63,7 @@ export class ClientController {
 
     @Get('/:client_id')
     @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor)
     public async getClientInfoFromNetwork(
         @Param('client_id') clientId: string,
         @CurrentUser() user: UserDTO,
