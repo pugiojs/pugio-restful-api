@@ -63,7 +63,9 @@ export class ClientController {
 
     @Get('/:client_id')
     @UseGuards(AuthGuard())
-    @UseInterceptors(ClientInterceptor)
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+    }))
     public async getClientInfoFromNetwork(
         @Param('client_id') clientId: string,
         @CurrentUser() user: UserDTO,

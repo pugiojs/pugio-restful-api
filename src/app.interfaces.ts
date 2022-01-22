@@ -44,3 +44,9 @@ export interface PaginationQueryResponse<D> {
 }
 
 export type NestedConditionList<D> = Array<TRangeMap<D> | NestedConditionList<D>>;
+
+export interface ResourceBaseInterceptorOptions {
+    sources?: string | string[];
+    paths?: string | string[];
+    type?: number | number [];
+}

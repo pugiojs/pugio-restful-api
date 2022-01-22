@@ -11,8 +11,13 @@ import { UtilService } from 'src/util/util.service';
 import { ClientService } from '../client/client.service';
 import * as _ from 'lodash';
 import { memoize } from 'src/app.util';
+import { ResourceBaseInterceptorOptions } from 'src/app.interfaces';
 
-const createClientInterceptor = (type?: number | number[]) => {
+const createClientInterceptor = ({
+    type = -1,
+    sources = 'query',
+    paths = '$.client_id',
+}: ResourceBaseInterceptorOptions) => {
     class MixinClientInterceptor implements NestInterceptor {
         public constructor(
         @Inject(ClientService)
@@ -21,13 +26,13 @@ const createClientInterceptor = (type?: number | number[]) => {
         private readonly utilService: UtilService,
         ) {}
 
-        public async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+        public async intercept(
+            context: ExecutionContext,
+            next: CallHandler,
+        ): Promise<Observable<any>> {
             const request = context.switchToHttp().getRequest();
             const userId = _.get(request, 'user.id');
-
-            let clientId: string = _.get(request, 'params.client_id') ||
-                _.get(request, 'query.client') ||
-                this.utilService.getStringValueFromBody(_.get(request, 'body'), 'client');
+            const clientId = this.utilService.getResourceIdentityFromContext(context, sources, paths);
 
             if (
                 _.isString(clientId) &&
@@ -44,4 +49,6 @@ const createClientInterceptor = (type?: number | number[]) => {
     return interceptor;
 };
 
-export const ClientInterceptor: (type?: number | number[]) => NestInterceptor = memoize(createClientInterceptor);
+export const ClientInterceptor: (
+    options: ResourceBaseInterceptorOptions,
+) => NestInterceptor = memoize(createClientInterceptor);

@@ -14,8 +14,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { HookDTO } from './dto/hook.dto';
 import { Repository } from 'typeorm';
 import { memoize } from 'src/app.util';
+import { ResourceBaseInterceptorOptions } from 'src/app.interfaces';
 
-const createHookInterceptor = (type?: number | number[]) => {
+const createHookInterceptor = ({
+    sources = 'query',
+    paths = '$.hook_id',
+    type = -1,
+}: ResourceBaseInterceptorOptions) => {
     class MixinHookInterceptor implements NestInterceptor {
         public constructor(
         @Inject(ClientService)
@@ -26,13 +31,13 @@ const createHookInterceptor = (type?: number | number[]) => {
         private readonly hookRepository: Repository<HookDTO>,
         ) {}
 
-        public async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+        public async intercept(
+            context: ExecutionContext,
+            next: CallHandler,
+        ): Promise<Observable<any>> {
             const request = context.switchToHttp().getRequest();
             const userId = _.get(request, 'user.id');
-
-            let hookId: string = _.get(request, 'params.hook_id') ||
-                _.get(request, 'query.hook') ||
-                this.utilService.getStringValueFromBody(_.get(request, 'body'), 'hook');
+            const hookId = this.utilService.getResourceIdentityFromContext(context, sources, paths);
 
             if (!hookId) {
                 return next.handle();
@@ -66,4 +71,6 @@ const createHookInterceptor = (type?: number | number[]) => {
     return interceptor;
 };
 
-export const HookInterceptor: (type?: number | number[]) => NestInterceptor = memoize(createHookInterceptor);
+export const HookInterceptor: (
+    options: ResourceBaseInterceptorOptions,
+) => NestInterceptor = memoize(createHookInterceptor);

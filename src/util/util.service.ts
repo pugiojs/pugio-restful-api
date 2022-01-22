@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import {
+    ExecutionContext,
+    Injectable,
+} from '@nestjs/common';
 import * as _ from 'lodash';
 import {
     NestedConditionList,
@@ -336,6 +339,51 @@ export class UtilService {
                 return value;
             } else if (_.isObject(value) || _.isObjectLike(value)) {
                 return this.getStringValueFromBody(value, keyName);
+            }
+        }
+
+        return null;
+    }
+
+    public getResourceIdentityFromContext(
+        context: ExecutionContext,
+        sources: string | string[] = 'query',
+        paths: string | string [],
+    ) {
+        if (paths.length === 0) {
+            return null;
+        }
+
+        const request = context.switchToHttp().getRequest();
+
+        const sourceTypes = _.isString(sources)
+            ? [sources]
+            : sources;
+        const jpathQueryList = _.isString(paths)
+            ? [paths]
+            : paths;
+
+        for (const sourceType of sourceTypes) {
+            const currentSource = _.get(request,sourceType);
+
+            if (!currentSource) {
+                continue;
+            }
+
+            for (const query of jpathQueryList) {
+                try {
+                    const result = jpath.nodes(currentSource, query);
+
+                    if (result && _.isArray(result) && result.length > 0) {
+                        for (const item of result) {
+                            const { value } = item;
+                            // eslint-disable-next-line max-depth
+                            if (_.isString(value)) {
+                                return value;
+                            }
+                        }
+                    }
+                } catch (e) {}
             }
         }
 
