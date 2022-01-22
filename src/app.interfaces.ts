@@ -27,6 +27,7 @@ export type WhereOptions<D> = FindConditions<D>[] | FindConditions<D> | ObjectLi
 
 export interface PaginationQueryOptions<D> {
     repository: Repository<D>;
+    prefix?: string,
     lastCursor?: string;
     whereOptions?: WhereOptions<D>;
     size?: number;

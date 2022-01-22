@@ -141,6 +141,7 @@ export class UtilService {
     public async queryWithPagination<D>(
         {
             repository,
+            prefix = '',
             whereOptions: userWhereOptions = {},
             size = 10,
             searchContent = '',
@@ -152,6 +153,9 @@ export class UtilService {
         const searchKeys = Array.from(userSearchKeys);
         let rangeMapList: TRangeMap<D>[] = [];
         let cursorDate: Date;
+        const prefixSegments = prefix
+            ? prefix.split('.')
+            : [];
 
         if (_.isArray(range)) {
             rangeMapList = range;
@@ -161,9 +165,11 @@ export class UtilService {
 
         if (lastCursor) {
             const cursorItem: any = await repository.findOne({
-                where: {
-                    id: lastCursor,
-                },
+                where: _.set(
+                    {},
+                    prefixSegments.concat('id').join('.'),
+                    lastCursor,
+                ),
             });
 
             if (cursorItem) {
@@ -176,10 +182,12 @@ export class UtilService {
                 return _.merge(
                     _.cloneDeep(userWhereOptions),
                     (
-                        searchKey !== '@sys_nil@'
-                            ? {
-                                [searchKey]: Like(`%${searchContent}%`),
-                            }
+                        (_.isString(searchKey) && searchKey !== '@sys_nil@')
+                            ? _.set(
+                                {},
+                                prefixSegments.concat(searchKey).join('.'),
+                                Like(`%${searchContent}%`),
+                            )
                             : {}
                     ),
                 );
@@ -195,21 +203,32 @@ export class UtilService {
                         condition,
                         (
                             _.isDate(cursorDate)
-                                ? {
-                                    createdAt: LessThan(cursorDate),
-                                }
+                                ? _.set(
+                                    {},
+                                    prefixSegments.concat('createdAt').join('.'),
+                                    LessThan(cursorDate),
+                                )
                                 : {}
                         ),
-                        this.parseRange<D>(rangeMap, cursorDate, false),
+                        this.parseRange<D>(rangeMap, cursorDate),
                     );
 
                     return _.isDate(cursorDate)
                         ? [
                             currentCondition,
-                            {
-                                createdAt: cursorDate,
-                                id: LessThan(lastCursor),
-                            },
+                            _.merge(
+                                {},
+                                _.set(
+                                    {},
+                                    prefixSegments.concat('createdAt').join('.'),
+                                    cursorDate,
+                                ),
+                                _.set(
+                                    {},
+                                    prefixSegments.concat('id').join('.'),
+                                    LessThan(lastCursor),
+                                ),
+                            ),
                         ]
                         : currentCondition;
                 });
@@ -457,15 +476,19 @@ export class UtilService {
         }
     }
 
-    private parseRange<D>(rangeMap: TRangeMap<D>, cursorDate?: Date, countMode = false) {
-        if (!rangeMap || !_.isObject(rangeMap) || Object.keys(rangeMap).length === 0) {
+    private parseRange<D>(rangeMap: TRangeMap<D>, cursorDate?: Date, prefixSegments: string[] = []) {
+        if (
+            !rangeMap ||
+            !_.isObject(rangeMap) ||
+            Object.keys(rangeMap).length === 0
+        ) {
             return {};
         }
 
         return Object.keys(rangeMap).reduce((result, key) => {
             let currentRange;
 
-            if (!countMode && key === 'createdAt') {
+            if (key === 'createdAt') {
                 const result = this.generateCreatedAtRange(rangeMap[key], cursorDate);
 
                 if (result) {
@@ -476,7 +499,11 @@ export class UtilService {
             }
 
             if (currentRange) {
-                result[key] = currentRange;
+                return _.set(
+                    result,
+                    prefixSegments.concat(key).join('.'),
+                    currentRange,
+                );
             }
 
             return result;
