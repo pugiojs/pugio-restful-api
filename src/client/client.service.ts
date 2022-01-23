@@ -7,7 +7,7 @@ import {
 import { UtilService } from 'src/util/util.service';
 import { LockerService } from 'src/locker/locker.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from './dto/client.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
@@ -17,6 +17,7 @@ import {
     RedisService,
 } from '@lenconda/nestjs-redis';
 import * as _ from 'lodash';
+import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 
 @Injectable()
 export class ClientService {
@@ -186,6 +187,39 @@ export class ClientService {
 
         return {
             clientInfo: _.omit(newClientInfo, 'passwords'),
+        };
+    }
+
+    public async queryClients(
+        user: UserDTO,
+        roles: number[] = [],
+        options: PaginationQueryServiceOptions<UserClientDTO> = {},
+    ) {
+        const result = await this.utilService.queryWithPagination<UserClientDTO>({
+            queryOptions: {
+                where: {
+                    user: {
+                        id: user.id,
+                    },
+                    ...(
+                        roles.length > 0
+                            ? {
+                                roleType: In(roles),
+                            }
+                            : {}
+                    ),
+                },
+                select: ['id', 'client', 'roleType', 'createdAt', 'updatedAt'],
+                relations: ['user', 'client'],
+            },
+            searchKeys: ['client.name', 'client.description'] as any[],
+            repository: this.userClientRepository,
+            ...options,
+        });
+
+        return {
+            ...result,
+            items: result.items.map((result) => _.omit(result, 'user')),
         };
     }
 }

@@ -10,7 +10,12 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { PermanentlyParseIntPipe } from 'src/app.pipe';
+import { TRangeItem } from 'src/app.interfaces';
+import {
+    ParseDateRangePipe,
+    ParseQueryArrayPipe,
+    PermanentlyParseIntPipe,
+} from 'src/app.pipe';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
 import { CurrentClient } from './client.decorator';
@@ -86,5 +91,32 @@ export class ClientController {
         @Body('credential') oldCredential: string,
     ) {
         return await this.clientService.handleChannelConnection(client, oldCredential);
+    }
+
+    @Get('')
+    @UseGuards(AuthGuard())
+    public async queryClients(
+        @CurrentUser() user: UserDTO,
+        @Query('size', PermanentlyParseIntPipe) size = 10,
+        @Query('search') searchContent: string,
+        @Query('last_cursor') lastCursor: string,
+        @Query(
+            'roles',
+            ParseQueryArrayPipe,
+            PermanentlyParseIntPipe,
+        ) roles: number[] = [],
+        @Query(
+            'create_date_range',
+            ParseDateRangePipe,
+        ) createDateRange: TRangeItem[],
+    ) {
+        return await this.clientService.queryClients(user, roles, {
+            size,
+            searchContent,
+            lastCursor,
+            range: {
+                createdAt: createDateRange,
+            },
+        });
     }
 }

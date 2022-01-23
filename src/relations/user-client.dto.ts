@@ -13,6 +13,7 @@ import {
 
 @Entity({ name: 'user_clients' })
 @Index(['createdAt', 'id'])
+@Index(['user', 'client'], { unique: true })
 export class UserClientDTO {
     @PrimaryGeneratedColumn('uuid')
     public id: string;

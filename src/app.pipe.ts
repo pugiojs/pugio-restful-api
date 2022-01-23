@@ -7,15 +7,33 @@ import * as _ from 'lodash';
 @Injectable()
 export class PermanentlyParseIntPipe implements PipeTransform {
     public transform(value: any) {
-        if (!value) {
-            return undefined;
+        const permanentParseInt = (value: any) => {
+            if (_.isNull(value) || _.isUndefined(value)) {
+                return undefined;
+            }
+
+            try {
+                return parseInt(value, 10);
+            } catch (e) {
+                return undefined;
+            }
+        };
+
+        if (_.isNumber(value)) {
+            return value;
         }
 
-        try {
-            return parseInt(value, 10);
-        } catch (e) {
-            return undefined;
+        if (_.isString(value)) {
+            return permanentParseInt(value);
         }
+
+        if (_.isArray(value)) {
+            return value
+                .map((item) => permanentParseInt(item))
+                .filter((item) => _.isNumber(item));
+        }
+
+        return undefined;
     }
 }
 
@@ -98,5 +116,16 @@ export class ParseNumberRangePipe implements PipeTransform {
         } catch (e) {
             return [null, null];
         }
+    }
+}
+
+@Injectable()
+export class ParseQueryArrayPipe implements PipeTransform {
+    public transform(value: any) {
+        if (!value || !_.isString(value)) {
+            return [];
+        }
+
+        return value.split(',');
     }
 }
