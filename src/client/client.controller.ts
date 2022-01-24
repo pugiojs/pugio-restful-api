@@ -5,6 +5,7 @@ import {
     Get,
     Param,
     Post,
+    Put,
     Query,
     UseGuards,
     UseInterceptors,
@@ -118,5 +119,42 @@ export class ClientController {
                 createdAt: createDateRange,
             },
         });
+    }
+
+    @Put('/:client_id/membership')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+    }))
+    public async handleTransferOwnership(
+        @CurrentUser() user: UserDTO,
+        @Param('client_id') clientId: string,
+        @Body('owner') ownerId: string,
+    ) {
+        return await this.clientService.handleMembership(
+            user,
+            clientId,
+            ownerId,
+            0,
+        );
+    }
+
+    @Post('/:client_id/membership')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+    }))
+    public async handleCreateMembership(
+        @CurrentUser() user: UserDTO,
+        @Param('client_id') clientId: string,
+        @Body('new_user') newUserId: string,
+        @Body('role_type', PermanentlyParseIntPipe) roleType: number,
+    ) {
+        return await this.clientService.handleMembership(
+            user,
+            clientId,
+            newUserId,
+            roleType || 2,
+        );
     }
 }

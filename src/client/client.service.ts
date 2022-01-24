@@ -7,7 +7,10 @@ import {
 import { UtilService } from 'src/util/util.service';
 import { LockerService } from 'src/locker/locker.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import {
+    In,
+    Repository,
+} from 'typeorm';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from './dto/client.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
@@ -221,5 +224,58 @@ export class ClientService {
             ...result,
             items: result.items.map((result) => _.omit(result, 'user')),
         };
+    }
+
+    public async handleMembership(
+        user: UserDTO,
+        clientId: string,
+        newUserId: string,
+        roleType: number,
+    ) {
+        const currentRelationShip = await this.userClientRepository.findOne({
+            where: {
+                user: {
+                    id: user.id,
+                },
+                client: {
+                    id: clientId,
+                },
+            },
+        });
+
+        if (roleType < currentRelationShip.roleType) {
+            throw new ForbiddenException();
+        }
+
+
+        if (roleType === 0) {
+            console.log(currentRelationShip);
+            await this.userClientRepository.delete({
+                id: currentRelationShip.id,
+            });
+        }
+
+        const newOwnerShipConfig = {
+            user: {
+                id: newUserId,
+            },
+            client: {
+                id: clientId,
+            },
+        };
+
+        let newOwnerRelationShip = await this.userClientRepository.findOne({
+            where: newOwnerShipConfig,
+        });
+
+        if (!newOwnerRelationShip) {
+            newOwnerRelationShip = this.userClientRepository.create(newOwnerShipConfig);
+        }
+
+        newOwnerRelationShip.roleType = roleType;
+
+        const result = await this.userClientRepository.save(newOwnerRelationShip);
+
+        return _.omit(result, ['user', 'client']);
     }
 }
