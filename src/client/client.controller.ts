@@ -125,13 +125,14 @@ export class ClientController {
     @UseGuards(AuthGuard())
     @UseInterceptors(ClientInterceptor({
         sources: 'params',
+        type: 0,
     }))
     public async handleTransferOwnership(
         @CurrentUser() user: UserDTO,
         @Param('client_id') clientId: string,
         @Body('owner') ownerId: string,
     ) {
-        return await this.clientService.handleMembership(
+        return await this.clientService.handleCreateMembership(
             user,
             clientId,
             ownerId,
@@ -150,11 +151,30 @@ export class ClientController {
         @Body('new_user') newUserId: string,
         @Body('role_type', PermanentlyParseIntPipe) roleType: number,
     ) {
-        return await this.clientService.handleMembership(
+        return await this.clientService.handleCreateMembership(
             user,
             clientId,
             newUserId,
             roleType || 2,
+        );
+    }
+
+    @Delete('/:client_id/membership/:target_user_id?')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+        type: [0, 1],
+    }))
+    public async handleDeleteMemberRelationship(
+        @CurrentUser() user: UserDTO,
+        @Param('client_id') clientId: string,
+        @Param('target_user_id') targetUserIdFromParam?: string,
+        @Body('users') targetUserIdListFromBody?: string[],
+    ) {
+        return await this.clientService.handleDeleteMemberRelationship(
+            user,
+            clientId,
+            targetUserIdFromParam || targetUserIdListFromBody,
         );
     }
 }

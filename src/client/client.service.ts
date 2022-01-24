@@ -226,13 +226,13 @@ export class ClientService {
         };
     }
 
-    public async handleMembership(
+    public async handleCreateMembership(
         user: UserDTO,
         clientId: string,
         newUserId: string,
         roleType: number,
     ) {
-        const currentRelationShip = await this.userClientRepository.findOne({
+        const currentRelationship = await this.userClientRepository.findOne({
             where: {
                 user: {
                     id: user.id,
@@ -243,15 +243,13 @@ export class ClientService {
             },
         });
 
-        if (roleType < currentRelationShip.roleType) {
+        if (roleType < currentRelationship.roleType) {
             throw new ForbiddenException();
         }
 
-
         if (roleType === 0) {
-            console.log(currentRelationShip);
             await this.userClientRepository.delete({
-                id: currentRelationShip.id,
+                id: currentRelationship.id,
             });
         }
 
@@ -277,5 +275,63 @@ export class ClientService {
         const result = await this.userClientRepository.save(newOwnerRelationShip);
 
         return _.omit(result, ['user', 'client']);
+    }
+
+    public async handleDeleteMemberRelationship(
+        user: UserDTO,
+        clientId: string,
+        targetUserIdOrList?: string | string[],
+    ) {
+        if (!targetUserIdOrList) {
+            return [];
+        }
+
+        const targetUserIdList = _.isArray(targetUserIdOrList)
+            ? Array.from(targetUserIdOrList)
+            : [targetUserIdOrList];
+
+        const currentRelationship = await this.userClientRepository.findOne({
+            where: {
+                user: {
+                    id: user.id,
+                },
+                client: {
+                    id: clientId,
+                },
+            },
+        });
+
+        const targetRelations = await this.userClientRepository.find({
+            where: {
+                user: {
+                    id: In(targetUserIdList),
+                },
+                client: {
+                    id: clientId,
+                },
+            },
+            relations: ['user', 'client'],
+        });
+
+        if (
+            targetRelations.some((relation) => {
+                return (
+                    relation.user.id !== user.id &&
+                    relation.roleType <= currentRelationship.roleType
+                );
+            })
+        ) {
+            throw new ForbiddenException();
+        }
+
+        if (targetRelations.length === 0) {
+            return [];
+        }
+
+        await this.userClientRepository.delete({
+            id: In(targetRelations.map((relation) => relation.id)),
+        });
+
+        return targetRelations;
     }
 }
