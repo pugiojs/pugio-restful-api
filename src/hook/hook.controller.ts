@@ -1,15 +1,15 @@
 import {
     Body,
     Controller,
-    Get,
     Param,
     Post,
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { UserDTO } from 'src/user/dto/user.dto';
-import { CurrentUser } from 'src/user/user.decorator';
+import { TransformDTOPipe } from 'src/app.pipe';
+import { ClientInterceptor } from 'src/client/client.interceptor';
+import { HookDTO } from './dto/hook.dto';
 import { HookInterceptor } from './hook.interceptor';
 import { HookService } from './hook.service';
 
@@ -19,8 +19,22 @@ export class HookController {
         private readonly hookService: HookService,
     ) {}
 
-    @Post('/:hook_id/task')
+    @Post('')
     @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: ['body'],
+        paths: '$.client',
+        type: [0, 1],
+    }))
+    public async createHook(
+        @Body('client') clientId: string,
+        @Body('data', TransformDTOPipe) data: Partial<HookDTO>,
+    ) {
+        return await this.hookService.createHook(clientId, data);
+    }
+
+    @Post('/:hook_id')
+    @UseGuards(AuthGuard('api-key'))
     @UseInterceptors(HookInterceptor({
         sources: ['params'],
         paths: '$.hook_id',
@@ -28,19 +42,8 @@ export class HookController {
     }))
     public async sendExecutionTask(
         @Param('hook_id') hookId: string,
-        @CurrentUser() user: UserDTO,
         @Body() content,
     ) {
-        return await this.hookService.sendExecutionTask(hookId, user, content);
+        return await this.hookService.sendExecutionTask(hookId, content);
     }
-
-    // TODO TEST ONLY
-    @Get('/:hook_id/test')
-    @UseGuards(AuthGuard('client-key'))
-    @UseInterceptors(HookInterceptor({
-        sources: ['params'],
-        paths: '$.hook_id',
-        type: -1,
-    }))
-    public test() {}
 }

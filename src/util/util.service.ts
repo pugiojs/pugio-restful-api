@@ -45,7 +45,7 @@ export class UtilService {
         }
 
         if (!data) {
-            return;
+            return null;
         }
 
         if (_.isDate(data)) {

@@ -4,6 +4,7 @@ import {
     Delete,
     Get,
     Param,
+    Patch,
     Post,
     Put,
     Query,
@@ -16,13 +17,13 @@ import {
     ParseDateRangePipe,
     ParseQueryArrayPipe,
     PermanentlyParseIntPipe,
+    TransformDTOPipe,
 } from 'src/app.pipe';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
 import { CurrentClient } from './client.decorator';
 import { ClientInterceptor } from './client.interceptor';
 import { ClientService } from './client.service';
-import { ClientDAO } from './dao/client.dao';
 import { ClientDTO } from './dto/client.dto';
 
 @Controller('/client')
@@ -61,10 +62,24 @@ export class ClientController {
     @Post('')
     @UseGuards(AuthGuard())
     public async createClient(
-        @Body() configuration: ClientDAO,
         @CurrentUser() user: UserDTO,
+        @Body(TransformDTOPipe) configuration: Partial<ClientDTO>,
     ) {
         return await this.clientService.createClient(user, configuration);
+    }
+
+    @Patch('/:client_id')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+        paths: '$.client_id',
+        type: [0, 1],
+    }))
+    public async updateClient(
+        @Param('client_id') clientId: string,
+        @Body(TransformDTOPipe) updates: Partial<ClientDTO>,
+    ) {
+        return await this.clientService.updateClient(clientId, updates);
     }
 
     @Get('/:client_id')

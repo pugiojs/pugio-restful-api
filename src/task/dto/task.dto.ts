@@ -38,6 +38,7 @@ export class TaskDTO {
     public executionCwd: string;
 
     /**
+     * - -4: enqueue error
      * - -3: key pair failure
      * - -2: script-parse-errored
      * - -1: runtime-errored
@@ -48,6 +49,12 @@ export class TaskDTO {
      */
     @Column({ default: 1 })
     public status: number;
+
+    @Column({
+        select: false,
+        name: 'aes_key',
+    })
+    public aesKey: string;
 
     @ManyToOne(() => HookDTO, (hookDTO) => hookDTO.tasks, {
         onUpdate: 'CASCADE',

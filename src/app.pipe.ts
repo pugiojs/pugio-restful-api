@@ -3,6 +3,7 @@ import {
     PipeTransform,
 } from '@nestjs/common';
 import * as _ from 'lodash';
+import { UtilService } from './util/util.service';
 
 @Injectable()
 export class PermanentlyParseIntPipe implements PipeTransform {
@@ -127,5 +128,20 @@ export class ParseQueryArrayPipe implements PipeTransform {
         }
 
         return value.split(',');
+    }
+}
+
+@Injectable()
+export class TransformDTOPipe implements PipeTransform {
+    public constructor(
+        private readonly utilService: UtilService,
+    ) {}
+
+    public transform(value: any) {
+        if (!value) {
+            return {};
+        }
+
+        return this.utilService.transformDAOToDTO(value);
     }
 }

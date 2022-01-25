@@ -4,19 +4,18 @@ import {
 } from '@lenconda/nestjs-redis';
 import {
     Injectable,
-    InternalServerErrorException,
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ERR_FAILED_TO_GET_LOCK } from 'src/app.constants';
 import { ClientService } from 'src/client/client.service';
 import { TaskDTO } from 'src/task/dto/task.dto';
-import { UserDTO } from 'src/user/dto/user.dto';
 import { UtilService } from 'src/util/util.service';
 import { Repository } from 'typeorm';
 import { HookDTO } from './dto/hook.dto';
 import * as Handlebars from 'handlebars';
 import * as _ from 'lodash';
+import { v5 as uuidv5 } from 'uuid';
+import * as NodeRSA from 'node-rsa';
 
 @Injectable()
 export class HookService {
@@ -34,20 +33,55 @@ export class HookService {
         this.redisClient = this.redisService.getClient();
     }
 
-    public async sendExecutionTask(hookId: string, user: UserDTO, props: Record<string, any> = {}) {
-        const hook = await this.hookRepository
-            .findOne({
-                where: {
-                    id: hookId,
+    public async createHook(clientId: string, data: Partial<HookDTO>) {
+        const hookData = _.pick(
+            data,
+            [
+                'name',
+                'description',
+                'mapper',
+                'preCommandSegment',
+                'postCommandSegment',
+                'template',
+                'executionCwd',
+            ],
+        );
+
+        const hook = await this.hookRepository.save(
+            this.hookRepository.create({
+                ...hookData,
+                client: {
+                    id: clientId,
                 },
-                relations: ['client'],
-            });
+            }),
+        );
+
+        return _.omit(hook, ['client']);
+    }
+
+    public async sendExecutionTask(hookId: string, props: Record<string, any> = {}) {
+        const hook = await this.hookRepository
+            .createQueryBuilder('hook')
+            .leftJoinAndSelect('hook.client', 'client')
+            .addSelect('client.publicKey')
+            .where('hook.id = :hookId', { hookId })
+            .getOne();
 
         if (!hook || !hook.client) {
             throw new NotFoundException();
         }
 
-        const clientId = hook.client.id;
+        let taskStatus = 1;
+
+        const {
+            id: clientId,
+            publicKey: clientPublicKey,
+        } = hook.client;
+
+        if (!_.isString(clientPublicKey)) {
+            taskStatus = -3;
+        }
+
         const clientTaskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
         const clientTaskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
 
@@ -60,16 +94,12 @@ export class HookService {
             data,
         } = await this.clientService.lockExecutionTaskChannel(clientId);
 
-        if (error) {
-            throw new InternalServerErrorException(data);
-        }
-
         if (!error && data) {
             gotLock = true;
         }
 
-        if (!gotLock) {
-            throw new InternalServerErrorException(ERR_FAILED_TO_GET_LOCK);
+        if (error || !gotLock) {
+            taskStatus = -4;
         }
 
         const {
@@ -78,35 +108,47 @@ export class HookService {
         } = hook;
 
         let scriptContent: string = null;
-        let scriptParseErrored = false;
 
         if (_.isString(template)) {
             try {
                 const render = Handlebars.compile(template);
                 scriptContent = render(props);
             } catch (e) {
-                scriptParseErrored = true;
+                taskStatus = -2;
             }
         }
+
+        const taskAesKey = uuidv5(
+            new Date().toISOString + Math.random().toString(32),
+            hook.id,
+        );
 
         const newTask = await this.taskRepository.save(
             this.taskRepository.create({
                 script: scriptContent,
-                status: scriptParseErrored ? -2 : 1,
+                status: taskStatus,
                 executionCwd,
                 props: JSON.stringify(props),
+                aesKey: taskAesKey,
             }),
         );
 
-        if (!scriptParseErrored) {
-            await this.redisClient.RPUSH(
-                clientTaskQueueName,
-                newTask.id,
-            );
-
-            this.redisClient.publish(clientTaskChannelName, new Date().toISOString());
+        if (taskStatus < 0) {
+            return newTask;
         }
 
-        return newTask;
+        await this.redisClient.RPUSH(
+            clientTaskQueueName,
+            newTask.id,
+        );
+
+        const rsaPublicKey = new NodeRSA({ b: 1024 }).importKey(clientPublicKey);
+
+        this.redisClient.publish(
+            clientTaskChannelName,
+            rsaPublicKey.encrypt(taskAesKey, 'base64'),
+        );
+
+        return _.omit(newTask, 'aesKey');
     }
 }

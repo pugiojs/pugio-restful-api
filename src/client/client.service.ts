@@ -14,7 +14,6 @@ import {
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from './dto/client.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
-import { ClientDAO } from './dao/client.dao';
 import {
     Redis,
     RedisService,
@@ -80,14 +79,14 @@ export class ClientService {
         return relations.some((relation) => permissionList.indexOf(relation.roleType) !== -1);
     }
 
-    public async createClient(user: UserDTO, configuration: ClientDAO) {
+    public async createClient(user: UserDTO, configuration: Partial<ClientDTO>) {
         const {
             name,
             description,
             deviceId,
             publicKey,
             privateKey,
-        } = this.utilService.transformDAOToDTO<ClientDAO, ClientDTO>(configuration);
+        } = configuration;
 
         const client = await this.clientRepository.save(
             this.clientRepository.create({
@@ -333,5 +332,34 @@ export class ClientService {
         });
 
         return targetRelations;
+    }
+
+    public async updateClient(clientId: string, updates: Partial<ClientDTO>) {
+        const updateData = _.pick(
+            updates,
+            [
+                'name',
+                'description',
+                'deviceId',
+                'publicKey',
+                'privateKey',
+            ],
+        );
+
+        const client = await this.clientRepository.findOne({
+            where: {
+                id: clientId,
+            },
+        });
+
+        if (!client) {
+            throw new NotFoundException();
+        }
+
+        const result = await this.clientRepository.save(
+            _.merge(client, updateData),
+        );
+
+        return _.omit(result, ['publicKey', 'privateKey']);
     }
 }
