@@ -75,8 +75,14 @@ export class HookService {
 
         const {
             id: clientId,
-            publicKey: clientPublicKey,
+            publicKey: clientRawPublicKey,
         } = hook.client;
+
+        let clientPublicKey;
+
+        try {
+            clientPublicKey = JSON.parse(clientRawPublicKey);
+        } catch (e) {}
 
         if (!_.isString(clientPublicKey)) {
             taskStatus = -3;
@@ -133,21 +139,24 @@ export class HookService {
             }),
         );
 
+        let encryptedTaskAesKey;
+
+        try {
+            const rsaPublicKey = new NodeRSA({ b: 1024 }).importKey(clientPublicKey);
+            encryptedTaskAesKey = rsaPublicKey.encrypt(taskAesKey, 'base64');
+        } catch (e) {
+            taskStatus = -3;
+        }
+
         if (taskStatus < 0) {
-            return newTask;
+            return _.omit(newTask, 'aesKey');
         }
 
         await this.redisClient.RPUSH(
             clientTaskQueueName,
             newTask.id,
         );
-
-        const rsaPublicKey = new NodeRSA({ b: 1024 }).importKey(clientPublicKey);
-
-        this.redisClient.publish(
-            clientTaskChannelName,
-            rsaPublicKey.encrypt(taskAesKey, 'base64'),
-        );
+        this.redisClient.publish(clientTaskChannelName, encryptedTaskAesKey);
 
         return _.omit(newTask, 'aesKey');
     }

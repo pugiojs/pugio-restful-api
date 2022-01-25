@@ -20,6 +20,7 @@ import {
 } from '@lenconda/nestjs-redis';
 import * as _ from 'lodash';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
+import { ERR_CLIENT_UNVERIFIED } from 'src/app.constants';
 
 @Injectable()
 export class ClientService {
@@ -62,10 +63,19 @@ export class ClientService {
                         id: clientId,
                     },
                 },
+                relations: ['client'],
             });
 
         if (relations.length === 0) {
             return false;
+        }
+
+        if (
+            relations.some((relation) => {
+                return !relation.client.verified;
+            })
+        ) {
+            throw new ForbiddenException(ERR_CLIENT_UNVERIFIED);
         }
 
         if (permission === -1) {

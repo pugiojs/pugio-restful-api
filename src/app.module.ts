@@ -22,6 +22,8 @@ import { RedisModule } from '@lenconda/nestjs-redis';
 import { LockerModule } from './locker/locker.module';
 import { TaskModule } from './task/task.module';
 import { HookModule } from './hook/hook.module';
+import { ExecutionModule } from './execution/execution.module';
+import { ClientStatusModule } from './client-status/client-status.module';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -77,6 +79,8 @@ import redisConfig from './config/redis.config';
         LockerModule,
         TaskModule,
         HookModule,
+        ExecutionModule,
+        ClientStatusModule,
     ],
     controllers: [AppController],
     providers: [

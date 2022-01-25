@@ -24,3 +24,5 @@ export const ERR_CLIENT_PRIV_KEY_NOTFOUND = 'ERR_CLIENT_PRIV_KEY_NOTFOUND';
 export const ERR_ENCRYPT_FAILED = 'ERR_ENCRYPT_FAILED';
 // decrypt failed
 export const ERR_DECRYPT_FAILED = 'ERR_DECRYPT_FAILED';
+// client unverified
+export const ERR_CLIENT_UNVERIFIED = 'ERR_CLIENT_UNVERIFIED';

@@ -1,3 +1,4 @@
+import { ExecutionDTO } from 'src/execution/dto/execution.dto';
 import { HookDTO } from 'src/hook/dto/hook.dto';
 import {
     Column,
@@ -6,6 +7,7 @@ import {
     Index,
     JoinColumn,
     ManyToOne,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
@@ -56,10 +58,20 @@ export class TaskDTO {
     })
     public aesKey: string;
 
-    @ManyToOne(() => HookDTO, (hookDTO) => hookDTO.tasks, {
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
-    })
+    @OneToMany(
+        () => ExecutionDTO,
+        (executionDTO) => executionDTO.task,
+    )
+    public executions: ExecutionDTO[];
+
+    @ManyToOne(
+        () => HookDTO,
+        (hookDTO) => hookDTO.tasks,
+        {
+            onUpdate: 'CASCADE',
+            onDelete: 'CASCADE',
+        },
+    )
     @JoinColumn({ name: 'hook_id' })
     public hook: HookDTO;
 

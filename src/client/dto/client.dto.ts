@@ -1,3 +1,4 @@
+import { ClientStatusDTO } from 'src/client-status/dto/client-status.dto';
 import { HookDTO } from 'src/hook/dto/hook.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import {
@@ -34,7 +35,11 @@ export class ClientDTO {
     @Column({ default: true })
     public verified: boolean;
 
+    @Column({ default: false })
+    public offline: boolean;
+
     @Column({
+        type: 'longtext',
         name: 'public_key',
         nullable: true,
         default: null,
@@ -43,6 +48,7 @@ export class ClientDTO {
     public publicKey: string;
 
     @Column({
+        type: 'longtext',
         name: 'private_key',
         nullable: true,
         default: null,
@@ -50,7 +56,16 @@ export class ClientDTO {
     })
     public privateKey: string;
 
-    @OneToMany(() => UserClientDTO, (userClientDTO) => userClientDTO.client)
+    @OneToMany(
+        () => ClientStatusDTO,
+        (clientStatusDTO) => clientStatusDTO.client,
+    )
+    public statuses: ClientStatusDTO[];
+
+    @OneToMany(
+        () => UserClientDTO,
+        (userClientDTO) => userClientDTO.client,
+    )
     public clientUsers: UserClientDTO[];
 
     @OneToMany(() => HookDTO, (hookDTO) => hookDTO.client)
