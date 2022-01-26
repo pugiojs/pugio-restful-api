@@ -35,9 +35,6 @@ export class ClientDTO {
     @Column({ default: true })
     public verified: boolean;
 
-    @Column({ default: false })
-    public offline: boolean;
-
     @Column({
         type: 'longtext',
         name: 'public_key',

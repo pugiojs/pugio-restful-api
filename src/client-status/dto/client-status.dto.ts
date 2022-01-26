@@ -1,4 +1,5 @@
 import { ClientDTO } from 'src/client/dto/client.dto';
+import { UserDTO } from 'src/user/dto/user.dto';
 import {
     Column,
     CreateDateColumn,
@@ -17,10 +18,11 @@ export class ClientStatusDTO {
     public id: string;
 
     /**
+     * - -2: key pair not defined
+     * - -1: key pair parse failed
      * - 1: normal
-     * - 2: key pair failure
      */
-    @Column()
+    @Column({ default: 1 })
     public status: number;
 
     @ManyToOne(
@@ -33,6 +35,17 @@ export class ClientStatusDTO {
     )
     @JoinColumn({ name: 'client_id' })
     public client: ClientDTO;
+
+    @ManyToOne(
+        () => UserDTO,
+        (reporter) => reporter.clientStatusReports,
+        {
+            onUpdate: 'CASCADE',
+            onDelete: 'CASCADE',
+        },
+    )
+    @JoinColumn({ name: 'reporter_id' })
+    public reporter: UserDTO;
 
     @CreateDateColumn({ name: 'created_at' })
     public createdAt: Date;
