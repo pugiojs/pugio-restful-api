@@ -12,11 +12,11 @@ import { UtilService } from 'src/util/util.service';
 @Injectable()
 export class ClientStatusService {
     public constructor(
+        private readonly utilService: UtilService,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(ClientStatusDTO)
         private readonly clientStatusRepository: Repository<ClientStatusDTO>,
-        private readonly utilService: UtilService,
     ) {}
 
     public async reportClientStatus(

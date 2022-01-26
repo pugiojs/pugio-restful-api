@@ -20,10 +20,10 @@ const createClientInterceptor = ({
 }: ResourceBaseInterceptorOptions) => {
     class MixinClientInterceptor implements NestInterceptor {
         public constructor(
-        @Inject(ClientService)
-        private readonly clientService: ClientService,
-        @Inject(UtilService)
-        private readonly utilService: UtilService,
+            @Inject(ClientService)
+            private readonly clientService: ClientService,
+            @Inject(UtilService)
+            private readonly utilService: UtilService,
         ) {}
 
         public async intercept(
