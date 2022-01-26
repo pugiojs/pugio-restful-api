@@ -121,7 +121,7 @@ export class TaskService {
         };
     }
 
-    public async reportTaskExecution(
+    public async createTaskExecution(
         taskId: string,
         sequence: number,
         status = 3,
@@ -178,6 +178,14 @@ export class TaskService {
                 sequence,
             }),
         );
+
+        try {
+            this.taskGateway.server.to(taskId).emit('execution', JSON.stringify({
+                taskId,
+                sequence,
+                content: decryptedContent,
+            }));
+        } catch (e) {}
 
         return executionRecord;
     }
