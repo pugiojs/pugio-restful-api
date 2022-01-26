@@ -16,7 +16,7 @@ import { Repository } from 'typeorm';
 import { TaskDTO } from './dto/task.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import * as _ from 'lodash';
-import * as NodeRSA from 'node-rsa';
+import * as Crypto from 'crypto-js';
 import {
     ERR_CLIENT_PUB_KEY_NOTFOUND,
     ERR_ENCRYPT_FAILED,
@@ -58,6 +58,7 @@ export class TaskService {
                 'id',
                 'script',
                 'hook',
+                'aesKey',
             ],
         });
 
@@ -67,15 +68,9 @@ export class TaskService {
 
         let status = 2;
         let error: Error = null;
+        const taskAesKey = task.aesKey;
 
-        const { publicKey } = await this.clientRepository.findOne({
-            where: {
-                id: client.id,
-            },
-            select: ['publicKey'],
-        });
-
-        if (!_.isString(publicKey)) {
+        if (!_.isString(taskAesKey)) {
             status = -3;
             error = new ForbiddenException(ERR_CLIENT_PUB_KEY_NOTFOUND);
         }
@@ -92,12 +87,12 @@ export class TaskService {
             preCommandSegment,
             postCommandSegment,
         };
-        let executionData: string = null;
+
+        let executionData;
 
         try {
-            const key = new NodeRSA({ b: 1024 });
-            key.importKey(publicKey);
-            executionData = key.encrypt(JSON.stringify(executionConfig), 'base64');
+            const rawExecutionData = JSON.stringify(executionConfig);
+            executionData = Crypto.AES.encrypt(rawExecutionData, taskAesKey);
         } catch (e) {
             status = -3;
             error = new InternalServerErrorException(ERR_ENCRYPT_FAILED);

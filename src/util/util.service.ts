@@ -44,6 +44,10 @@ export class UtilService {
             return data as any;
         }
 
+        if (_.isBoolean(data)) {
+            return data as any;
+        }
+
         if (!data) {
             return null;
         }

@@ -43,10 +43,10 @@ export class ClientStatusService {
 
         try {
             const keyPair = new NodeRSA({ b: 1024 })
-                .importKey(publicKey)
-                .importKey(privateKey);
+                .importKey(publicKey, 'pkcs8-public-pem')
+                .importKey(privateKey, 'pkcs8-private-pem');
 
-            const decryptedText = keyPair.decrypt(cipher, 'base64');
+            const decryptedText = keyPair.decrypt(cipher, 'utf8');
 
             if (!(
                 _.isString(plaintext) &&
@@ -111,6 +111,15 @@ export class ClientStatusService {
         if (!latestStatus) {
             statusResult.offline = true;
             return statusResult;
+        }
+
+        if (
+            (
+                Date.parse(new Date().toISOString()) -
+                Date.parse(latestStatus.createdAt.toISOString())
+            ) > 60000
+        ) {
+            statusResult.offline = true;
         }
 
         statusResult.statusCode = latestStatus.status;

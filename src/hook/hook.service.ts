@@ -75,14 +75,8 @@ export class HookService {
 
         const {
             id: clientId,
-            publicKey: clientRawPublicKey,
+            publicKey: clientPublicKey,
         } = hook.client;
-
-        let clientPublicKey;
-
-        try {
-            clientPublicKey = JSON.parse(clientRawPublicKey);
-        } catch (e) {}
 
         if (!_.isString(clientPublicKey)) {
             taskStatus = -3;
@@ -142,7 +136,10 @@ export class HookService {
         let encryptedTaskAesKey;
 
         try {
-            const rsaPublicKey = new NodeRSA({ b: 1024 }).importKey(clientPublicKey);
+            const rsaPublicKey = new NodeRSA({ b: 1024 }).importKey(
+                clientPublicKey,
+                'pkcs8-public-pem',
+            );
             encryptedTaskAesKey = rsaPublicKey.encrypt(taskAesKey, 'base64');
         } catch (e) {
             taskStatus = -3;
