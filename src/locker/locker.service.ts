@@ -28,10 +28,11 @@ export class LockerService {
 
     public async lock(
         lockName: string,
+        namespace: string,
         maximumRetryTimes = Math.floor((this.expiration + 10000) / 500),
     ) {
         let retryTimes = 0;
-        const lockData = uuidv5(new Date().toISOString(), lockName);
+        const lockData = uuidv5(new Date().toISOString(), namespace);
 
         while (true) {
             try {

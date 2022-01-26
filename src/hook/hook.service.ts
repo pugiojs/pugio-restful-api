@@ -16,6 +16,7 @@ import * as Handlebars from 'handlebars';
 import * as _ from 'lodash';
 import { v5 as uuidv5 } from 'uuid';
 import * as NodeRSA from 'node-rsa';
+import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 
 @Injectable()
 export class HookService {
@@ -59,6 +60,56 @@ export class HookService {
         return _.omit(hook, ['client']);
     }
 
+    public async updateHook(hookId: string, updates: Partial<HookDTO>) {
+        const hook = await this.hookRepository.findOne({
+            where: {
+                id: hookId,
+            },
+        });
+
+        const updateData = _.pick(updates, [
+            'name',
+            'description',
+            'mapper',
+            'preCommandSegment',
+            'postCommandSegment',
+            'template',
+            'executionCwd',
+        ]);
+
+        const result = await this.hookRepository.save(_.merge(hook, updateData));
+
+        return result;
+    }
+
+    public async queryHooks(
+        clientId: string,
+        queryOptions: PaginationQueryServiceOptions<HookDTO>,
+    ) {
+        const result = await this.utilService.queryWithPagination({
+            ...queryOptions,
+            repository: this.hookRepository,
+            searchKeys: [
+                'id',
+                'name',
+                'description',
+                'template',
+                'postCommandSegment',
+                'preCommandSegment',
+                'executionCwd',
+            ],
+            queryOptions: {
+                where: {
+                    client: {
+                        id: clientId,
+                    },
+                },
+            },
+        });
+
+        return result;
+    }
+
     public async sendExecutionTask(hookId: string, props: Record<string, any> = {}) {
         const hook = await this.hookRepository
             .createQueryBuilder('hook')
@@ -72,6 +123,8 @@ export class HookService {
         }
 
         let taskStatus = 1;
+
+        console.log(hook);
 
         const {
             id: clientId,
@@ -120,7 +173,7 @@ export class HookService {
 
         const taskAesKey = uuidv5(
             new Date().toISOString + Math.random().toString(32),
-            hook.id,
+            hookId,
         );
 
         const newTask = await this.taskRepository.save(
@@ -130,6 +183,9 @@ export class HookService {
                 executionCwd,
                 props: JSON.stringify(props),
                 aesKey: taskAesKey,
+                hook: {
+                    id: hookId,
+                },
             }),
         );
 
@@ -155,6 +211,6 @@ export class HookService {
         );
         this.redisClient.publish(clientTaskChannelName, encryptedTaskAesKey);
 
-        return _.omit(newTask, 'aesKey');
+        return _.omit(newTask, ['aesKey', 'hook']);
     }
 }

@@ -29,13 +29,13 @@ export class TaskController {
     @Post('/:task_id/execution')
     @UseGuards(AuthGuard('client-key'))
     @UseInterceptors(TaskInterceptor({}))
-    public async createTaskExecution(
+    public async pushTaskExecution(
         @Param('task_id') taskId: string,
         @Body('sequence', PermanentlyParseIntPipe) sequence: number,
         @Body('status') status?: number,
         @Body('content') content?: string,
     ) {
-        return await this.taskService.createTaskExecution(
+        return await this.taskService.pushTaskExecution(
             taskId,
             sequence,
             status,

@@ -40,7 +40,7 @@ export class ClientService {
 
     public async lockExecutionTaskChannel(clientId: string, retryTimes?: number) {
         const lockName = this.utilService.generateExecutionTaskLockName(clientId);
-        return await this.lockerService.lock(lockName, retryTimes);
+        return await this.lockerService.lock(lockName, clientId, retryTimes);
     }
 
     public async unlockExecutionTaskChannel(clientId: string, value: string) {
