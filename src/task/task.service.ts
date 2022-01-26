@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ForbiddenException,
     Injectable,
     InternalServerErrorException,
@@ -21,6 +22,8 @@ import {
     ERR_CLIENT_PUB_KEY_NOTFOUND,
     ERR_ENCRYPT_FAILED,
 } from 'src/app.constants';
+import * as yup from 'yup';
+import { ExecutionDTO } from 'src/execution/dto/execution.dto';
 
 @Injectable()
 export class TaskService {
@@ -35,6 +38,8 @@ export class TaskService {
         private readonly taskRepository: Repository<TaskDTO>,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
+        @InjectRepository(ExecutionDTO)
+        private readonly executionRepository: Repository<ExecutionDTO>,
     ) {
         this.eventService.setGateway(this.taskGateway);
         this.redisClient = this.redisService.getClient();
@@ -92,7 +97,10 @@ export class TaskService {
 
         try {
             const rawExecutionData = JSON.stringify(executionConfig);
-            executionData = Crypto.AES.encrypt(rawExecutionData, taskAesKey);
+            executionData = Crypto
+                .AES
+                .encrypt(rawExecutionData, taskAesKey)
+                .toString();
         } catch (e) {
             status = -3;
             error = new InternalServerErrorException(ERR_ENCRYPT_FAILED);
@@ -111,5 +119,66 @@ export class TaskService {
             executionCwd,
             executionData,
         };
+    }
+
+    public async reportTaskExecution(
+        taskId: string,
+        sequence: number,
+        status = 3,
+        encryptedContent = '',
+    ) {
+        const schema = yup.object().shape({
+            taskId: yup.string().required(),
+            sequence: yup.number().required(),
+            status: yup.number().moreThan(-5).lessThan(5).optional(),
+            content: yup.string().optional(),
+        });
+
+        if (!schema.isValidSync({ taskId, sequence, status, content: encryptedContent })) {
+            throw new BadRequestException();
+        }
+
+        const task = await this.taskRepository.findOne({
+            where: {
+                id: taskId,
+            },
+            select: ['id', 'aesKey', 'executions'],
+        });
+
+        if (!task) {
+            throw new NotFoundException();
+        }
+
+        await this.taskRepository.save(task);
+
+        task.status = status;
+        let decryptedContent: string = null;
+
+        const executionRecords = _.get(task, 'executions') || [];
+
+        if (executionRecords.some((record) => record.sequence === sequence)) {
+            throw new BadRequestException();
+        }
+
+        try {
+            decryptedContent = Crypto
+                .AES
+                .decrypt(encryptedContent, task.aesKey)
+                .toString();
+        } catch (e) {
+            task.status = -3;
+        }
+
+        const executionRecord = await this.executionRepository.save(
+            this.executionRepository.create({
+                task: {
+                    id: taskId,
+                },
+                content: decryptedContent,
+                sequence,
+            }),
+        );
+
+        return executionRecord;
     }
 }

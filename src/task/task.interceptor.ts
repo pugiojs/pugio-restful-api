@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     CallHandler,
     ExecutionContext,
     ForbiddenException,
@@ -11,50 +12,51 @@ import { UtilService } from 'src/util/util.service';
 import { ClientService } from '../client/client.service';
 import * as _ from 'lodash';
 import { InjectRepository } from '@nestjs/typeorm';
-import { HookDTO } from './dto/hook.dto';
 import { Repository } from 'typeorm';
 import { memoize } from 'src/app.util';
 import { ResourceBaseInterceptorOptions } from 'src/app.interfaces';
+import { TaskDTO } from './dto/task.dto';
 
-const createHookInterceptor = ({
-    sources = 'query',
-    paths = '$.hook_id',
+const createTaskInterceptor = ({
+    sources = 'params',
+    paths = '$.task_id',
     type = -1,
 }: ResourceBaseInterceptorOptions) => {
-    class MixinHookInterceptor implements NestInterceptor {
+    class MixinTaskInterceptor implements NestInterceptor {
         public constructor(
         @Inject(ClientService)
         private readonly clientService: ClientService,
         @Inject(UtilService)
         private readonly utilService: UtilService,
-        @InjectRepository(HookDTO)
-        private readonly hookRepository: Repository<HookDTO>,
+        @InjectRepository(TaskDTO)
+        private readonly taskRepository: Repository<TaskDTO>,
         ) {}
 
-        public async intercept(
-            context: ExecutionContext,
-            next: CallHandler,
-        ): Promise<Observable<any>> {
+        public async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
             const request = context.switchToHttp().getRequest();
             const userId = _.get(request, 'user.id');
-            const hookId = this.utilService.getResourceIdentityFromContext(context, sources, paths);
+            const taskId = this.utilService.getResourceIdentityFromContext(context, sources, paths);
 
-            if (!hookId) {
+            if (!taskId) {
                 return next.handle();
             }
 
-            const hook = await this.hookRepository.findOne({
+            const task = await this.taskRepository.findOne({
                 where: {
-                    id: hookId,
+                    id: taskId,
                 },
-                relations: ['client'],
+                relations: ['hook', 'hook.client'],
             });
 
-            if (!hook) {
+            if (!task) {
                 return next.handle();
             }
 
-            const clientId = _.get(hook, 'client.id');
+            if (task.status === 4 || task.status < 0) {
+                throw new BadRequestException();
+            }
+
+            const clientId = _.get(task, 'hook.client.id');
 
             if (
                 _.isString(clientId) &&
@@ -67,10 +69,10 @@ const createHookInterceptor = ({
         }
     }
 
-    const interceptor = mixin(MixinHookInterceptor);
+    const interceptor = mixin(MixinTaskInterceptor);
     return interceptor;
 };
 
-export const HookInterceptor: (
+export const TaskInterceptor: (
     options: ResourceBaseInterceptorOptions,
-) => NestInterceptor = memoize(createHookInterceptor);
+) => NestInterceptor = memoize(createTaskInterceptor);

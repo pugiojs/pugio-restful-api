@@ -46,8 +46,8 @@ export class TaskDTO {
      * - -1: runtime-errored
      * - 1: queueing
      * - 2: waiting
-     * - 2: running
-     * - 3: done
+     * - 3: running
+     * - 4: done
      */
     @Column({ default: 1 })
     public status: number;
