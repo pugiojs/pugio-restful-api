@@ -2,6 +2,7 @@ import {
     Logger,
     Module,
 } from '@nestjs/common';
+import * as path from 'path';
 import {
     ConfigModule,
     ConfigService,
@@ -24,6 +25,7 @@ import { TaskModule } from './task/task.module';
 import { HookModule } from './hook/hook.module';
 import { ExecutionModule } from './execution/execution.module';
 import { ClientStatusModule } from './client-status/client-status.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -81,6 +83,16 @@ import redisConfig from './config/redis.config';
         HookModule,
         ExecutionModule,
         ClientStatusModule,
+        ...(
+            process.env.NODE_ENV === 'development'
+                ? [
+                    ServeStaticModule.forRoot({
+                        rootPath: path.resolve(__dirname, '../static'),
+                        serveRoot: '/static',
+                    }),
+                ]
+                : []
+        ),
     ],
     controllers: [AppController],
     providers: [

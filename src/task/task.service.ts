@@ -199,6 +199,7 @@ export class TaskService {
                 taskId,
                 sequence,
                 content: decryptedContent,
+                timestamp: Date.now(),
             }));
         } catch (e) {}
 
