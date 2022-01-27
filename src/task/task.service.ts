@@ -195,12 +195,10 @@ export class TaskService {
         );
 
         try {
-            this.taskGateway.server.to(taskId).emit('execution', JSON.stringify({
-                taskId,
-                sequence,
-                content: decryptedContent,
-                timestamp: Date.now(),
-            }));
+            this.taskGateway.server.to(taskId).emit(
+                'execution',
+                JSON.stringify(_.omit(executionRecord, ['task'])),
+            );
         } catch (e) {}
 
         return _.omit(executionRecord, ['task', 'sequence', 'content']);
