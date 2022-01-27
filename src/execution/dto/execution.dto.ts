@@ -12,6 +12,7 @@ import {
 
 @Entity({ name: 'executions' })
 @Index(['id', 'sequence'], { unique: true })
+@Index(['task', 'sequence'], { unique: true })
 export class ExecutionDTO {
     @PrimaryGeneratedColumn('uuid')
     public id: string;

@@ -96,8 +96,11 @@ export class ClientController {
 
     @Post('/challenge')
     @UseGuards(AuthGuard('client-key'))
-    public async handleMakeChallenge(@CurrentClient() client: ClientDTO) {
-        return await this.clientService.handleMakeChallenge(client);
+    public async handleMakeChallenge(
+        @CurrentClient() client: ClientDTO,
+        @Body('device_id') deviceId: string,
+    ) {
+        return await this.clientService.handleMakeChallenge(client, deviceId);
     }
 
     @Post('/connected')

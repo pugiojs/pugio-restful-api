@@ -27,18 +27,6 @@ export class TaskDTO {
     @Column()
     public props: string;
 
-    @Column({
-        nullable: true,
-        default: null,
-    })
-    public template: string;
-
-    @Column({
-        name: 'execution_cwd',
-        nullable: true,
-    })
-    public executionCwd: string;
-
     /**
      * - -4: enqueue error
      * - -3: key pair failure

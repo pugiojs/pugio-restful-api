@@ -3,6 +3,7 @@ import {
     RedisService,
 } from '@lenconda/nestjs-redis';
 import {
+    BadRequestException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
@@ -10,7 +11,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ClientService } from 'src/client/client.service';
 import { TaskDTO } from 'src/task/dto/task.dto';
 import { UtilService } from 'src/util/util.service';
-import { Repository } from 'typeorm';
+import {
+    In,
+    Repository,
+} from 'typeorm';
 import { HookDTO } from './dto/hook.dto';
 import * as Handlebars from 'handlebars';
 import * as _ from 'lodash';
@@ -82,6 +86,33 @@ export class HookService {
         return result;
     }
 
+    public async deleteHooks(hookIdOrList: string | string[]) {
+        if (
+            !hookIdOrList ||
+            (!_.isArray(hookIdOrList) && !_.isString(hookIdOrList))
+        ) {
+            return [];
+        }
+
+        const hookIdList = (
+            _.isArray(hookIdOrList)
+                ? hookIdOrList
+                : [hookIdOrList]
+        ).filter((hookId) => _.isString(hookId));
+
+        const hooks = await this.hookRepository.find({
+            where: {
+                id: In(hookIdList),
+            },
+        });
+
+        if (hooks.length !== 0) {
+            await this.hookRepository.delete(hooks.map((hook) => hook.id));
+        }
+
+        return hooks;
+    }
+
     public async queryHooks(
         clientId: string,
         queryOptions: PaginationQueryServiceOptions<HookDTO>,
@@ -108,6 +139,18 @@ export class HookService {
         });
 
         return result;
+    }
+
+    public async getHook(hookId: string) {
+        if (!hookId || !_.isString(hookId)) {
+            throw new BadRequestException();
+        }
+
+        return await this.hookRepository.findOne({
+            where: {
+                id: hookId,
+            },
+        });
     }
 
     public async sendExecutionTask(hookId: string, props: Record<string, any> = {}) {
@@ -180,7 +223,6 @@ export class HookService {
             this.taskRepository.create({
                 script: scriptContent,
                 status: taskStatus,
-                executionCwd,
                 props: JSON.stringify(props),
                 aesKey: taskAesKey,
                 hook: {

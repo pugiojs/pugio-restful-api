@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     Param,
     Patch,
@@ -41,13 +42,13 @@ export class HookController {
         return await this.hookService.createHook(clientId, data);
     }
 
-    @Get('/:client_id/all')
+    @Get('')
     @UseGuards(AuthGuard())
     @UseInterceptors(ClientInterceptor({
-        sources: 'params',
+        sources: 'query',
     }))
-    public async queryClientStatuses(
-        @Param('client_id') clientId: string,
+    public async queryHooks(
+        @Query('client_id') clientId: string,
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
@@ -66,9 +67,32 @@ export class HookController {
         );
     }
 
+    @Get('/:hook_id')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(HookInterceptor({
+        sources: ['params'],
+    }))
+    public async getHook(@Param('hook_id') hookId: string) {
+        return await this.hookService.getHook(hookId);
+    }
+
+    @Delete('/:hook_id?')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(HookInterceptor({
+        sources: ['params'],
+        paths: '$.hook_id',
+        type: [0, 1],
+    }))
+    public async deleteOneHook(
+        @Body('hooks') hookIdList?: string[],
+        @Param('hook_id') hookId?: string,
+    ) {
+        return await this.hookService.deleteHooks(hookId || hookIdList);
+    }
+
     @Patch('/:hook_id')
     @UseGuards(AuthGuard())
-    @UseInterceptors(ClientInterceptor({
+    @UseInterceptors(HookInterceptor({
         sources: ['params'],
         paths: '$.hook_id',
         type: [0, 1],

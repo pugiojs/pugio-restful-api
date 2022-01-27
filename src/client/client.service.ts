@@ -144,12 +144,35 @@ export class ClientService {
         return result.client;
     }
 
-    public async handleMakeChallenge(client: ClientDTO) {
-        if (!(client)) {
+    public async handleMakeChallenge(client: ClientDTO, deviceId: string) {
+        if (!client || !_.isString(deviceId)) {
             throw new BadRequestException();
         }
 
         const clientId = client.id;
+
+        const {
+            deviceId: clientDeviceId,
+        } = await this.clientRepository.findOne({
+            where: {
+                id: clientId,
+            },
+            select: ['deviceId'],
+        });
+
+        if (clientDeviceId !== clientId) {
+            await this.clientRepository.update(
+                {
+                    id: clientId,
+                },
+                {
+                    deviceId,
+                    verified: false,
+                },
+            );
+            throw new ForbiddenException();
+        }
+
         const credential = await this.utilService.generateRandomPassword(clientId);
 
         await this.redisClient.aclSetUser(

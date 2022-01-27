@@ -24,6 +24,9 @@ import {
 } from 'src/app.constants';
 import * as yup from 'yup';
 import { ExecutionDTO } from 'src/execution/dto/execution.dto';
+import { ClientService } from 'src/client/client.service';
+import { UserDTO } from 'src/user/dto/user.dto';
+import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 
 @Injectable()
 export class TaskService {
@@ -34,10 +37,9 @@ export class TaskService {
         private readonly taskGateway: TaskGateway,
         private readonly utilService: UtilService,
         private readonly redisService: RedisService,
+        private readonly clientService: ClientService,
         @InjectRepository(TaskDTO)
         private readonly taskRepository: Repository<TaskDTO>,
-        @InjectRepository(ClientDTO)
-        private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(ExecutionDTO)
         private readonly executionRepository: Repository<ExecutionDTO>,
     ) {
@@ -45,7 +47,17 @@ export class TaskService {
         this.redisClient = this.redisService.getClient();
     }
 
-    public async consumeExecutionTask(client: ClientDTO) {
+    public async consumeExecutionTask(user: UserDTO, client: ClientDTO) {
+        const permission = await this.clientService.checkPermission(
+            user.id,
+            client.id,
+            -1,
+        );
+
+        if (!permission) {
+            throw new ForbiddenException();
+        }
+
         const taskQueueName = this.utilService.generateExecutionTaskQueueName(client.id);
         const taskId = await this.redisClient.LPOP(taskQueueName);
 
@@ -106,9 +118,7 @@ export class TaskService {
             error = new InternalServerErrorException(ERR_ENCRYPT_FAILED);
         }
 
-        if (status < 0) {
-            await this.taskRepository.update({ id }, { status });
-        }
+        await this.taskRepository.update({ id }, { status });
 
         if (error) {
             throw error;
@@ -151,7 +161,12 @@ export class TaskService {
 
         await this.taskRepository.save(task);
 
-        task.status = status;
+        if (task.status) {
+            task.status = status;
+        } else {
+            task.status = 3;
+        }
+
         let decryptedContent: string = null;
 
         const executionRecords = _.get(task, 'executions') || [];
@@ -164,7 +179,7 @@ export class TaskService {
             decryptedContent = Crypto
                 .AES
                 .decrypt(encryptedContent, task.aesKey)
-                .toString();
+                .toString(Crypto.enc.Utf8);
         } catch (e) {
             task.status = -3;
         }
@@ -187,6 +202,44 @@ export class TaskService {
             }));
         } catch (e) {}
 
-        return executionRecord;
+        return _.omit(executionRecord, ['task', 'sequence', 'content']);
+    }
+
+    public async getTask(taskId: string) {
+        if (!taskId || !_.isString(taskId)) {
+            throw new BadRequestException();
+        }
+
+        return await this.taskRepository.findOne({
+            where: {
+                id: taskId,
+            },
+        });
+    }
+
+    public async queryTasks(
+        clientId: string,
+        queryOptions: PaginationQueryServiceOptions<TaskDTO>,
+    ) {
+        const result = await this.utilService.queryWithPagination({
+            ...queryOptions,
+            repository: this.taskRepository,
+            searchKeys: [
+                'id',
+                'props',
+            ],
+            queryOptions: {
+                where: {
+                    hook: {
+                        client: {
+                            id: clientId,
+                        },
+                    },
+                },
+                relations: ['hook', 'hook.client'],
+            },
+        });
+
+        return result;
     }
 }
