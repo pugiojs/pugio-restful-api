@@ -43,6 +43,7 @@ export class HookDTO {
 
     @Column({
         nullable: true,
+        default: null,
     })
     public template: string;
 

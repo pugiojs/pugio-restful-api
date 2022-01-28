@@ -6,6 +6,7 @@ import {
 import { Server } from 'socket.io';
 import {
     FindConditions,
+    FindManyOptions,
     ObjectLiteral,
     Repository,
 } from 'typeorm';
@@ -27,8 +28,9 @@ export type WhereOptions<D> = FindConditions<D>[] | FindConditions<D> | ObjectLi
 
 export interface PaginationQueryOptions<D> {
     repository: Repository<D>;
+    prefix?: string,
     lastCursor?: string;
-    whereOptions?: WhereOptions<D>;
+    queryOptions?: FindManyOptions<D>;
     size?: number;
     searchKeys?: Array<keyof D | '@sys_nil@'>;
     searchContent?: string;
@@ -50,3 +52,5 @@ export interface ResourceBaseInterceptorOptions {
     paths?: string | string[];
     type?: number | number [];
 }
+
+export type PaginationQueryServiceOptions<D> = Omit<PaginationQueryOptions<D>, 'repository'>;

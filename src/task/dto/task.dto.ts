@@ -1,3 +1,4 @@
+import { ExecutionDTO } from 'src/execution/dto/execution.dto';
 import { HookDTO } from 'src/hook/dto/hook.dto';
 import {
     Column,
@@ -6,6 +7,7 @@ import {
     Index,
     JoinColumn,
     ManyToOne,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
@@ -25,34 +27,39 @@ export class TaskDTO {
     @Column()
     public props: string;
 
-    @Column({
-        nullable: true,
-        default: null,
-    })
-    public template: string;
-
-    @Column({
-        name: 'execution_cwd',
-        nullable: true,
-    })
-    public executionCwd: string;
-
     /**
+     * - -4: enqueue error
      * - -3: key pair failure
      * - -2: script-parse-errored
      * - -1: runtime-errored
      * - 1: queueing
      * - 2: waiting
-     * - 2: running
-     * - 3: done
+     * - 3: running
+     * - 4: done
      */
     @Column({ default: 1 })
     public status: number;
 
-    @ManyToOne(() => HookDTO, (hookDTO) => hookDTO.tasks, {
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE',
+    @Column({
+        select: false,
+        name: 'aes_key',
     })
+    public aesKey: string;
+
+    @OneToMany(
+        () => ExecutionDTO,
+        (executionDTO) => executionDTO.task,
+    )
+    public executions: ExecutionDTO[];
+
+    @ManyToOne(
+        () => HookDTO,
+        (hookDTO) => hookDTO.tasks,
+        {
+            onUpdate: 'CASCADE',
+            onDelete: 'CASCADE',
+        },
+    )
     @JoinColumn({ name: 'hook_id' })
     public hook: HookDTO;
 

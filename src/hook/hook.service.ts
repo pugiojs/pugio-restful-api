@@ -3,20 +3,24 @@ import {
     RedisService,
 } from '@lenconda/nestjs-redis';
 import {
+    BadRequestException,
     Injectable,
-    InternalServerErrorException,
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ERR_FAILED_TO_GET_LOCK } from 'src/app.constants';
 import { ClientService } from 'src/client/client.service';
 import { TaskDTO } from 'src/task/dto/task.dto';
-import { UserDTO } from 'src/user/dto/user.dto';
 import { UtilService } from 'src/util/util.service';
-import { Repository } from 'typeorm';
+import {
+    In,
+    Repository,
+} from 'typeorm';
 import { HookDTO } from './dto/hook.dto';
 import * as Handlebars from 'handlebars';
 import * as _ from 'lodash';
+import { v5 as uuidv5 } from 'uuid';
+import * as NodeRSA from 'node-rsa';
+import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 
 @Injectable()
 export class HookService {
@@ -34,20 +38,146 @@ export class HookService {
         this.redisClient = this.redisService.getClient();
     }
 
-    public async sendExecutionTask(hookId: string, user: UserDTO, props: Record<string, any> = {}) {
-        const hook = await this.hookRepository
-            .findOne({
-                where: {
-                    id: hookId,
+    public async createHook(clientId: string, data: Partial<HookDTO>) {
+        const hookData = _.pick(
+            data,
+            [
+                'name',
+                'description',
+                'mapper',
+                'preCommandSegment',
+                'postCommandSegment',
+                'template',
+                'executionCwd',
+            ],
+        );
+
+        const hook = await this.hookRepository.save(
+            this.hookRepository.create({
+                ...hookData,
+                client: {
+                    id: clientId,
                 },
-                relations: ['client'],
-            });
+            }),
+        );
+
+        return _.omit(hook, ['client']);
+    }
+
+    public async updateHook(hookId: string, updates: Partial<HookDTO>) {
+        const hook = await this.hookRepository.findOne({
+            where: {
+                id: hookId,
+            },
+        });
+
+        const updateData = _.pick(updates, [
+            'name',
+            'description',
+            'mapper',
+            'preCommandSegment',
+            'postCommandSegment',
+            'template',
+            'executionCwd',
+        ]);
+
+        const result = await this.hookRepository.save(_.merge(hook, updateData));
+
+        return result;
+    }
+
+    public async deleteHooks(hookIdOrList: string | string[]) {
+        if (
+            !hookIdOrList ||
+            (!_.isArray(hookIdOrList) && !_.isString(hookIdOrList))
+        ) {
+            return [];
+        }
+
+        const hookIdList = (
+            _.isArray(hookIdOrList)
+                ? hookIdOrList
+                : [hookIdOrList]
+        ).filter((hookId) => _.isString(hookId));
+
+        const hooks = await this.hookRepository.find({
+            where: {
+                id: In(hookIdList),
+            },
+        });
+
+        if (hooks.length !== 0) {
+            await this.hookRepository.delete(hooks.map((hook) => hook.id));
+        }
+
+        return hooks;
+    }
+
+    public async queryHooks(
+        clientId: string,
+        queryOptions: PaginationQueryServiceOptions<HookDTO>,
+    ) {
+        const result = await this.utilService.queryWithPagination({
+            ...queryOptions,
+            repository: this.hookRepository,
+            searchKeys: [
+                'id',
+                'name',
+                'description',
+                'template',
+                'postCommandSegment',
+                'preCommandSegment',
+                'executionCwd',
+            ],
+            queryOptions: {
+                where: {
+                    client: {
+                        id: clientId,
+                    },
+                },
+            },
+        });
+
+        return result;
+    }
+
+    public async getHook(hookId: string) {
+        if (!hookId || !_.isString(hookId)) {
+            throw new BadRequestException();
+        }
+
+        return await this.hookRepository.findOne({
+            where: {
+                id: hookId,
+            },
+        });
+    }
+
+    public async sendExecutionTask(hookId: string, props: Record<string, any> = {}) {
+        const hook = await this.hookRepository
+            .createQueryBuilder('hook')
+            .leftJoinAndSelect('hook.client', 'client')
+            .addSelect('client.publicKey')
+            .where('hook.id = :hookId', { hookId })
+            .getOne();
 
         if (!hook || !hook.client) {
             throw new NotFoundException();
         }
 
-        const clientId = hook.client.id;
+        let taskStatus = 1;
+
+        console.log(hook);
+
+        const {
+            id: clientId,
+            publicKey: clientPublicKey,
+        } = hook.client;
+
+        if (!_.isString(clientPublicKey)) {
+            taskStatus = -3;
+        }
+
         const clientTaskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
         const clientTaskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
 
@@ -60,16 +190,12 @@ export class HookService {
             data,
         } = await this.clientService.lockExecutionTaskChannel(clientId);
 
-        if (error) {
-            throw new InternalServerErrorException(data);
-        }
-
         if (!error && data) {
             gotLock = true;
         }
 
-        if (!gotLock) {
-            throw new InternalServerErrorException(ERR_FAILED_TO_GET_LOCK);
+        if (error || !gotLock) {
+            taskStatus = -4;
         }
 
         const {
@@ -78,35 +204,55 @@ export class HookService {
         } = hook;
 
         let scriptContent: string = null;
-        let scriptParseErrored = false;
 
         if (_.isString(template)) {
             try {
                 const render = Handlebars.compile(template);
                 scriptContent = render(props);
             } catch (e) {
-                scriptParseErrored = true;
+                taskStatus = -2;
             }
         }
+
+        const taskAesKey = uuidv5(
+            new Date().toISOString + Math.random().toString(32),
+            hookId,
+        );
 
         const newTask = await this.taskRepository.save(
             this.taskRepository.create({
                 script: scriptContent,
-                status: scriptParseErrored ? -2 : 1,
-                executionCwd,
+                status: taskStatus,
                 props: JSON.stringify(props),
+                aesKey: taskAesKey,
+                hook: {
+                    id: hookId,
+                },
             }),
         );
 
-        if (!scriptParseErrored) {
-            await this.redisClient.RPUSH(
-                clientTaskQueueName,
-                newTask.id,
-            );
+        let encryptedTaskAesKey;
 
-            this.redisClient.publish(clientTaskChannelName, new Date().toISOString());
+        try {
+            const rsaPublicKey = new NodeRSA({ b: 1024 }).importKey(
+                clientPublicKey,
+                'pkcs8-public-pem',
+            );
+            encryptedTaskAesKey = rsaPublicKey.encrypt(taskAesKey, 'base64');
+        } catch (e) {
+            taskStatus = -3;
         }
 
-        return newTask;
+        if (taskStatus < 0) {
+            return _.omit(newTask, 'aesKey');
+        }
+
+        await this.redisClient.RPUSH(
+            clientTaskQueueName,
+            newTask.id,
+        );
+        this.redisClient.publish(clientTaskChannelName, encryptedTaskAesKey);
+
+        return _.omit(newTask, ['aesKey', 'hook']);
     }
 }

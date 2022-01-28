@@ -15,7 +15,7 @@ import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import { v5 as uuidv5 } from 'uuid';
 import { UtilService } from 'src/util/util.service';
-import { TRangeItem } from 'src/app.interfaces';
+import { PaginationQueryServiceOptions, TRangeItem } from 'src/app.interfaces';
 
 @Injectable()
 export class KeyService {
@@ -124,25 +124,19 @@ export class KeyService {
 
     public async queryApiKeys(
         user: UserDTO,
-        size = 10,
-        lastCursor: string,
-        searchContent = '',
-        createDateRange: TRangeItem[],
+        options: PaginationQueryServiceOptions<KeyDTO> = {},
     ) {
         const result = await this.utilService.queryWithPagination<KeyDTO>({
-            size,
+            ...options,
             repository: this.keyRepository,
-            whereOptions: {
-                owner: {
-                    id: user.id,
+            queryOptions: {
+                where: {
+                    owner: {
+                        id: user.id,
+                    },
                 },
             },
-            lastCursor,
             searchKeys: ['keyId', 'id'],
-            searchContent,
-            range: {
-                createdAt: createDateRange,
-            },
         });
 
         return result;

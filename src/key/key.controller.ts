@@ -35,10 +35,14 @@ export class KeyController {
     ) {
         return await this.keyService.queryApiKeys(
             user,
-            size,
-            lastCursor,
-            searchContent,
-            createDateRange,
+            {
+                size,
+                lastCursor,
+                searchContent,
+                range: {
+                    createdAt: createDateRange,
+                },
+            },
         );
     }
 

@@ -19,44 +19,43 @@ import { ClientInterceptor } from 'src/client/client.interceptor';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
-import { TaskInterceptor } from './task.interceptor';
-import { TaskService } from './task.service';
+import { ClientStatusService } from './client-status.service';
 
-@Controller('/task')
-export class TaskController {
+@Controller('/client_status')
+export class ClientStatusController {
     public constructor(
-        private readonly taskService: TaskService,
+        private readonly clientStatusService: ClientStatusService,
     ) {}
 
-    @Get('/consume')
+    @Post('')
     @UseGuards(AuthGuard('client-key'))
-    public async consumeExecutionTask(
-        @CurrentUser() user: UserDTO,
+    public async reportClientStatus(
+        @CurrentUser() reporter: UserDTO,
         @CurrentClient() client: ClientDTO,
+        @Body('plaintext') plaintext: string,
+        @Body('cipher') cipher: string,
     ) {
-        return await this.taskService.consumeExecutionTask(user, client);
+        return await this.clientStatusService.reportClientStatus(
+            reporter,
+            client,
+            plaintext,
+            cipher,
+        );
     }
 
-    @Get('/:task_id')
     @UseGuards(AuthGuard())
-    @UseInterceptors(TaskInterceptor({}))
-    public async getTask(@Param('task_id') taskId: string) {
-        return await this.taskService.getTask(taskId);
-    }
-
-    @Get('')
-    @UseGuards(AuthGuard())
+    @Get('/:client_id/all')
     @UseInterceptors(ClientInterceptor({
-        sources: 'query',
+        sources: 'params',
     }))
-    public async queryTasks(
-        @Query('client_id') clientId: string,
+    public async queryClientStatuses(
+        @Param('client_id') clientId: string,
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
         @Query('create_date_range', ParseDateRangePipe) createDateRange: TRangeItem[],
     ) {
-        return await this.taskService.queryTasks(
+        return await this.clientStatusService.queryClientStatuses(
             clientId,
             {
                 size,
@@ -69,20 +68,12 @@ export class TaskController {
         );
     }
 
-    @Post('/:task_id/execution')
-    @UseGuards(AuthGuard('client-key'))
-    @UseInterceptors(TaskInterceptor({}))
-    public async pushTaskExecution(
-        @Param('task_id') taskId: string,
-        @Body('sequence', PermanentlyParseIntPipe) sequence: number,
-        @Body('status') status?: number,
-        @Body('content') content?: string,
-    ) {
-        return await this.taskService.pushTaskExecution(
-            taskId,
-            sequence,
-            status,
-            content,
-        );
+    @UseGuards(AuthGuard())
+    @Get('/:client_id')
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+    }))
+    public async getClientCurrentStatus(@Param('client_id') clientId: string) {
+        return await this.clientStatusService.getClientCurrentStatus(clientId);
     }
 }

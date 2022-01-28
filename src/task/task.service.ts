@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ForbiddenException,
     Injectable,
     InternalServerErrorException,
@@ -16,11 +17,16 @@ import { Repository } from 'typeorm';
 import { TaskDTO } from './dto/task.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import * as _ from 'lodash';
-import * as NodeRSA from 'node-rsa';
+import * as Crypto from 'crypto-js';
 import {
     ERR_CLIENT_PUB_KEY_NOTFOUND,
     ERR_ENCRYPT_FAILED,
 } from 'src/app.constants';
+import * as yup from 'yup';
+import { ExecutionDTO } from 'src/execution/dto/execution.dto';
+import { ClientService } from 'src/client/client.service';
+import { UserDTO } from 'src/user/dto/user.dto';
+import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 
 @Injectable()
 export class TaskService {
@@ -31,16 +37,27 @@ export class TaskService {
         private readonly taskGateway: TaskGateway,
         private readonly utilService: UtilService,
         private readonly redisService: RedisService,
+        private readonly clientService: ClientService,
         @InjectRepository(TaskDTO)
         private readonly taskRepository: Repository<TaskDTO>,
-        @InjectRepository(ClientDTO)
-        private readonly clientRepository: Repository<ClientDTO>,
+        @InjectRepository(ExecutionDTO)
+        private readonly executionRepository: Repository<ExecutionDTO>,
     ) {
         this.eventService.setGateway(this.taskGateway);
         this.redisClient = this.redisService.getClient();
     }
 
-    public async consumeExecutionTask(client: ClientDTO) {
+    public async consumeExecutionTask(user: UserDTO, client: ClientDTO) {
+        const permission = await this.clientService.checkPermission(
+            user.id,
+            client.id,
+            -1,
+        );
+
+        if (!permission) {
+            throw new ForbiddenException();
+        }
+
         const taskQueueName = this.utilService.generateExecutionTaskQueueName(client.id);
         const taskId = await this.redisClient.LPOP(taskQueueName);
 
@@ -58,6 +75,7 @@ export class TaskService {
                 'id',
                 'script',
                 'hook',
+                'aesKey',
             ],
         });
 
@@ -67,15 +85,9 @@ export class TaskService {
 
         let status = 2;
         let error: Error = null;
+        const taskAesKey = task.aesKey;
 
-        const { publicKey } = await this.clientRepository.findOne({
-            where: {
-                id: client.id,
-            },
-            select: ['publicKey'],
-        });
-
-        if (!_.isString(publicKey)) {
+        if (!_.isString(taskAesKey)) {
             status = -3;
             error = new ForbiddenException(ERR_CLIENT_PUB_KEY_NOTFOUND);
         }
@@ -92,20 +104,21 @@ export class TaskService {
             preCommandSegment,
             postCommandSegment,
         };
-        let executionData: string = null;
+
+        let executionData;
 
         try {
-            const key = new NodeRSA({ b: 1024 });
-            key.importKey(publicKey);
-            executionData = key.encrypt(JSON.stringify(executionConfig), 'base64');
+            const rawExecutionData = JSON.stringify(executionConfig);
+            executionData = Crypto
+                .AES
+                .encrypt(rawExecutionData, taskAesKey)
+                .toString();
         } catch (e) {
             status = -3;
             error = new InternalServerErrorException(ERR_ENCRYPT_FAILED);
         }
 
-        if (status < 0) {
-            await this.taskRepository.update({ id }, { status });
-        }
+        await this.taskRepository.update({ id }, { status });
 
         if (error) {
             throw error;
@@ -116,5 +129,116 @@ export class TaskService {
             executionCwd,
             executionData,
         };
+    }
+
+    public async pushTaskExecution(
+        taskId: string,
+        sequence: number,
+        status = 3,
+        encryptedContent = '',
+    ) {
+        const schema = yup.object().shape({
+            taskId: yup.string().required(),
+            sequence: yup.number().required(),
+            status: yup.number().moreThan(-5).lessThan(5).optional(),
+            content: yup.string().optional(),
+        });
+
+        if (!schema.isValidSync({ taskId, sequence, status, content: encryptedContent })) {
+            throw new BadRequestException();
+        }
+
+        const task = await this.taskRepository.findOne({
+            where: {
+                id: taskId,
+            },
+            select: ['id', 'aesKey', 'executions'],
+        });
+
+        if (!task) {
+            throw new NotFoundException();
+        }
+
+        await this.taskRepository.save(task);
+
+        if (task.status) {
+            task.status = status;
+        } else {
+            task.status = 3;
+        }
+
+        let decryptedContent: string = null;
+
+        const executionRecords = _.get(task, 'executions') || [];
+
+        if (executionRecords.some((record) => record.sequence === sequence)) {
+            throw new BadRequestException();
+        }
+
+        try {
+            decryptedContent = Crypto
+                .AES
+                .decrypt(encryptedContent, task.aesKey)
+                .toString(Crypto.enc.Utf8);
+        } catch (e) {
+            task.status = -3;
+        }
+
+        const executionRecord = await this.executionRepository.save(
+            this.executionRepository.create({
+                task: {
+                    id: taskId,
+                },
+                content: decryptedContent,
+                sequence,
+            }),
+        );
+
+        try {
+            this.taskGateway.server.to(taskId).emit(
+                'execution',
+                JSON.stringify(_.omit(executionRecord, ['task'])),
+            );
+        } catch (e) {}
+
+        return _.omit(executionRecord, ['task', 'sequence', 'content']);
+    }
+
+    public async getTask(taskId: string) {
+        if (!taskId || !_.isString(taskId)) {
+            throw new BadRequestException();
+        }
+
+        return await this.taskRepository.findOne({
+            where: {
+                id: taskId,
+            },
+        });
+    }
+
+    public async queryTasks(
+        clientId: string,
+        queryOptions: PaginationQueryServiceOptions<TaskDTO>,
+    ) {
+        const result = await this.utilService.queryWithPagination({
+            ...queryOptions,
+            repository: this.taskRepository,
+            searchKeys: [
+                'id',
+                'props',
+            ],
+            queryOptions: {
+                where: {
+                    hook: {
+                        client: {
+                            id: clientId,
+                        },
+                    },
+                },
+                relations: ['hook', 'hook.client'],
+            },
+        });
+
+        return result;
     }
 }

@@ -1,3 +1,4 @@
+import { ClientStatusDTO } from 'src/client-status/dto/client-status.dto';
 import { KeyDTO } from 'src/key/dto/key.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import {
@@ -46,8 +47,17 @@ export class UserDTO {
     @OneToMany(() => KeyDTO, (keyDTO) => keyDTO.owner)
     public keys: KeyDTO[];
 
-    @OneToMany(() => UserClientDTO, (userClientDTO) => userClientDTO.user)
+    @OneToMany(
+        () => UserClientDTO,
+        (userClientDTO) => userClientDTO.user,
+    )
     public userClients: UserClientDTO[];
+
+    @OneToMany(
+        () => ClientStatusDTO,
+        (clientStatusReport) => clientStatusReport.reporter,
+    )
+    public clientStatusReports: ClientStatusDTO[];
 
     @CreateDateColumn({ name: 'created_at' })
     public createdAt: Date;

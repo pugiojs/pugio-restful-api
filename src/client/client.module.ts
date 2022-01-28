@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LockerModule } from 'src/locker/locker.module';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientController } from './client.controller';
+import { ClientInterceptor } from './client.interceptor';
 import { ClientService } from './client.service';
 import { ClientDTO } from './dto/client.dto';
 

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cases | Execution</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="container"></div>
+</body>
+<script>
+    window.onload = function() {
+        const search = new URLSearchParams(window.location.search);
+        const taskId = search.get('task_id');
+        const client = io('https://pugio-dev.lenconda.top/task');
+
+        client.emit('join', taskId);
+
+        client.on('execution', (message) => {
+            console.log(message);
+        })
+    }
+</script>
+</html>

@@ -44,8 +44,12 @@ export class UtilService {
             return data as any;
         }
 
+        if (_.isBoolean(data)) {
+            return data as any;
+        }
+
         if (!data) {
-            return;
+            return null;
         }
 
         if (_.isDate(data)) {
@@ -138,10 +142,18 @@ export class UtilService {
         return `${clientId}:task_queue_lock`;
     }
 
+    public createQueryObjectPathGenerator(prefixSegments: string[]) {
+        const currentPrefixSegments = Array.from(prefixSegments);
+        return (pathname: string) => {
+            return currentPrefixSegments.concat(pathname).join('.');
+        };
+    }
+
     public async queryWithPagination<D>(
         {
             repository,
-            whereOptions: userWhereOptions = {},
+            prefix = '',
+            queryOptions: userQueryOptions = {},
             size = 10,
             searchContent = '',
             searchKeys: userSearchKeys = [],
@@ -149,9 +161,15 @@ export class UtilService {
             lastCursor = '',
         }: PaginationQueryOptions<D>,
     ): Promise<PaginationQueryResponse<D>> {
+        const userWhereOptions = _.get(userQueryOptions, 'where') || {};
         const searchKeys = Array.from(userSearchKeys);
         let rangeMapList: TRangeMap<D>[] = [];
         let cursorDate: Date;
+        const prefixSegments = prefix
+            ? prefix.split('.')
+            : [];
+
+        const generateQueryPath = this.createQueryObjectPathGenerator(prefixSegments);
 
         if (_.isArray(range)) {
             rangeMapList = range;
@@ -161,55 +179,76 @@ export class UtilService {
 
         if (lastCursor) {
             const cursorItem: any = await repository.findOne({
-                where: {
-                    id: lastCursor,
-                },
+                where: _.set(
+                    {},
+                    generateQueryPath('id'),
+                    lastCursor,
+                ),
+                relations: userQueryOptions.relations || [],
             });
 
             if (cursorItem) {
-                cursorDate = cursorItem.createdAt as Date;
+                cursorDate = _.get(cursorItem, generateQueryPath('createdAt')) as Date;
             }
         }
 
         const baseWhereConditionList = (searchContent && _.isString(searchContent))
             ? searchKeys.map((searchKey) => {
-                return _.merge(
-                    _.cloneDeep(userWhereOptions),
-                    (
-                        searchKey !== '@sys_nil@'
-                            ? {
-                                [searchKey]: Like(`%${searchContent}%`),
-                            }
-                            : {}
-                    ),
-                );
+                return {
+                    condition: _.cloneDeep(userWhereOptions),
+                    search: (_.isString(searchKey) && searchKey !== '@sys_nil@')
+                        ? _.set(
+                            {},
+                            searchKey,
+                            Like(`%${searchContent}%`),
+                        )
+                        : {},
+                };
             })
-            : [_.cloneDeep(userWhereOptions)];
+            : [
+                {
+                    condition: _.cloneDeep(userWhereOptions),
+                    search: {},
+                },
+            ];
 
-        const whereNestedConditionList = baseWhereConditionList.reduce((resultList: WhereOptions<D>[], condition) => {
+        const whereNestedConditionList = baseWhereConditionList.reduce((resultList: WhereOptions<D>[], { condition, search }) => {
             const currentResultList = Array.from(resultList);
 
             const currentItem = rangeMapList
                 .map((rangeMap) => {
                     const currentCondition = _.merge(
                         condition,
+                        search,
                         (
                             _.isDate(cursorDate)
-                                ? {
-                                    createdAt: LessThan(cursorDate),
-                                }
+                                ? _.set(
+                                    {},
+                                    generateQueryPath('createdAt'),
+                                    LessThan(cursorDate),
+                                )
                                 : {}
                         ),
-                        this.parseRange<D>(rangeMap, cursorDate, false),
+                        this.parseRange<D>(rangeMap, cursorDate, prefixSegments),
                     );
 
                     return _.isDate(cursorDate)
                         ? [
                             currentCondition,
-                            {
-                                createdAt: cursorDate,
-                                id: LessThan(lastCursor),
-                            },
+                            _.merge(
+                                userWhereOptions,
+                                search,
+                                _.set(
+                                    {},
+                                    generateQueryPath('createdAt'),
+                                    cursorDate,
+                                ),
+                                _.set(
+                                    {},
+                                    generateQueryPath('id'),
+                                    LessThan(lastCursor),
+                                ),
+                            ),
                         ]
                         : currentCondition;
                 });
@@ -225,18 +264,31 @@ export class UtilService {
             ? whereConditionList[0]
             : whereConditionList;
 
+        const findConfig = {
+            where: whereCondition,
+            take: size,
+            order: _.merge(
+                {},
+                _.set(
+                    {},
+                    generateQueryPath('createdAt'),
+                    'DESC',
+                ),
+                _.set(
+                    {},
+                    generateQueryPath('id'),
+                    'DESC',
+                ),
+            ),
+            ..._.omit(userQueryOptions, 'where'),
+        };
+
         const [total = 0, items = []] = await Promise.all([
             repository.count({
                 where: whereCondition,
+                ..._.omit(userQueryOptions, 'where'),
             }),
-            repository.find({
-                where: whereCondition,
-                take: size,
-                order: {
-                    createdAt: 'DESC',
-                    id: 'DESC',
-                } as any,
-            }),
+            repository.find(findConfig),
         ]);
 
         return {
@@ -457,15 +509,21 @@ export class UtilService {
         }
     }
 
-    private parseRange<D>(rangeMap: TRangeMap<D>, cursorDate?: Date, countMode = false) {
-        if (!rangeMap || !_.isObject(rangeMap) || Object.keys(rangeMap).length === 0) {
+    private parseRange<D>(rangeMap: TRangeMap<D>, cursorDate?: Date, prefixSegments: string[] = []) {
+        if (
+            !rangeMap ||
+            !_.isObject(rangeMap) ||
+            Object.keys(rangeMap).length === 0
+        ) {
             return {};
         }
+
+        const generateQueryPath = this.createQueryObjectPathGenerator(prefixSegments);
 
         return Object.keys(rangeMap).reduce((result, key) => {
             let currentRange;
 
-            if (!countMode && key === 'createdAt') {
+            if (key === 'createdAt') {
                 const result = this.generateCreatedAtRange(rangeMap[key], cursorDate);
 
                 if (result) {
@@ -476,7 +534,11 @@ export class UtilService {
             }
 
             if (currentRange) {
-                result[key] = currentRange;
+                return _.set(
+                    result,
+                    generateQueryPath(key),
+                    currentRange,
+                );
             }
 
             return result;
