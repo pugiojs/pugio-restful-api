@@ -189,10 +189,14 @@ export class ClientService {
 
         const newClientInfo = await this.redisClient.aclGetUser(clientId);
         const taskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
+        const taskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
+        const tasksLockName = this.utilService.generateExecutionTaskLockName(clientId);
 
         return {
             credential,
             taskChannelName,
+            taskQueueName,
+            tasksLockName,
             clientInfo: _.omit(newClientInfo, 'passwords'),
         };
     }
