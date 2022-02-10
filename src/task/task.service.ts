@@ -65,16 +65,19 @@ export class TaskService {
         }
 
         const taskQueueName = this.utilService.generateExecutionTaskQueueName(client.id);
-        const taskIdList: string[] = [];
+        let taskIdList: string[] = [];
 
         if (all === 1) {
             const {
                 data: lockPass,
             } = await this.clientService.lockExecutionTaskChannel(client.id);
 
-            while ((await this.redisClient.LLEN(taskQueueName)) > 0) {
-                taskIdList.push(await this.redisClient.LPOP(taskQueueName));
-            }
+            const unconsumedTaskIdList = await this.redisClient.LPOP_COUNT(
+                taskQueueName,
+                await this.redisClient.LLEN(taskQueueName),
+            );
+
+            taskIdList = taskIdList.concat(unconsumedTaskIdList);
 
             await this.clientService.unlockExecutionTaskChannel(client.id, lockPass);
         } else {
