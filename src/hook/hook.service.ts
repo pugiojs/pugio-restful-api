@@ -167,8 +167,6 @@ export class HookService {
 
         let taskStatus = 1;
 
-        console.log(hook);
-
         const {
             id: clientId,
             publicKey: clientPublicKey,
@@ -187,10 +185,10 @@ export class HookService {
 
         const {
             error,
-            data,
+            data: lockPass,
         } = await this.clientService.lockExecutionTaskChannel(clientId);
 
-        if (!error && data) {
+        if (!error && _.isString(lockPass)) {
             gotLock = true;
         }
 
@@ -200,7 +198,6 @@ export class HookService {
 
         const {
             template,
-            executionCwd,
         } = hook;
 
         let scriptContent: string = null;
@@ -251,7 +248,7 @@ export class HookService {
             clientTaskQueueName,
             newTask.id,
         );
-        this.redisClient.publish(clientTaskChannelName, encryptedTaskAesKey);
+        this.redisClient.PUBLISH(clientTaskChannelName, lockPass);
 
         return _.omit(newTask, ['aesKey', 'hook']);
     }

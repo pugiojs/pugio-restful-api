@@ -33,8 +33,10 @@ export class TaskController {
     public async consumeExecutionTask(
         @CurrentUser() user: UserDTO,
         @CurrentClient() client: ClientDTO,
+        @Query('all', PermanentlyParseIntPipe) all = 0,
+        @Query('lock_pass') lockPass = '',
     ) {
-        return await this.taskService.consumeExecutionTask(user, client);
+        return await this.taskService.consumeExecutionTasks(user, client, all, lockPass);
     }
 
     @Get('/:task_id')
