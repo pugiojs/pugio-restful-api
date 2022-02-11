@@ -157,7 +157,7 @@ export class ClientService {
             where: {
                 id: clientId,
             },
-            select: ['deviceId'],
+            select: ['deviceId', 'id'],
         });
 
         if (clientDeviceId !== clientId) {
@@ -170,7 +170,6 @@ export class ClientService {
                     verified: false,
                 },
             );
-            throw new ForbiddenException();
         }
 
         const credential = await this.utilService.generateRandomPassword(clientId);
