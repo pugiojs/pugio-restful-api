@@ -216,12 +216,8 @@ export class TaskService {
             throw new NotFoundException();
         }
 
-        await this.taskRepository.save(task);
-
-        if (task.status) {
+        if (task.status && task.status !== 3) {
             task.status = status;
-        } else {
-            task.status = 3;
         }
 
         let decryptedContent: string = null;
@@ -240,6 +236,8 @@ export class TaskService {
         } catch (e) {
             task.status = -3;
         }
+
+        await this.taskRepository.save(task);
 
         const executionRecord = await this.executionRepository.save(
             this.executionRepository.create({
