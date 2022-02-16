@@ -76,7 +76,7 @@ export class TaskController {
     @UseInterceptors(TaskInterceptor({}))
     public async pushTaskExecution(
         @Param('task_id') taskId: string,
-        @Body('sequence', PermanentlyParseIntPipe) sequence: number,
+        @Body('sequence', PermanentlyParseIntPipe) sequence = -1,
         @Body('status') status?: number,
         @Body('content') content?: string,
     ) {

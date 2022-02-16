@@ -191,18 +191,21 @@ export class TaskService {
 
     public async pushTaskExecution(
         taskId: string,
-        sequence: number,
+        sequence = -1,
         status = 3,
         encryptedContent = '',
     ) {
         const schema = yup.object().shape({
             taskId: yup.string().required(),
-            sequence: yup.number().required(),
+            sequence: yup.number().optional(),
             status: yup.number().moreThan(-5).lessThan(5).optional(),
             content: yup.string().optional(),
         });
 
-        if (!schema.isValidSync({ taskId, sequence, status, content: encryptedContent })) {
+        if (
+            (status === 3 && sequence < 0) ||
+            !(await schema.isValid({ taskId, sequence, status, content: encryptedContent }))
+        ) {
             throw new BadRequestException();
         }
 
@@ -222,12 +225,6 @@ export class TaskService {
         }
 
         let decryptedContent: string = null;
-
-        const executionRecords = _.get(task, 'executions') || [];
-
-        if (executionRecords.some((record) => record.sequence === sequence)) {
-            throw new BadRequestException();
-        }
 
         try {
             decryptedContent = Crypto
