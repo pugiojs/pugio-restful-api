@@ -52,10 +52,6 @@ const createTaskInterceptor = ({
                 return next.handle();
             }
 
-            if (task.status === 4 || task.status < 0) {
-                throw new BadRequestException();
-            }
-
             const clientId = _.get(task, 'hook.client.id');
 
             if (

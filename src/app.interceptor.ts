@@ -29,7 +29,6 @@ export class AppInterceptor<T> implements NestInterceptor<T, Response> {
     ): Promise<Observable<Response>> {
         return next.handle().pipe(
             catchError((e) => {
-                console.log(e);
                 if (e instanceof HttpException) {
                     throw e;
                 } else {

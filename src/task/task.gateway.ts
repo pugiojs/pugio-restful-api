@@ -33,7 +33,6 @@ export class TaskGateway implements Gateway {
 
 	@SubscribeMessage('join')
     public handleJoinRoom(client: Socket, roomId: string) {
-        console.log(roomId);
         client.join(roomId);
     }
 

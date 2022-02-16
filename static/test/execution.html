@@ -8,19 +8,29 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <div id="container"></div>
+    <pre id="container"></pre>
 </body>
 <script>
     window.onload = function() {
         const search = new URLSearchParams(window.location.search);
         const taskId = search.get('task_id');
-        const client = io('https://pugio-dev.lenconda.top/task');
+        const client = io('/task');
+        const messages = [];
 
         client.emit('join', taskId);
 
         client.on('execution', (message) => {
-            console.log(message);
-        })
+            try {
+                const parsedMessage = JSON.parse(message);
+                messages.push(parsedMessage);
+
+                const result = messages.sort((a, b) => a.sequence - b.sequence).map((message) => {
+                    return message.content;
+                }).join('');
+
+                document.getElementById('container').innerText = result;
+            } catch (e) {}
+        });
     }
 </script>
 </html>
