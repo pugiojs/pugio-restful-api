@@ -240,22 +240,33 @@ export class TaskService {
 
         await this.taskRepository.save(task);
 
-        const executionRecord = await this.executionRepository.save(
-            this.executionRepository.create({
+        let executionRecord = await this.executionRepository.findOne({
+            where: {
                 task: {
                     id: taskId,
                 },
-                content: decryptedContent,
                 sequence,
-            }),
-        );
+            },
+        });
 
-        try {
-            this.taskGateway.server.to(taskId).emit(
-                'execution',
-                JSON.stringify(_.omit(executionRecord, ['task'])),
+        if (!executionRecord) {
+            executionRecord = await this.executionRepository.save(
+                this.executionRepository.create({
+                    task: {
+                        id: taskId,
+                    },
+                    content: decryptedContent,
+                    sequence,
+                }),
             );
-        } catch (e) {}
+
+            try {
+                this.taskGateway.server.to(taskId).emit(
+                    'execution',
+                    JSON.stringify(_.omit(executionRecord, ['task'])),
+                );
+            } catch (e) {}
+        }
 
         return _.omit(executionRecord, ['task', 'sequence', 'content']);
     }
