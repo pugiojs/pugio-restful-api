@@ -20,7 +20,7 @@ export class ExecutionDTO {
     @Column()
     public sequence: number;
 
-    @Column()
+    @Column({ nullable: true })
     public content: string;
 
     @ManyToOne(

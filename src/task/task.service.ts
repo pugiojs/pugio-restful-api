@@ -195,11 +195,13 @@ export class TaskService {
         status = 3,
         encryptedContent = '',
     ) {
+        let currentStatus = status;
+
         const schema = yup.object().shape({
             taskId: yup.string().required(),
             sequence: yup.number().optional(),
             status: yup.number().moreThan(-5).lessThan(5).optional(),
-            content: yup.string().optional(),
+            content: yup.string().optional().nullable(),
         });
 
         if (
@@ -213,29 +215,34 @@ export class TaskService {
             where: {
                 id: taskId,
             },
-            select: ['id', 'aesKey', 'executions'],
+            select: ['id', 'aesKey', 'executions', 'status'],
         });
 
         if (!task) {
             throw new NotFoundException();
         }
 
-        if (task.status && task.status !== 3) {
-            task.status = status;
-        }
-
         let decryptedContent: string = null;
 
         try {
-            decryptedContent = Crypto
-                .AES
-                .decrypt(encryptedContent, task.aesKey)
-                .toString(Crypto.enc.Utf8);
+            if (_.isString(encryptedContent)) {
+                decryptedContent = Crypto
+                    .AES
+                    .decrypt(encryptedContent, task.aesKey)
+                    .toString(Crypto.enc.Utf8);
+            }
         } catch (e) {
-            task.status = -3;
+            currentStatus = -3;
         }
 
-        await this.taskRepository.save(task);
+        if (
+            currentStatus > 3 ||
+            currentStatus < 0 ||
+            (task.status < 3 && task.status > 0 && currentStatus === 3)
+        ) {
+            task.status = currentStatus;
+            await this.taskRepository.save(task);
+        }
 
         let executionRecord = await this.executionRepository.findOne({
             where: {
@@ -246,7 +253,7 @@ export class TaskService {
             },
         });
 
-        if (!executionRecord) {
+        if (!executionRecord && sequence > 0) {
             executionRecord = await this.executionRepository.save(
                 this.executionRepository.create({
                     task: {
@@ -263,6 +270,10 @@ export class TaskService {
                     JSON.stringify(_.omit(executionRecord, ['task'])),
                 );
             } catch (e) {}
+        }
+
+        if (!executionRecord) {
+            return;
         }
 
         return _.omit(executionRecord, ['task', 'sequence', 'content']);
