@@ -160,17 +160,15 @@ export class ClientService {
             select: ['deviceId', 'id'],
         });
 
-        if (clientDeviceId !== deviceId) {
-            await this.clientRepository.update(
-                {
-                    id: clientId,
-                },
-                {
-                    deviceId,
-                    verified: false,
-                },
-            );
-        }
+        await this.clientRepository.update(
+            {
+                id: clientId,
+            },
+            {
+                deviceId,
+                verified: clientDeviceId === deviceId,
+            },
+        );
 
         const credential = await this.utilService.generateRandomPassword(clientId);
 
