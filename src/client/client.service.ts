@@ -160,7 +160,7 @@ export class ClientService {
             select: ['deviceId', 'id'],
         });
 
-        if (clientDeviceId !== clientId) {
+        if (clientDeviceId !== deviceId) {
             await this.clientRepository.update(
                 {
                     id: clientId,
