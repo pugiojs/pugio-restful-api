@@ -54,7 +54,6 @@ export class TaskService {
         all: number,
         singleLockPass: string,
     ) {
-        console.log('singleLockPass:', singleLockPass);
         const permission = await this.clientService.checkPermission(
             user.id,
             client.id,
@@ -88,7 +87,6 @@ export class TaskService {
                 throw new BadRequestException();
             }
 
-            console.log(111);
             await this.clientService.unlockExecutionTaskChannel(client.id, singleLockPass);
         }
 
