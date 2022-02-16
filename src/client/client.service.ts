@@ -182,6 +182,7 @@ export class ClientService {
                 'resetchannels',
                 '~' + clientId + ':*',
                 '-@all',
+                '+@pubsub',
             ],
         );
         await this.redisClient.aclSetUser(clientId, ['&' + clientId + '@*']);
