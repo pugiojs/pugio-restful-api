@@ -249,15 +249,16 @@ export class ClientService {
         await this.redisClient.aclSetUser(clientId, ['&' + clientId + '@*']);
 
         const newClientInfo = await this.redisClient.aclGetUser(clientId);
-        const taskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
-        const taskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
-        const tasksLockName = this.utilService.generateExecutionTaskLockName(clientId);
+
+        const channels = [
+            'execution',
+            'file',
+            'os',
+        ];
 
         return {
             credential,
-            taskChannelName,
-            taskQueueName,
-            tasksLockName,
+            channels: channels.map((channel) => this.utilService.generateChannelName(clientId, channel)),
             clientInfo: _.omit(newClientInfo, 'passwords'),
         };
     }

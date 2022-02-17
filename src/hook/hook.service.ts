@@ -177,7 +177,7 @@ export class HookService {
         }
 
         const clientTaskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
-        const clientTaskChannelName = this.utilService.generateExecutionTaskChannelName(clientId);
+        const clientTaskChannelName = this.utilService.generateChannelName(clientId, 'execution');
 
         await this.redisClient.persist(clientTaskQueueName);
 

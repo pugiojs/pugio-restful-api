@@ -130,8 +130,8 @@ export class UtilService {
         });
     }
 
-    public generateExecutionTaskChannelName(clientId: string) {
-        return `${clientId}@execution`;
+    public generateChannelName(clientId: string, scope: string) {
+        return `${clientId}@${scope}`;
     }
 
     public generateExecutionTaskQueueName(clientId: string) {
