@@ -36,7 +36,7 @@ const createClientInterceptor = ({
 
             if (
                 _.isString(clientId) &&
-                !(await this.clientService.checkPermission(userId, clientId, type))
+                !(await this.clientService.checkPermission({ userId, clientId, permission: type }))
             ) {
                 throw new ForbiddenException();
             }

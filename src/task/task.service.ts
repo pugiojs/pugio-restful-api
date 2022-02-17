@@ -54,11 +54,10 @@ export class TaskService {
         all: number,
         singleLockPass: string,
     ) {
-        const permission = await this.clientService.checkPermission(
-            user.id,
-            client.id,
-            -1,
-        );
+        const permission = await this.clientService.checkPermission({
+            userId: user.id,
+            clientId: client.id,
+        });
 
         if (!permission) {
             throw new ForbiddenException();

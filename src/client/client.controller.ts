@@ -99,8 +99,9 @@ export class ClientController {
     public async handleMakeChallenge(
         @CurrentClient() client: ClientDTO,
         @Body('device_id') deviceId: string,
+        @Body('version') version: string,
     ) {
-        return await this.clientService.handleMakeChallenge(client, deviceId);
+        return await this.clientService.handleMakeChallenge(client, deviceId, version);
     }
 
     @Post('/connected')

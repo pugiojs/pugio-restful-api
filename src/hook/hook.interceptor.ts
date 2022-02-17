@@ -59,7 +59,7 @@ const createHookInterceptor = ({
 
             if (
                 _.isString(clientId) &&
-                !(await this.clientService.checkPermission(userId, clientId, type, checkDeviceId))
+                !(await this.clientService.checkPermission({ userId, clientId, permission: type, checkDeviceId }))
             ) {
                 throw new ForbiddenException();
             }

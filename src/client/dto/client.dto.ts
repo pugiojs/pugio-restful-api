@@ -35,6 +35,9 @@ export class ClientDTO {
     @Column({ default: true })
     public verified: boolean;
 
+    @Column({ default: '1.0.0' })
+    public version: string;
+
     @Column({
         type: 'longtext',
         name: 'public_key',

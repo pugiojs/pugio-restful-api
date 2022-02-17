@@ -20,7 +20,8 @@ import {
 } from '@lenconda/nestjs-redis';
 import * as _ from 'lodash';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
-import { ERR_CLIENT_UNVERIFIED } from 'src/app.constants';
+import { ERR_CLIENT_UNVERIFIED, ERR_CLIENT_VERSION_NOT_SUPPORT } from 'src/app.constants';
+import * as semver from 'semver';
 
 @Injectable()
 export class ClientService {
@@ -49,10 +50,19 @@ export class ClientService {
     }
 
     public async checkPermission(
-        userId: string,
-        clientId: string,
-        permission: number | number[] = -1,
-        checkDeviceId = false,
+        {
+            userId,
+            clientId,
+            permission = -1,
+            checkDeviceId = false,
+            version = [],
+        }: {
+            userId: string,
+            clientId: string,
+            permission?: number | number[],
+            checkDeviceId?: boolean,
+            version?: string | string[],
+        },
     ) {
         const relations = await this.userClientRepository
             .find({
@@ -76,6 +86,58 @@ export class ClientService {
             relations.some((relation) => !relation.client.verified)
         ) {
             throw new ForbiddenException(ERR_CLIENT_UNVERIFIED);
+        }
+
+        if (_.isString(version) || (_.isArray(version) && version.length > 0)) {
+            let compareType: string;
+            let minVersion: string;
+            let maxVersion: string;
+            let canUse = true;
+
+            if (_.isString(version)) {
+                compareType = 'gte';
+                minVersion = version;
+            } else if (_.isArray(version)) {
+                const [min, max] = version;
+                if (_.isString(min) && _.isString(max)) {
+                    compareType = 'between';
+                    minVersion = min;
+                    maxVersion = max;
+                } else if (_.isString(min) && !_.isString(max)) {
+                    compareType = 'gte';
+                    minVersion = min;
+                } else if (!_.isString(min) && _.isString(max)) {
+                    compareType = 'lte';
+                    maxVersion = max;
+                }
+            }
+
+            if (!compareType) {
+                return canUse;
+            }
+
+            canUse = relations.some((relation) => {
+                const clientVersion = relation.client.version;
+
+                switch (compareType) {
+                    case 'gte': {
+                        return semver.gte(clientVersion, minVersion);
+                    }
+                    case 'lte': {
+                        return semver.lte(clientVersion, maxVersion);
+                    }
+                    case 'between': {
+                        return semver.gte(clientVersion, minVersion) && semver.lte(clientVersion, maxVersion);
+                    }
+                    default: {
+                        return true;
+                    }
+                }
+            });
+
+            if (!canUse) {
+                throw new ForbiddenException(ERR_CLIENT_VERSION_NOT_SUPPORT);
+            }
         }
 
         if (permission === -1) {
@@ -144,7 +206,7 @@ export class ClientService {
         return result.client;
     }
 
-    public async handleMakeChallenge(client: ClientDTO, deviceId: string) {
+    public async handleMakeChallenge(client: ClientDTO, deviceId: string, version = '1.0.0') {
         if (!client || !_.isString(deviceId)) {
             throw new BadRequestException();
         }
@@ -167,6 +229,7 @@ export class ClientService {
             {
                 deviceId,
                 verified: clientDeviceId === deviceId,
+                version,
             },
         );
 

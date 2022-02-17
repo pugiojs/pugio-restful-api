@@ -26,3 +26,5 @@ export const ERR_ENCRYPT_FAILED = 'ERR_ENCRYPT_FAILED';
 export const ERR_DECRYPT_FAILED = 'ERR_DECRYPT_FAILED';
 // client unverified
 export const ERR_CLIENT_UNVERIFIED = 'ERR_CLIENT_UNVERIFIED';
+// client version not support
+export const ERR_CLIENT_VERSION_NOT_SUPPORT = 'ERR_CLIENT_VERSION_NOT_SUPPORT';
