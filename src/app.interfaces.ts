@@ -51,6 +51,7 @@ export interface ResourceBaseInterceptorOptions {
     sources?: string | string[];
     paths?: string | string[];
     type?: number | number [];
+    checkDeviceId?: boolean;
 }
 
 export type PaginationQueryServiceOptions<D> = Omit<PaginationQueryOptions<D>, 'repository'>;

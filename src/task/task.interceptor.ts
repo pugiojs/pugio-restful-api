@@ -21,7 +21,8 @@ const createTaskInterceptor = ({
     sources = 'params',
     paths = '$.task_id',
     type = -1,
-}: ResourceBaseInterceptorOptions) => {
+    checkDeviceId = false,
+}: ResourceBaseInterceptorOptions = {}) => {
     class MixinTaskInterceptor implements NestInterceptor {
         public constructor(
         @Inject(ClientService)
@@ -56,7 +57,7 @@ const createTaskInterceptor = ({
 
             if (
                 _.isString(clientId) &&
-                !(await this.clientService.checkPermission(userId, clientId, type))
+                !(await this.clientService.checkPermission(userId, clientId, type, checkDeviceId))
             ) {
                 throw new ForbiddenException();
             }

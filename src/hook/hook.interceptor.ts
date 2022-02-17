@@ -20,6 +20,7 @@ const createHookInterceptor = ({
     sources = 'query',
     paths = '$.hook_id',
     type = -1,
+    checkDeviceId = false,
 }: ResourceBaseInterceptorOptions) => {
     class MixinHookInterceptor implements NestInterceptor {
         public constructor(
@@ -58,7 +59,7 @@ const createHookInterceptor = ({
 
             if (
                 _.isString(clientId) &&
-                !(await this.clientService.checkPermission(userId, clientId, type))
+                !(await this.clientService.checkPermission(userId, clientId, type, checkDeviceId))
             ) {
                 throw new ForbiddenException();
             }

@@ -110,6 +110,7 @@ export class HookController {
         sources: ['params'],
         paths: '$.hook_id',
         type: -1,
+        checkDeviceId: true,
     }))
     public async sendExecutionTask(
         @Param('hook_id') hookId: string,

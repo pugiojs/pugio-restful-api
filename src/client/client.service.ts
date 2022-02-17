@@ -52,6 +52,7 @@ export class ClientService {
         userId: string,
         clientId: string,
         permission: number | number[] = -1,
+        checkDeviceId = false,
     ) {
         const relations = await this.userClientRepository
             .find({
@@ -71,9 +72,8 @@ export class ClientService {
         }
 
         if (
-            relations.some((relation) => {
-                return !relation.client.verified;
-            })
+            checkDeviceId &&
+            relations.some((relation) => !relation.client.verified)
         ) {
             throw new ForbiddenException(ERR_CLIENT_UNVERIFIED);
         }

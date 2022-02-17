@@ -30,6 +30,7 @@ export class TaskController {
 
     @Get('/consume')
     @UseGuards(AuthGuard('client-key'))
+    @UseInterceptors(TaskInterceptor({}))
     public async consumeExecutionTask(
         @CurrentUser() user: UserDTO,
         @CurrentClient() client: ClientDTO,
