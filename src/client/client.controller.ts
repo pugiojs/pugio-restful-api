@@ -195,4 +195,17 @@ export class ClientController {
             targetUserIdFromParam || targetUserIdListFromBody,
         );
     }
+
+    @Post('/:client_id/verify')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: ['params'],
+        type: [0, 1],
+    }))
+    public async verifyClient(
+        @Param('client_id') clientId: string,
+        @Body('device_id') deviceId: string,
+    ) {
+        return await this.clientService.verifyClient(clientId, deviceId);
+    }
 }

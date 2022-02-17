@@ -397,4 +397,26 @@ export class ClientService {
 
         return _.omit(result, ['publicKey', 'privateKey']);
     }
+
+    public async verifyClient(clientId: string, deviceId: string) {
+        const client = await this.clientRepository.findOne({
+            where: {
+                id: clientId,
+            },
+            select: ['id', 'deviceId', 'verified'],
+        });
+
+        if (
+            !client.verified &&
+            Boolean(deviceId) &&
+            Boolean(client.deviceId) &&
+            deviceId === client.deviceId
+        ) {
+            client.verified = true;
+            await this.clientRepository.save(client);
+            return { verified: true };
+        }
+
+        return { verified: false };
+    }
 }
