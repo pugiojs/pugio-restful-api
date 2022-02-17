@@ -236,9 +236,9 @@ export class TaskService {
         }
 
         if (
-            currentStatus > 3 ||
             currentStatus < 0 ||
-            (task.status < 3 && task.status > 0 && currentStatus === 3)
+            (task.status < 3 && task.status > 0 && currentStatus === 3) ||
+            (task.status === 3 && currentStatus > 3)
         ) {
             task.status = currentStatus;
             await this.taskRepository.save(task);
