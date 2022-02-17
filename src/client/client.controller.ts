@@ -209,4 +209,31 @@ export class ClientController {
     ) {
         return await this.clientService.verifyClient(clientId, deviceId);
     }
+
+    @Post('/:client_id/response/:scope/:request_id')
+    @UseGuards(AuthGuard('client-key'))
+    @UseInterceptors(ClientInterceptor({
+        sources: ['params'],
+    }))
+    public async pushClientResponse(
+        @Param('client_id') clientId: string,
+        @Param('scope') scope: string,
+        @Param('request_id') requestId: string,
+        @Body() data: any,
+    ) {
+        return await this.clientService.pushClientResponse(clientId, scope, requestId, data);
+    }
+
+    // TODO remove
+    @Post('/:client_id/test')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: ['params'],
+        type: [0, 1],
+    }))
+    public async test(
+        @Param('client_id') clientId: string,
+    ) {
+        return await this.clientService.requestClientChannel(clientId, 'file', { pathname: '/root' });
+    }
 }

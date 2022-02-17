@@ -20,12 +20,18 @@ import {
 } from '@lenconda/nestjs-redis';
 import * as _ from 'lodash';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
-import { ERR_CLIENT_UNVERIFIED, ERR_CLIENT_VERSION_NOT_SUPPORT } from 'src/app.constants';
+import {
+    ERR_CLIENT_UNVERIFIED,
+    ERR_CLIENT_VERSION_NOT_SUPPORT,
+} from 'src/app.constants';
 import * as semver from 'semver';
+import { v5 as uuidv5 } from 'uuid';
+import * as EventEmitter from 'events';
 
 @Injectable()
 export class ClientService {
     private redisClient: Redis;
+    private emitter: EventEmitter;
 
     public constructor(
         private readonly utilService: UtilService,
@@ -37,6 +43,7 @@ export class ClientService {
         private readonly redisService: RedisService,
     ) {
         this.redisClient = this.redisService.getClient();
+        this.emitter = new EventEmitter();
     }
 
     public async lockExecutionTaskChannel(clientId: string, retryTimes?: number) {
@@ -482,5 +489,34 @@ export class ClientService {
         }
 
         return { verified: false };
+    }
+
+    public async requestClientChannel(clientId: string, scope: string, data: any = {}) {
+        return new Promise((resolve) => {
+            const channelId = this.utilService.generateChannelName(clientId, scope);
+            const uuid = uuidv5(`${new Date().toISOString()}$${scope}`, clientId);
+            const responseChannelId = `${channelId}$${uuid}`;
+
+            const handler = (content) => {
+                this.emitter.off(responseChannelId, handler);
+                resolve(content);
+            };
+
+            this.emitter.on(responseChannelId, handler);
+
+            this.redisClient.PUBLISH(
+                channelId,
+                JSON.stringify({
+                    id: uuid,
+                    options: data,
+                }),
+            );
+        });
+    }
+
+    public async pushClientResponse(clientId: string, scope: string, requestId: string, data: any) {
+        const channelId = this.utilService.generateChannelName(clientId, scope);
+        const eventId = `${channelId}$${requestId}`;
+        this.emitter.emit(eventId, data);
     }
 }
