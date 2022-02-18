@@ -224,8 +224,7 @@ export class ClientController {
         return await this.clientService.pushChannelResponse(clientId, scope, requestId, data);
     }
 
-    // TODO remove
-    @Post('/:client_id/test')
+    @Post('/:client_id/channel')
     @UseGuards(AuthGuard())
     @UseInterceptors(ClientInterceptor({
         sources: ['params'],
@@ -233,13 +232,12 @@ export class ClientController {
     }))
     public async test(
         @Param('client_id') clientId: string,
+        @Body('data') data: any = {},
     ) {
         return await this.clientService.requestClientChannel({
             clientId,
             scope: 'file',
-            data: {
-                pathname: '/root',
-            },
+            data,
         });
     }
 }
