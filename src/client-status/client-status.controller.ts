@@ -73,7 +73,10 @@ export class ClientStatusController {
     @UseInterceptors(ClientInterceptor({
         sources: 'params',
     }))
-    public async getClientCurrentStatus(@Param('client_id') clientId: string) {
-        return await this.clientStatusService.getClientCurrentStatus(clientId);
+    public async getClientCurrentStatus(
+        @Param('client_id') clientId: string,
+        @Query('offline_threshold', PermanentlyParseIntPipe) offlineThreshold = 6000,
+    ) {
+        return await this.clientStatusService.getClientCurrentStatus(clientId, offlineThreshold);
     }
 }

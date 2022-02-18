@@ -90,7 +90,7 @@ export class ClientStatusService {
         return result;
     }
 
-    public async getClientCurrentStatus(clientId: string) {
+    public async getClientCurrentStatus(clientId: string, offlineThreshold = 60000) {
         const statusResult = {
             offline: false,
             statusCode: 1,
@@ -117,7 +117,7 @@ export class ClientStatusService {
             (
                 Date.parse(new Date().toISOString()) -
                 Date.parse(latestStatus.createdAt.toISOString())
-            ) > 60000
+            ) > offlineThreshold
         ) {
             statusResult.offline = true;
         }
