@@ -219,9 +219,9 @@ export class ClientController {
         @Param('client_id') clientId: string,
         @Param('scope') scope: string,
         @Param('request_id') requestId: string,
-        @Body() data: any,
+        @Body() responseBody: any,
     ) {
-        return await this.clientService.pushChannelResponse(clientId, scope, requestId, data);
+        return await this.clientService.pushChannelResponse(clientId, scope, requestId, responseBody);
     }
 
     @Post('/:client_id/channel')
@@ -230,14 +230,15 @@ export class ClientController {
         sources: ['params'],
         type: [0, 1],
     }))
-    public async test(
+    public async requestClientChannel(
         @Param('client_id') clientId: string,
-        @Body('data') data: any = {},
+        @Body('scope') scope: string,
+        @Body('data') requestBody: any = {},
     ) {
         return await this.clientService.requestClientChannel({
             clientId,
-            scope: 'file',
-            data,
+            scope,
+            requestBody,
         });
     }
 }

@@ -496,22 +496,29 @@ export class ClientService {
     public async requestClientChannel({
         clientId,
         scope,
-        data = {},
+        requestBody = {},
         timeoutThreshold = 30000,
     }: {
         clientId: string,
         scope: string,
-        data?: any,
+        requestBody?: any,
         timeoutThreshold?: number,
     }) {
+        if (!_.isString(scope) || !_.isString(clientId)) {
+            throw new BadRequestException();
+        }
+
         return new Promise((resolve, reject) => {
             const channelId = this.utilService.generateChannelName(clientId, scope);
             const uuid = uuidv5(`${new Date().toISOString()}$${scope}`, clientId);
             const responseChannelId = `${channelId}$${uuid}`;
 
-            const handler = (content) => {
+            const handler = (responseBody) => {
                 this.emitter.off(responseChannelId, handler);
-                resolve(content);
+                resolve({
+                    id: uuid,
+                    ...responseBody,
+                });
             };
 
             this.emitter.on(responseChannelId, handler);
@@ -520,7 +527,7 @@ export class ClientService {
                 channelId,
                 JSON.stringify({
                     id: uuid,
-                    options: data,
+                    options: requestBody,
                 }),
             );
 
@@ -530,10 +537,10 @@ export class ClientService {
         });
     }
 
-    public async pushChannelResponse(clientId: string, scope: string, requestId: string, data: any) {
+    public async pushChannelResponse(clientId: string, scope: string, requestId: string, responseBody: any) {
         const channelId = this.utilService.generateChannelName(clientId, scope);
         const eventId = `${channelId}$${requestId}`;
-        const accepted = this.emitter.emit(eventId, data);
+        const accepted = this.emitter.emit(eventId, responseBody);
 
         return { accepted };
     }
