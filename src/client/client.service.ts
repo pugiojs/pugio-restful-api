@@ -2,6 +2,7 @@ import {
     BadRequestException,
     ForbiddenException,
     Injectable,
+    InternalServerErrorException,
     NotFoundException,
 } from '@nestjs/common';
 import { UtilService } from 'src/util/util.service';
@@ -21,6 +22,7 @@ import {
 import * as _ from 'lodash';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 import {
+    ERR_CLIENT_REQUEST_TIMED_OUT,
     ERR_CLIENT_UNVERIFIED,
     ERR_CLIENT_VERSION_NOT_SUPPORT,
 } from 'src/app.constants';
@@ -491,8 +493,18 @@ export class ClientService {
         return { verified: false };
     }
 
-    public async requestClientChannel(clientId: string, scope: string, data: any = {}) {
-        return new Promise((resolve) => {
+    public async requestClientChannel({
+        clientId,
+        scope,
+        data = {},
+        timeoutThreshold = 30000,
+    }: {
+        clientId: string,
+        scope: string,
+        data?: any,
+        timeoutThreshold?: number,
+    }) {
+        return new Promise((resolve, reject) => {
             const channelId = this.utilService.generateChannelName(clientId, scope);
             const uuid = uuidv5(`${new Date().toISOString()}$${scope}`, clientId);
             const responseChannelId = `${channelId}$${uuid}`;
@@ -511,12 +523,18 @@ export class ClientService {
                     options: data,
                 }),
             );
+
+            setTimeout(() => {
+                reject(new InternalServerErrorException(ERR_CLIENT_REQUEST_TIMED_OUT));
+            }, timeoutThreshold);
         });
     }
 
-    public async pushClientResponse(clientId: string, scope: string, requestId: string, data: any) {
+    public async pushChannelResponse(clientId: string, scope: string, requestId: string, data: any) {
         const channelId = this.utilService.generateChannelName(clientId, scope);
         const eventId = `${channelId}$${requestId}`;
-        this.emitter.emit(eventId, data);
+        const accepted = this.emitter.emit(eventId, data);
+
+        return { accepted };
     }
 }

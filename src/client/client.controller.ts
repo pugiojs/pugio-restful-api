@@ -215,13 +215,13 @@ export class ClientController {
     @UseInterceptors(ClientInterceptor({
         sources: ['params'],
     }))
-    public async pushClientResponse(
+    public async pushChannelResponse(
         @Param('client_id') clientId: string,
         @Param('scope') scope: string,
         @Param('request_id') requestId: string,
         @Body() data: any,
     ) {
-        return await this.clientService.pushClientResponse(clientId, scope, requestId, data);
+        return await this.clientService.pushChannelResponse(clientId, scope, requestId, data);
     }
 
     // TODO remove
@@ -234,6 +234,12 @@ export class ClientController {
     public async test(
         @Param('client_id') clientId: string,
     ) {
-        return await this.clientService.requestClientChannel(clientId, 'file', { pathname: '/root' });
+        return await this.clientService.requestClientChannel({
+            clientId,
+            scope: 'file',
+            data: {
+                pathname: '/root',
+            },
+        });
     }
 }

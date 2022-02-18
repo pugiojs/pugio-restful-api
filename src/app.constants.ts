@@ -28,3 +28,5 @@ export const ERR_DECRYPT_FAILED = 'ERR_DECRYPT_FAILED';
 export const ERR_CLIENT_UNVERIFIED = 'ERR_CLIENT_UNVERIFIED';
 // client version not support
 export const ERR_CLIENT_VERSION_NOT_SUPPORT = 'ERR_CLIENT_VERSION_NOT_SUPPORT';
+// client request timed out
+export const ERR_CLIENT_REQUEST_TIMED_OUT = 'ERR_CLIENT_REQUEST_TIMED_OUT';
