@@ -513,11 +513,12 @@ export class ClientService {
             const uuid = uuidv5(`${new Date().toISOString()}$${scope}`, clientId);
             const responseChannelId = `${channelId}$${uuid}`;
 
-            const handler = (responseBody) => {
+            const handler = ({ data, errored }) => {
                 this.emitter.off(responseChannelId, handler);
                 resolve({
                     id: uuid,
-                    ...responseBody,
+                    errored,
+                    data,
                 });
             };
 
@@ -537,10 +538,18 @@ export class ClientService {
         });
     }
 
-    public async pushChannelResponse(clientId: string, scope: string, requestId: string, responseBody: any) {
+    public async pushChannelResponse(
+        {
+            clientId,
+            scope,
+            requestId,
+            data,
+            errored = false,
+        }: {clientId: string, scope: string, requestId: string, data: any, errored: boolean },
+    ) {
         const channelId = this.utilService.generateChannelName(clientId, scope);
         const eventId = `${channelId}$${requestId}`;
-        const accepted = this.emitter.emit(eventId, responseBody);
+        const accepted = this.emitter.emit(eventId, { data, errored });
 
         return { accepted };
     }

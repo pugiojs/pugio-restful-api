@@ -219,9 +219,16 @@ export class ClientController {
         @Param('client_id') clientId: string,
         @Param('scope') scope: string,
         @Param('request_id') requestId: string,
-        @Body() responseBody: any,
+        @Body('data') data: any,
+        @Body('errored') errored = false,
     ) {
-        return await this.clientService.pushChannelResponse(clientId, scope, requestId, responseBody);
+        return await this.clientService.pushChannelResponse({
+            clientId,
+            scope,
+            requestId,
+            data,
+            errored,
+        });
     }
 
     @Post('/:client_id/channel')
