@@ -509,25 +509,30 @@ export class ClientService {
         }
 
         return new Promise((resolve, reject) => {
-            const channelId = this.utilService.generateChannelName(clientId, scope);
-            const uuid = uuidv5(`${new Date().toISOString()}$${scope}`, clientId);
-            const responseChannelId = `${channelId}$${uuid}`;
+            const requestId = uuidv5(`${new Date().toISOString()}$${scope}`, clientId);
+
+            const requestChannelId = this.utilService.generateChannelName(clientId, 'channel_request');
+            const responseChannelId = this.utilService.generateChannelName(clientId, 'channel_response');
+
+            const eventId = `${responseChannelId}$${requestId}`;
 
             const handler = ({ data, errored }) => {
-                this.emitter.off(responseChannelId, handler);
+                this.emitter.off(eventId, handler);
                 resolve({
-                    id: uuid,
+                    id: requestId,
                     errored,
                     data,
                 });
             };
 
-            this.emitter.on(responseChannelId, handler);
+            this.emitter.on(eventId, handler);
 
+            console.log(requestChannelId);
             this.redisClient.PUBLISH(
-                channelId,
+                requestChannelId,
                 JSON.stringify({
-                    id: uuid,
+                    id: requestId,
+                    scope,
                     options: requestBody,
                 }),
             );
@@ -541,13 +546,12 @@ export class ClientService {
     public async pushChannelResponse(
         {
             clientId,
-            scope,
             requestId,
             data,
             errored = false,
-        }: {clientId: string, scope: string, requestId: string, data: any, errored: boolean },
+        }: {clientId: string, requestId: string, data: any, errored: boolean },
     ) {
-        const channelId = this.utilService.generateChannelName(clientId, scope);
+        const channelId = this.utilService.generateChannelName(clientId, 'channel_response');
         const eventId = `${channelId}$${requestId}`;
         const accepted = this.emitter.emit(eventId, { data, errored });
 

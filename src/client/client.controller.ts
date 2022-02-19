@@ -210,28 +210,26 @@ export class ClientController {
         return await this.clientService.verifyClient(clientId, deviceId);
     }
 
-    @Post('/:client_id/response/:scope/:request_id')
+    @Post('/channel_response/:request_id')
     @UseGuards(AuthGuard('client-key'))
     @UseInterceptors(ClientInterceptor({
         sources: ['params'],
     }))
     public async pushChannelResponse(
-        @Param('client_id') clientId: string,
-        @Param('scope') scope: string,
+        @CurrentClient() client: ClientDTO,
         @Param('request_id') requestId: string,
         @Body('data') data: any,
         @Body('errored') errored = false,
     ) {
         return await this.clientService.pushChannelResponse({
-            clientId,
-            scope,
+            clientId: client.id,
             requestId,
             data,
             errored,
         });
     }
 
-    @Post('/:client_id/channel')
+    @Post('/:client_id/channel_request')
     @UseGuards(AuthGuard())
     @UseInterceptors(ClientInterceptor({
         sources: ['params'],
