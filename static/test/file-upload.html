@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cases | File Upload</title>
+</head>
+<body>
+    <div>
+        <input id="upload-file" type="file" placeholder="Select file">
+    </div>
+</body>
+<script>
+    window.onload = function() {
+        const uploadFileInput = document.getElementById('upload-file');
+        const fileReader = new FileReader();
+
+        fileReader.onload = function() {
+            console.log(this.result);
+        }
+
+        uploadFileInput.onchange = function(event) {
+            const [file] = uploadFileInput.files;
+            const chunkSize = 1024;
+            const chunkCount = Math.ceil(file.size / chunkSize);
+            console.log(chunkCount);
+        }
+    }
+</script>
+</html>
