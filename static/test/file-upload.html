@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Cases | File Upload</title>
+    <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.2/base64.min.js"></script>
 </head>
 <body>
     <div>
@@ -17,14 +18,19 @@
         const fileReader = new FileReader();
 
         fileReader.onload = function() {
-            console.log(this.result);
+            const chunk = new Uint8Array(this.result.slice(0, 1024));
+            let str = '';
+            for (let i = 0; i < chunk.byteLength; i += 1) {
+                str = str + String.fromCharCode(chunk[i]);
+            }
+            console.log(window.btoa(str));
         }
 
         uploadFileInput.onchange = function(event) {
             const [file] = uploadFileInput.files;
             const chunkSize = 1024;
             const chunkCount = Math.ceil(file.size / chunkSize);
-            console.log(chunkCount);
+            fileReader.readAsArrayBuffer(file);
         }
     }
 </script>

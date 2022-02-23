@@ -229,6 +229,19 @@ export class ClientController {
         });
     }
 
+    @Post('/channel_gateway/:event_id')
+    @UseGuards(AuthGuard('client-key'))
+    @UseInterceptors(ClientInterceptor({
+        sources: ['params'],
+    }))
+    public async pushChannelGateway(
+        @CurrentClient() client: ClientDTO,
+        @Param('event_id') eventId: string,
+        @Body() data: any,
+    ) {
+        return await this.clientService.pushChannelGateway(client, eventId, data);
+    }
+
     @Post('/:client_id/channel_request')
     @UseGuards(AuthGuard())
     @UseInterceptors(ClientInterceptor({

@@ -29,6 +29,7 @@ import {
 import * as semver from 'semver';
 import { v5 as uuidv5 } from 'uuid';
 import * as EventEmitter from 'events';
+import { ClientGateway } from './client.gateway';
 
 @Injectable()
 export class ClientService {
@@ -38,6 +39,7 @@ export class ClientService {
     public constructor(
         private readonly utilService: UtilService,
         private readonly lockerService: LockerService,
+        private readonly clientGateway: ClientGateway,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(UserClientDTO)
@@ -527,7 +529,6 @@ export class ClientService {
 
             this.emitter.on(eventId, handler);
 
-            console.log(requestChannelId);
             this.redisClient.PUBLISH(
                 requestChannelId,
                 JSON.stringify({
@@ -556,5 +557,18 @@ export class ClientService {
         const accepted = this.emitter.emit(eventId, { data, errored });
 
         return { accepted };
+    }
+
+    public pushChannelGateway(client: ClientDTO, eventId: string, data: any) {
+        try {
+            const accepted = this.clientGateway.server.to(client.id).emit(
+                eventId,
+                data,
+            );
+
+            return { accepted };
+        } catch (e) {
+            return { accepted: false };
+        }
     }
 }

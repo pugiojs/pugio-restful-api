@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LockerModule } from 'src/locker/locker.module';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientController } from './client.controller';
-import { ClientInterceptor } from './client.interceptor';
+import { ClientGateway } from './client.gateway';
 import { ClientService } from './client.service';
 import { ClientDTO } from './dto/client.dto';
 
@@ -16,7 +16,7 @@ import { ClientDTO } from './dto/client.dto';
         ]),
     ],
     controllers: [ClientController],
-    providers: [ClientService],
-    exports: [ClientService],
+    providers: [ClientService, ClientGateway],
+    exports: [ClientService, ClientGateway],
 })
 export class ClientModule {}
