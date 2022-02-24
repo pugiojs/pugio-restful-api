@@ -6,31 +6,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Cases | File Upload</title>
     <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.2/base64.min.js"></script>
+    <script src="https://149.129.56.110:8080/packages/pugio-segmental-transferer/umd/index.js"></script>
 </head>
 <body>
     <div>
         <input id="upload-file" type="file" placeholder="Select file">
+        <div>Progress: <span id="progress">0</span>%</div>
     </div>
 </body>
 <script>
     window.onload = function() {
         const uploadFileInput = document.getElementById('upload-file');
-        const fileReader = new FileReader();
-
-        fileReader.onload = function() {
-            const chunk = new Uint8Array(this.result.slice(0, 1024));
-            let str = '';
-            for (let i = 0; i < chunk.byteLength; i += 1) {
-                str = str + String.fromCharCode(chunk[i]);
-            }
-            console.log(window.btoa(str));
-        }
 
         uploadFileInput.onchange = function(event) {
             const [file] = uploadFileInput.files;
-            const chunkSize = 1024;
-            const chunkCount = Math.ceil(file.size / chunkSize);
-            fileReader.readAsArrayBuffer(file);
+
+            const uint8Reader = new FileReader();
+
+            uint8Reader.onload = function() {
+                const bytes = new Uint8Array(this.result);
+                const binary = bytes.reduce((result, byte, index) => result + String.fromCharCode(bytes[index]), '');
+                console.log('uint8:', window.btoa(binary));
+            }
+
+            uint8Reader.readAsArrayBuffer(file);
+
+            PugioSegmentalTransferer.Sender.readBrowserFileAsUint8Array(file).then((res) => {
+                const id = Math.random().toString(32).slice(2);
+
+                const sender = new PugioSegmentalTransferer.Sender({
+                    id,
+                    file: res,
+                    chunkSize: 1024 * 50,
+                    sender: async (index, chunkCount, chunkContent) => {
+                        console.log(chunkContent);
+                        try {
+                            const result = await fetch('/api/v1/client/024c59d7-594b-409a-aebc-3ae92565588e/channel_request', {
+                                method: 'POST',
+                                headers: {
+                                    'API-KEY': '2ba2596b-f432-5089-b822-69d2cfdf4c89',
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    scope: 'file',
+                                    data: {
+                                        action: 'upload',
+                                        pathname: `/root/${file.name}`,
+                                        chunkCount,
+                                        chunkContent,
+                                        index,
+                                    },
+                                }),
+                            }).then((res) => res.json());
+                            const done = result.data.done;
+                            return done;
+                        } catch (e) {
+                            return false;
+                        }
+                    },
+                    onStatusChange: (status) => {
+                        const { total, succeeded } = status;
+                        document.getElementById('progress').innerText = (succeeded / total * 100).toFixed(2);
+                    },
+                });
+
+                sender.send();
+            });
         }
     }
 </script>
