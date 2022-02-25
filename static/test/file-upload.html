@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Cases | File Upload</title>
-    <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.2/base64.min.js"></script>
+    <script src="https://unpkg.com/js-base64@3.7.2/base64.js"></script>
     <script src="https://149.129.56.110:8080/packages/pugio-segmental-transferer/umd/index.js"></script>
 </head>
 <body>
@@ -16,6 +16,10 @@
 </body>
 <script>
     window.onload = function() {
+        const search = new URLSearchParams(window.location.search);
+        const apiKey = search.get('api_key');
+        const clientId = search.get('client_id');
+
         const uploadFileInput = document.getElementById('upload-file');
 
         uploadFileInput.onchange = function(event) {
@@ -30,10 +34,10 @@
                     chunkSize: 1024 * 10,
                     sender: async (index, chunkCount, chunkContent) => {
                         try {
-                            const result = await fetch('/api/v1/client/024c59d7-594b-409a-aebc-3ae92565588e/channel_request', {
+                            const result = await fetch(`/api/v1/client/${clientId}/channel_request`, {
                                 method: 'POST',
                                 headers: {
-                                    'API-KEY': '2ba2596b-f432-5089-b822-69d2cfdf4c89',
+                                    'API-KEY': apiKey,
                                     'Content-Type': 'application/json',
                                 },
                                 body: JSON.stringify({
