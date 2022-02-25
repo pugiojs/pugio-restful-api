@@ -21,23 +21,13 @@
         uploadFileInput.onchange = function(event) {
             const [file] = uploadFileInput.files;
 
-            const uint8Reader = new FileReader();
-
-            uint8Reader.onload = function() {
-                const bytes = new Uint8Array(this.result);
-                const binary = bytes.reduce((result, byte, index) => result + String.fromCharCode(bytes[index]), '');
-                console.log('uint8:', window.btoa(binary));
-            }
-
-            uint8Reader.readAsArrayBuffer(file);
-
             PugioSegmentalTransferer.Sender.readBrowserFileAsUint8Array(file).then((res) => {
                 const id = Math.random().toString(32).slice(2);
 
                 const sender = new PugioSegmentalTransferer.Sender({
                     id,
                     file: res,
-                    chunkSize: 1024 * 50,
+                    chunkSize: 1024 * 10,
                     sender: async (index, chunkCount, chunkContent) => {
                         console.log(chunkContent);
                         try {
