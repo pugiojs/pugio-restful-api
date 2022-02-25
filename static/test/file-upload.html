@@ -24,12 +24,11 @@
             PugioSegmentalTransferer.Sender.readBrowserFileAsUint8Array(file).then((res) => {
                 const id = Math.random().toString(32).slice(2);
 
-                const sender = new PugioSegmentalTransferer.Sender({
+                let sender = new PugioSegmentalTransferer.Sender({
                     id,
                     file: res,
                     chunkSize: 1024 * 10,
                     sender: async (index, chunkCount, chunkContent) => {
-                        console.log(chunkContent);
                         try {
                             const result = await fetch('/api/v1/client/024c59d7-594b-409a-aebc-3ae92565588e/channel_request', {
                                 method: 'POST',
@@ -57,6 +56,10 @@
                     onStatusChange: (status) => {
                         const { total, succeeded } = status;
                         document.getElementById('progress').innerText = (succeeded / total * 100).toFixed(2);
+
+                        if (total === succeeded) {
+                            sender = null;
+                        }
                     },
                 });
 
