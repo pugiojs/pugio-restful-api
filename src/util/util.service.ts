@@ -100,7 +100,7 @@ export class UtilService {
             return _.cloneDeep<R>(data as R);
         }
 
-        return data;
+        return data as R;
     };
 
     public transformDAOToDTO<DAOType, DTOType>(daoData: Partial<DAOType>): DTOType {

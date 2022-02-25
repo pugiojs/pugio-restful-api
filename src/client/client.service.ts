@@ -561,12 +561,12 @@ export class ClientService {
 
     public pushChannelGateway(client: ClientDTO, eventId: string, data: any) {
         try {
-            const accepted = this.clientGateway.server.to(client.id).emit(
+            this.clientGateway.server.to(client.id).emit(
                 eventId,
                 data,
             );
 
-            return { accepted };
+            return { accepted: true };
         } catch (e) {
             return { accepted: false };
         }
