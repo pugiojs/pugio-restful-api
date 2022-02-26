@@ -19,6 +19,8 @@
         const search = new URLSearchParams(window.location.search);
         const apiKey = search.get('api_key');
         const clientId = search.get('client_id');
+        const processElement = document.getElementById('progress');
+        let errored = false;
 
         const uploadFileInput = document.getElementById('upload-file');
 
@@ -32,7 +34,7 @@
                     id,
                     file: res,
                     chunkSize: 1024 * 10,
-                    sender: async (index, chunkCount, chunkContent) => {
+                    sender: async ({ index, chunkCount, chunkContent, md5 }) => {
                         try {
                             const result = await fetch(`/api/v1/client/${clientId}/channel_request`, {
                                 method: 'POST',
@@ -48,6 +50,7 @@
                                         chunkCount,
                                         chunkContent,
                                         index,
+                                        md5,
                                     },
                                 }),
                             }).then((res) => res.json());
@@ -58,10 +61,15 @@
                         }
                     },
                     onStatusChange: (status) => {
-                        const { total, succeeded } = status;
-                        document.getElementById('progress').innerText = (succeeded / total * 100).toFixed(2);
+                        const { total, succeeded, failed } = status;
 
-                        if (total === succeeded) {
+                        if (failed > 0) {
+                            processElement.innerText = 'errored';
+                        } else {
+                            processElement.innerText = (succeeded / total * 100).toFixed(2);
+                        }
+
+                        if (total === succeeded + failed) {
                             sender = null;
                         }
                     },
