@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Case | Terminal</title>
+    <script src="//unpkg.com/xterm@4.17.0/lib/xterm.js"></script>
+    <link rel="stylesheet" href="//unpkg.com/xterm@4.17.0/css/xterm.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div>
+        <button id="close">Close</button>
+    </div>
+    <div id="terminal"></div>
+</body>
+<script>
+    window.onload = async function() {
+        const search = new URLSearchParams(window.location.search);
+        const apiKey = search.get('api_key');
+        const clientId = search.get('client_id');
+
+        const client = io('/client');
+        client.emit('join', clientId);
+
+        const closeButton = document.getElementById('close');
+
+        const handshake = async (clientId, apiKey) => {
+            const { data: handshakeData } = await fetch(`https://pugio.lenconda.top/api/v1/client/${clientId}/channel_request`, {
+                method: 'POST',
+                headers: {
+                    'API-KEY': apiKey,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    scope: 'terminal',
+                    data: {
+                        type: 'handshake',
+                    },
+                }),
+            }).then((res) => res.json());
+
+            return handshakeData.id;
+        };
+
+        const connect = async (clientId, apiKey, id) => {
+            const { data } = await fetch(`https://pugio.lenconda.top/api/v1/client/${clientId}/channel_request`, {
+                method: 'POST',
+                headers: {
+                    'API-KEY': apiKey,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    scope: 'terminal',
+                    data: {
+                        type: 'connect',
+                        id,
+                    },
+                }),
+            }).then((res) => res.json());
+
+            return data;
+        };
+
+        const sendData = async (clientId, apiKey, id, data) => {
+            const { data } = await fetch(`https://pugio.lenconda.top/api/v1/client/${clientId}/channel_request`, {
+                method: 'POST',
+                headers: {
+                    'API-KEY': apiKey,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    scope: 'terminal',
+                    data: {
+                        type: 'data',
+                        id,
+                        data,
+                    },
+                }),
+            }).then((res) => res.json());
+
+            return data;
+        }
+
+        const closeConnection = async (clientId, apiKey, id) => {
+            const { data } = await fetch(`https://pugio.lenconda.top/api/v1/client/${clientId}/channel_request`, {
+                method: 'POST',
+                headers: {
+                    'API-KEY': apiKey,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    scope: 'terminal',
+                    data: {
+                        type: 'close',
+                        id,
+                    },
+                }),
+            }).then((res) => res.json());
+
+            return data;
+        };
+
+        const terminalId = await handshake(clientId, apiKey);
+
+        closeButton.addEventListener('click', () => {
+            closeConnection(clientId, apiKey, terminalId);
+        });
+
+        if (terminalId) {
+            const terminal = new Terminal();
+
+            client.on(`terminal:data:${terminalId}`, (data) => terminal.write(data));
+
+            terminal.open(document.getElementById('terminal'));
+
+            terminal.onKey((event) => {
+                const printable = !event.domEvent.altKey && !event.domEvent.altGraphKey && !event.domEvent.ctrlKey && !event.domEvent.metaKey;
+                let data;
+
+                if (event.domEvent.keyCode === 13) {
+                    data = '\n';
+                } else if (event.domEvent.keyCode === 8) {
+                    data = '\b \b'
+                } else if (printable) {
+                    data = event.key;
+                }
+
+                sendData(clientId, apiKey, terminalId, data);
+            });
+
+            await connect(clientId, apiKey, terminalId);
+        }
+    }
+</script>
+</html>
