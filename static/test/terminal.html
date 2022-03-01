@@ -63,7 +63,7 @@
             return data;
         };
 
-        const sendData = async (clientId, apiKey, id, data) => {
+        const sendData = async (clientId, apiKey, id, terminalData) => {
             const { data } = await fetch(`https://pugio.lenconda.top/api/v1/client/${clientId}/channel_request`, {
                 method: 'POST',
                 headers: {
@@ -75,7 +75,7 @@
                     data: {
                         type: 'data',
                         id,
-                        data,
+                        data: window.btoa(terminalData),
                     },
                 }),
             }).then((res) => res.json());
@@ -111,7 +111,10 @@
         if (terminalId) {
             const terminal = new Terminal();
 
-            client.on(`terminal:data:${terminalId}`, (data) => terminal.write(data));
+            client.on(`terminal:data:${terminalId}`, (data) => {
+                const { content } = data;
+                terminal.write(window.atob(content));
+            });
 
             terminal.open(document.getElementById('terminal'));
 
@@ -131,6 +134,10 @@
             });
 
             await connect(clientId, apiKey, terminalId);
+        }
+
+        window.onbeforeprint = function() {
+            closeConnection(clientId, apiKey, terminalId);
         }
     }
 </script>
