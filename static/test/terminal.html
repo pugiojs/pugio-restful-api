@@ -139,23 +139,12 @@
 
             terminal.open(document.getElementById('terminal'));
 
-            const listener = terminal.onKey(async (event) => {
+            const listener = terminal.onData(async (data) => {
                 while (initializingContent) {
                     continue;
                 }
 
                 sendSequence += 1;
-
-                const printable = !event.domEvent.altKey && !event.domEvent.altGraphKey && !event.domEvent.ctrlKey && !event.domEvent.metaKey;
-                let data;
-
-                if (event.domEvent.keyCode === 13) {
-                    data = '\n';
-                } else if (event.domEvent.keyCode === 8) {
-                    data = '\b \b'
-                } else if (printable) {
-                    data = event.key;
-                }
 
                 await sendData(clientId, apiKey, terminalId, sendSequence, data);
             });
