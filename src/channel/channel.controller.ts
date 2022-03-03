@@ -57,7 +57,6 @@ export class ChannelController {
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
-        @Query('creator') creatorId: string = null,
         @Query(
             'create_date_range',
             ParseDateRangePipe,
