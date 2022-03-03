@@ -30,6 +30,9 @@ export class ChannelDTO {
     @Column({ default: '' })
     public avatar: string;
 
+    @Column({ name: 'bundle_url' })
+    public bundleUrl: string;
+
     @Column({ default: 'https://registry.npmjs.org' })
     public registry: string;
 

@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
@@ -6,6 +10,7 @@ import { UtilService } from 'src/util/util.service';
 import { Repository } from 'typeorm';
 import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
+import { UserDTO } from 'src/user/dto/user.dto';
 
 @Injectable()
 export class ChannelService {
@@ -65,17 +70,126 @@ export class ChannelService {
         };
     }
 
-    public async getChannelInfo(channelId: string) {
-        try {
-            const result = await this.channelRepository.findOne({
+    public async getChannelInfo(channelId: string, clientId?: string) {
+        let result: ChannelDTO;
+
+        if (clientId && _.isString(clientId)) {
+            const clientChannelRelation = await this.channelClientRepository.findOne({
+                where: {
+                    channel: {
+                        id: channelId,
+                    },
+                    client: {
+                        id: clientId,
+                    },
+                },
+                relations: ['channel'],
+            });
+
+            result = _.get(clientChannelRelation, 'channel') || null;
+        } else {
+            result = await this.channelRepository.findOne({
                 where: {
                     id: channelId,
                 },
             });
-
-            return result;
-        } catch (e) {
-            return null;
         }
+
+        if (!result) {
+            throw new NotFoundException();
+        }
+
+        return result;
+    }
+
+    public async createChannel(creator: UserDTO, data: Partial<ChannelDTO>) {
+        const channel = await this.channelRepository.save(
+            this.channelRepository.create({
+                ...data,
+                creator,
+            }),
+        );
+
+        return channel;
+    }
+
+    public async updateChannel(updater: UserDTO, channelId: string, data: Partial<ChannelDTO>) {
+        const channel = await this.channelRepository.findOne({
+            where: {
+                id: channelId,
+            },
+            relations: ['creator'],
+        });
+
+        if (!channel) {
+            throw new NotFoundException();
+        }
+
+        if (channel.creator.id !== updater.id) {
+            throw new ForbiddenException();
+        }
+
+        const updates = _.pick(data, [
+            'name',
+            'description',
+            'avatar',
+            'packageName',
+            'registry',
+            'bundleUrl',
+        ]);
+
+        return await this.channelRepository.save(
+            _.merge(_.omit(channel, ['creator']), updates),
+        );
+    }
+
+    public async addChannelToClient(clientId: string, channelId: string) {
+        const existedRelation = await this.channelClientRepository.findOne({
+            where: {
+                client: {
+                    id: clientId,
+                },
+                channel: {
+                    id: channelId,
+                },
+            },
+        });
+
+        if (existedRelation) {
+            return existedRelation;
+        }
+
+        const result = await this.channelClientRepository.save(
+            this.channelClientRepository.create({
+                client: {
+                    id: clientId,
+                },
+                channel: {
+                    id: channelId,
+                },
+            }),
+        );
+
+        return _.omit(result, ['client', 'channel']);
+    }
+
+    public async removeChannelFromClient(clientId: string, channelId: string) {
+        const relation = await this.channelClientRepository.findOne({
+            where: {
+                client: {
+                    id: clientId,
+                },
+                channel: {
+                    id: channelId,
+                },
+            },
+        });
+
+        if (relation) {
+            await this.channelClientRepository.delete(relation.id);
+            return relation;
+        }
+
+        return null;
     }
 }
