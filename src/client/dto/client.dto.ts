@@ -1,5 +1,6 @@
 import { ClientStatusDTO } from 'src/client-status/dto/client-status.dto';
 import { HookDTO } from 'src/hook/dto/hook.dto';
+import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import {
     Column,
@@ -67,6 +68,12 @@ export class ClientDTO {
         (userClientDTO) => userClientDTO.client,
     )
     public clientUsers: UserClientDTO[];
+
+    @OneToMany(
+        () => ChannelClientDTO,
+        (channelClientDTO) => channelClientDTO.client,
+    )
+    public clientChannels: ChannelClientDTO[];
 
     @OneToMany(() => HookDTO, (hookDTO) => hookDTO.client)
     public hooks: HookDTO[];

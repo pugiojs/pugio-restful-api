@@ -26,6 +26,7 @@ import { HookModule } from './hook/hook.module';
 import { ExecutionModule } from './execution/execution.module';
 import { ClientStatusModule } from './client-status/client-status.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ChannelModule } from './channel/channel.module';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -93,6 +94,7 @@ import redisConfig from './config/redis.config';
                 ]
                 : []
         ),
+        ChannelModule,
     ],
     controllers: [AppController],
     providers: [
