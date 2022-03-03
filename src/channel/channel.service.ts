@@ -64,4 +64,18 @@ export class ChannelService {
             items: result.items.map((item) => item.channel),
         };
     }
+
+    public async getChannelInfo(channelId: string) {
+        try {
+            const result = await this.channelRepository.findOne({
+                where: {
+                    id: channelId,
+                },
+            });
+
+            return result;
+        } catch (e) {
+            return null;
+        }
+    }
 }

@@ -46,7 +46,7 @@ export class ChannelController {
     }
 
     @Get('/:client_id')
-    @UseGuards(AuthGuard(['api-key', 'jwt']))
+    @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
     @UseInterceptors(ClientInterceptor({
         sources: 'params',
         type: 0,
@@ -72,5 +72,11 @@ export class ChannelController {
                 createdAt: createDateRange,
             },
         });
+    }
+
+    @Get('/:channel_id')
+    @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
+    public async getChannelInfo(@Param('channel_id') channelId: string) {
+        return await this.channelService.getChannelInfo(channelId);
     }
 }
