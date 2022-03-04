@@ -60,7 +60,6 @@ export class ChannelController {
         type: -1,
     }))
     public async queryClientChannels(
-        @CurrentClient() client: ClientDTO,
         @Param('client_id') clientId: string = null,
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
@@ -70,7 +69,7 @@ export class ChannelController {
             ParseDateRangePipe,
         ) createDateRange: TRangeItem[],
     ) {
-        return await this.channelService.queryClientChannels(client, clientId, {
+        return await this.channelService.queryClientChannels(clientId, {
             size,
             searchContent,
             lastCursor,
@@ -112,11 +111,10 @@ export class ChannelController {
         type: [0, 1],
     }))
     public async getChannelClientRelation(
-        @CurrentClient() client: ClientDTO,
         @Param('channel_id') channelId: string,
         @Query('client_id') clientId: string,
     ) {
-        return await this.channelService.getChannelClientRelation(channelId, clientId, client);
+        return await this.channelService.getChannelClientRelation(channelId, clientId);
     }
 
     @Post('/:channel_id/client')
