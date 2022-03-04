@@ -108,13 +108,13 @@ export class ChannelController {
     @Get('/:channel_id/client')
     @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
     @UseInterceptors(ClientInterceptor({
-        sources: 'body',
+        sources: 'query',
         type: [0, 1],
     }))
     public async getChannelClientRelation(
         @CurrentClient() client: ClientDTO,
         @Param('channel_id') channelId: string,
-        @Body('client_id') clientId: string,
+        @Query('client_id') clientId: string,
     ) {
         return await this.channelService.getChannelClientRelation(channelId, clientId, client);
     }
