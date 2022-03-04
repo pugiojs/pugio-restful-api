@@ -82,13 +82,10 @@ export class ChannelController {
         });
     }
 
-    @Get('/:channel_id')
+    @Get('/:channel_id/detail')
     @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
-    public async getChannelInfo(
-        @Param('channel_id') channelId: string,
-        @CurrentClient() client: ClientDTO,
-    ) {
-        return await this.channelService.getChannelInfo(channelId, client.id);
+    public async getChannelInfo(@Param('channel_id') channelId: string) {
+        return await this.channelService.getChannelInfo(channelId);
     }
 
     @Post('')
@@ -110,28 +107,42 @@ export class ChannelController {
         return await this.channelService.updateChannel(updater, channelId, data);
     }
 
-    @Post('/:channel_id/add')
+    @Get('/:channel_id/client')
+    @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
+    @UseInterceptors(ClientInterceptor({
+        sources: 'body',
+        type: [0, 1],
+    }))
+    public async getChannelClientRelation(
+        @CurrentClient() client: ClientDTO,
+        @Param('channel_id') channelId: string,
+        @Body('client_id') clientId: string,
+    ) {
+        return await this.channelService.getChannelClientRelation(channelId, clientId, client);
+    }
+
+    @Post('/:channel_id/client')
     @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
     @UseInterceptors(ClientInterceptor({
         sources: 'body',
         type: [0, 1],
     }))
     public async addChannelToClient(
-        @Param('client_id') clientId: string,
-        @Body('channel_id') channelId: string,
+        @Param('channel_id') channelId: string,
+        @Body('client_id') clientId: string,
     ) {
         return await this.channelService.addChannelToClient(clientId, channelId);
     }
 
-    @Delete('/:channel_id/remove')
+    @Delete('/:channel_id/client')
     @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
     @UseInterceptors(ClientInterceptor({
         sources: 'body',
         type: [0, 1],
     }))
     public async removeChannelFromClient(
-        @Param('client_id') clientId: string,
-        @Body('channel_id') channelId: string,
+        @Param('channel_id') channelId: string,
+        @Body('client_id') clientId: string,
     ) {
         return await this.channelService.removeChannelFromClient(clientId, channelId);
     }

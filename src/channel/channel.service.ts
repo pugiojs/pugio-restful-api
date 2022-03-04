@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ForbiddenException,
     Injectable,
     NotFoundException,
@@ -11,6 +12,7 @@ import { Repository } from 'typeorm';
 import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
+import { ClientDTO } from 'src/client/dto/client.dto';
 
 @Injectable()
 export class ChannelService {
@@ -66,34 +68,16 @@ export class ChannelService {
 
         return {
             ...result,
-            items: result.items.map((item) => item.channel),
+            items: result.items.map((item) => _.omit(item, ['client'])),
         };
     }
 
-    public async getChannelInfo(channelId: string, clientId?: string) {
-        let result: ChannelDTO;
-
-        if (clientId && _.isString(clientId)) {
-            const clientChannelRelation = await this.channelClientRepository.findOne({
-                where: {
-                    channel: {
-                        id: channelId,
-                    },
-                    client: {
-                        id: clientId,
-                    },
-                },
-                relations: ['channel'],
-            });
-
-            result = _.get(clientChannelRelation, 'channel') || null;
-        } else {
-            result = await this.channelRepository.findOne({
-                where: {
-                    id: channelId,
-                },
-            });
-        }
+    public async getChannelInfo(channelId: string) {
+        const result = await this.channelRepository.findOne({
+            where: {
+                id: channelId,
+            },
+        });
 
         if (!result) {
             throw new NotFoundException();
@@ -105,7 +89,14 @@ export class ChannelService {
     public async createChannel(creator: UserDTO, data: Partial<ChannelDTO>) {
         const channel = await this.channelRepository.save(
             this.channelRepository.create({
-                ...data,
+                ..._.pick(data, [
+                    'name',
+                    'description',
+                    'avatar',
+                    'packageName',
+                    'registry',
+                    'bundleUrl',
+                ]),
                 creator,
             }),
         );
@@ -144,6 +135,10 @@ export class ChannelService {
     }
 
     public async addChannelToClient(clientId: string, channelId: string) {
+        if (!_.isString(clientId) || !_.isString(channelId)) {
+            throw new BadRequestException();
+        }
+
         const existedRelation = await this.channelClientRepository.findOne({
             where: {
                 client: {
@@ -153,10 +148,11 @@ export class ChannelService {
                     id: channelId,
                 },
             },
+            relations: ['client', 'channel'],
         });
 
         if (existedRelation) {
-            return existedRelation;
+            return _.omit(existedRelation, ['client', 'channel']);
         }
 
         const result = await this.channelClientRepository.save(
@@ -174,6 +170,10 @@ export class ChannelService {
     }
 
     public async removeChannelFromClient(clientId: string, channelId: string) {
+        if (!_.isString(clientId) || !_.isString(channelId)) {
+            throw new BadRequestException();
+        }
+
         const relation = await this.channelClientRepository.findOne({
             where: {
                 client: {
@@ -183,13 +183,39 @@ export class ChannelService {
                     id: channelId,
                 },
             },
+            relations: ['client', 'channel'],
         });
 
-        if (relation) {
-            await this.channelClientRepository.delete(relation.id);
-            return relation;
+        if (!relation) {
+            throw new NotFoundException();
         }
 
-        return null;
+        await this.channelClientRepository.delete(relation.id);
+
+        return _.omit(relation, ['client', 'channel']);
+    }
+
+    public async getChannelClientRelation(channelId: string, clientId?: string, client?: ClientDTO) {
+        if ((!_.isString(clientId) && !client) || !_.isString(channelId)) {
+            throw new BadRequestException();
+        }
+
+        const relation = await this.channelClientRepository.findOne({
+            where: {
+                client: {
+                    id: clientId,
+                },
+                channel: {
+                    id: channelId,
+                },
+            },
+            relations: ['client', 'channel'],
+        });
+
+        if (!relation) {
+            throw new NotFoundException();
+        }
+
+        return relation;
     }
 }
