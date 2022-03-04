@@ -54,7 +54,7 @@ export class ChannelController {
     }
 
     @Get('/:client_id')
-    @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
+    @UseGuards(AuthGuard())
     @UseInterceptors(ClientInterceptor({
         sources: 'params',
         type: -1,
