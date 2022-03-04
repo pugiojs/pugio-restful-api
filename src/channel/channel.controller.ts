@@ -70,9 +70,7 @@ export class ChannelController {
             ParseDateRangePipe,
         ) createDateRange: TRangeItem[],
     ) {
-        const searchClientId = client ? client.id : clientId;
-
-        return await this.channelService.queryClientChannels(searchClientId, {
+        return await this.channelService.queryClientChannels(client, clientId, {
             size,
             searchContent,
             lastCursor,

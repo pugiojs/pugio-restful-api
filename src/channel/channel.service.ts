@@ -44,14 +44,17 @@ export class ChannelService {
     }
 
     public async queryClientChannels(
-        clientId: string,
+        client?: ClientDTO,
+        clientId?: string,
         options: PaginationQueryServiceOptions<ChannelClientDTO> = {},
     ) {
+        const targetClientId = client ? client.id : clientId;
+
         const result = await this.utilService.queryWithPagination<ChannelClientDTO>({
             queryOptions: {
                 where: {
                     client: {
-                        id: clientId,
+                        id: targetClientId,
                     },
                 },
                 relations: ['client', 'channel'],
@@ -200,10 +203,12 @@ export class ChannelService {
             throw new BadRequestException();
         }
 
+        const targetClientId = client ? client.id : clientId;
+
         const relation = await this.channelClientRepository.findOne({
             where: {
                 client: {
-                    id: clientId,
+                    id: targetClientId,
                 },
                 channel: {
                     id: channelId,
