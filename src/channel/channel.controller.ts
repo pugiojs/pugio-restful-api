@@ -89,7 +89,7 @@ export class ChannelController {
     }
 
     @Post('')
-    @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
+    @UseGuards(AuthGuard())
     public async createChannel(
         @CurrentUser() creator: UserDTO,
         @Body(TransformDTOPipe) data: Partial<ChannelDTO> = {},
@@ -98,7 +98,7 @@ export class ChannelController {
     }
 
     @Patch('/:channel_id')
-    @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
+    @UseGuards(AuthGuard())
     public async updateChannel(
         @CurrentUser() updater: UserDTO,
         @Param('channel_id') channelId: string,
