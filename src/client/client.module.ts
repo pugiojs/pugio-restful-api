@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LockerModule } from 'src/locker/locker.module';
+import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientController } from './client.controller';
 import { ClientGateway } from './client.gateway';
@@ -13,6 +14,7 @@ import { ClientDTO } from './dto/client.dto';
         TypeOrmModule.forFeature([
             UserClientDTO,
             ClientDTO,
+            ChannelClientDTO,
         ]),
     ],
     controllers: [ClientController],

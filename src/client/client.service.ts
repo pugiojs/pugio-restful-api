@@ -30,6 +30,7 @@ import * as semver from 'semver';
 import { v5 as uuidv5 } from 'uuid';
 import * as EventEmitter from 'events';
 import { ClientGateway } from './client.gateway';
+import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 
 @Injectable()
 export class ClientService {
@@ -44,6 +45,8 @@ export class ClientService {
         private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(UserClientDTO)
         private readonly userClientRepository: Repository<UserClientDTO>,
+        @InjectRepository(ChannelClientDTO)
+        private readonly channelClientRepository: Repository<ChannelClientDTO>,
         private readonly redisService: RedisService,
     ) {
         this.redisClient = this.redisService.getClient();
@@ -508,6 +511,24 @@ export class ClientService {
     }) {
         if (!_.isString(scope) || !_.isString(clientId)) {
             throw new BadRequestException();
+        }
+
+        if (!scope.startsWith('pugio.')) {
+            const relation = await this.channelClientRepository.findOne({
+                where: {
+                    client: {
+                        id: clientId,
+                    },
+                    channel: {
+                        id: scope,
+                    },
+                },
+                relations: ['client', 'channel'],
+            });
+
+            if (!relation) {
+                throw new ForbiddenException();
+            }
         }
 
         return new Promise((resolve, reject) => {

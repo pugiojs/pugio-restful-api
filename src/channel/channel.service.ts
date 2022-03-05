@@ -12,7 +12,6 @@ import { Repository } from 'typeorm';
 import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
-import { ClientDTO } from 'src/client/dto/client.dto';
 
 @Injectable()
 export class ChannelService {
