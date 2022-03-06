@@ -123,7 +123,6 @@ export class ChannelService {
             'name',
             'description',
             'avatar',
-            'packageName',
             'registry',
             'bundleUrl',
         ]);
