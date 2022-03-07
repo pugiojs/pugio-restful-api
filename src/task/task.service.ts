@@ -9,7 +9,6 @@ import {
     RedisService,
 } from '@lenconda/nestjs-redis';
 import { UtilService } from 'src/util/util.service';
-import { EventService } from 'src/event/event.service';
 import { TaskGateway } from './task.gateway';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -30,7 +29,6 @@ export class TaskService {
     private redisClient: Redis;
 
     public constructor(
-        private readonly eventService: EventService,
         private readonly taskGateway: TaskGateway,
         private readonly utilService: UtilService,
         private readonly redisService: RedisService,
@@ -42,7 +40,6 @@ export class TaskService {
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
     ) {
-        this.eventService.setGateway(this.taskGateway);
         this.redisClient = this.redisService.getClient();
     }
 

@@ -170,7 +170,6 @@ export class HookService {
         } = hook.client;
 
         const clientTaskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
-        const clientTaskChannelName = this.utilService.generateChannelName(clientId, 'execution');
 
         await this.redisClient.persist(clientTaskQueueName);
 
@@ -223,6 +222,14 @@ export class HookService {
             clientTaskQueueName,
             newTask.id,
         );
+
+        await this.clientService.requestClientChannel({
+            clientId,
+            scope: 'pugio.pipelines',
+            requestBody: {
+                lockPass,
+            },
+        });
 
         return _.omit(newTask, ['hook']);
     }
