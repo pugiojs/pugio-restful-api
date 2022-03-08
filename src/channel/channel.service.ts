@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
+import { v5 as uuidv5 } from 'uuid';
 
 @Injectable()
 export class ChannelService {
@@ -76,6 +77,17 @@ export class ChannelService {
             where: {
                 id: channelId,
             },
+            select: [
+                'name',
+                'description',
+                'avatar',
+                'packageName',
+                'registry',
+                'bundleUrl',
+                'key',
+                'createdAt',
+                'updatedAt',
+            ],
         });
 
         if (!result) {
@@ -86,6 +98,8 @@ export class ChannelService {
     }
 
     public async createChannel(creator: UserDTO, data: Partial<ChannelDTO>) {
+        const key = uuidv5(new Date().toISOString(), creator.id);
+
         const channel = await this.channelRepository.save(
             this.channelRepository.create({
                 ..._.pick(data, [
@@ -96,11 +110,12 @@ export class ChannelService {
                     'registry',
                     'bundleUrl',
                 ]),
+                key,
                 creator,
             }),
         );
 
-        return channel;
+        return _.omit(channel, ['creator', 'key']);
     }
 
     public async updateChannel(updater: UserDTO, channelId: string, data: Partial<ChannelDTO>) {
@@ -215,5 +230,21 @@ export class ChannelService {
         }
 
         return relation;
+    }
+
+    public async requestChannelApi(
+        {
+            clientId,
+            channelId,
+        }: {
+            clientId: string,
+            channelId: string,
+            pathname: string,
+            method: string,
+            data?: Record<string, any>,
+            query?: Record<string, any>,
+        },
+    ) {
+
     }
 }
