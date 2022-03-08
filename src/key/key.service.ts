@@ -15,18 +15,25 @@ import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import { v5 as uuidv5 } from 'uuid';
 import { UtilService } from 'src/util/util.service';
-import { PaginationQueryServiceOptions, TRangeItem } from 'src/app.interfaces';
+import { PaginationQueryServiceOptions } from 'src/app.interfaces';
+import { ChannelDTO } from 'src/channel/dto/channel.dto';
+import { ChannelClientDTO } from 'src/relations/channel-client.dto';
+import * as Crypto from 'crypto-js';
 
 @Injectable()
 export class KeyService {
     public constructor(
+        private readonly utilService: UtilService,
         @InjectRepository(KeyDTO)
         private readonly keyRepository: Repository<KeyDTO>,
         @InjectRepository(UserClientDTO)
         private readonly userClientRepository: Repository<UserClientDTO>,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
-        private readonly utilService: UtilService,
+        @InjectRepository(ChannelClientDTO)
+        private readonly channelClientRepository: Repository<ChannelClientDTO>,
+        @InjectRepository(ChannelDTO)
+        private readonly channelRepository: Repository<ChannelDTO>,
     ) {}
 
     public async createApiKey(user: UserDTO) {
@@ -120,6 +127,55 @@ export class KeyService {
         result.client = userClient.client;
 
         return result;
+    }
+
+    public async validateChannelKey(encodedChannelKey: string) {
+        if (!encodedChannelKey || !_.isString(encodedChannelKey)) {
+            return false;
+        }
+
+        const [clientId, channelId, channelKey] = Buffer
+            .from(encodedChannelKey, 'base64')
+            .toString()
+            .split(':');
+
+        const relation = await this.channelClientRepository.findOne({
+            where: {
+                client: {
+                    id: clientId,
+                },
+                channel: {
+                    id: channelId,
+                },
+            },
+            relations: ['client', 'channel'],
+        });
+
+        if (!relation) {
+            return null;
+        }
+
+        const { key: channelAesKey } = await this.channelRepository.findOne({
+            where: {
+                id: relation.channel.id,
+            },
+            select: ['id', 'key'],
+        });
+
+        try {
+            const decryptedChannelKey = Crypto
+                .AES
+                .decrypt(channelKey, channelAesKey)
+                .toString(Crypto.enc.Utf8);
+
+            if (decryptedChannelKey !== channelAesKey) {
+                return false;
+            }
+
+            return relation.channel;
+        } catch (e) {
+            return false;
+        }
     }
 
     public async queryApiKeys(

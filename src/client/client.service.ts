@@ -6,7 +6,6 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { UtilService } from 'src/util/util.service';
-import { LockerService } from 'src/locker/locker.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     In,
@@ -39,7 +38,6 @@ export class ClientService {
 
     public constructor(
         private readonly utilService: UtilService,
-        private readonly lockerService: LockerService,
         private readonly clientGateway: ClientGateway,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
@@ -52,17 +50,6 @@ export class ClientService {
         this.redisClient = this.redisService.getClient();
         this.emitter = new EventEmitter();
     }
-
-    public async lockExecutionTaskChannel(clientId: string, retryTimes?: number) {
-        const lockName = this.utilService.generateExecutionTaskLockName(clientId);
-        return await this.lockerService.lock(lockName, clientId, retryTimes);
-    }
-
-    public async unlockExecutionTaskChannel(clientId: string, value: string) {
-        const lockName = this.utilService.generateExecutionTaskLockName(clientId);
-        return await this.lockerService.unlock(lockName, value);
-    }
-
     public async checkPermission(
         {
             userId,

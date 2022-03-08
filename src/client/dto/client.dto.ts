@@ -1,5 +1,4 @@
 import { ClientStatusDTO } from 'src/client-status/dto/client-status.dto';
-import { HookDTO } from 'src/hook/dto/hook.dto';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import {
@@ -74,9 +73,6 @@ export class ClientDTO {
         (channelClientDTO) => channelClientDTO.client,
     )
     public clientChannels: ChannelClientDTO[];
-
-    @OneToMany(() => HookDTO, (hookDTO) => hookDTO.client)
-    public hooks: HookDTO[];
 
     @CreateDateColumn({ name: 'created_at' })
     public createdAt: Date;
