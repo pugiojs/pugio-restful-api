@@ -40,12 +40,6 @@ export class TaskDTO {
     @Column({ default: 1 })
     public status: number;
 
-    @Column({
-        select: false,
-        name: 'aes_key',
-    })
-    public aesKey: string;
-
     @OneToMany(
         () => ExecutionDTO,
         (executionDTO) => executionDTO.task,

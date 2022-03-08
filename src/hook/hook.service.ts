@@ -18,8 +18,6 @@ import {
 import { HookDTO } from './dto/hook.dto';
 import * as Handlebars from 'handlebars';
 import * as _ from 'lodash';
-import { v5 as uuidv5 } from 'uuid';
-import * as NodeRSA from 'node-rsa';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 
 @Injectable()
@@ -169,15 +167,9 @@ export class HookService {
 
         const {
             id: clientId,
-            publicKey: clientPublicKey,
         } = hook.client;
 
-        if (!_.isString(clientPublicKey)) {
-            taskStatus = -3;
-        }
-
         const clientTaskQueueName = this.utilService.generateExecutionTaskQueueName(clientId);
-        const clientTaskChannelName = this.utilService.generateChannelName(clientId, 'execution');
 
         await this.redisClient.persist(clientTaskQueueName);
 
@@ -211,45 +203,34 @@ export class HookService {
             }
         }
 
-        const taskAesKey = uuidv5(
-            new Date().toISOString + Math.random().toString(32),
-            hookId,
-        );
-
         const newTask = await this.taskRepository.save(
             this.taskRepository.create({
                 script: scriptContent,
                 status: taskStatus,
                 props: JSON.stringify(props),
-                aesKey: taskAesKey,
                 hook: {
                     id: hookId,
                 },
             }),
         );
 
-        let encryptedTaskAesKey;
-
-        try {
-            const rsaPublicKey = new NodeRSA({ b: 1024 }).importKey(
-                clientPublicKey,
-                'pkcs8-public-pem',
-            );
-            encryptedTaskAesKey = rsaPublicKey.encrypt(taskAesKey, 'base64');
-        } catch (e) {
-            taskStatus = -3;
-        }
-
         if (taskStatus < 0) {
-            return _.omit(newTask, 'aesKey');
+            return newTask;
         }
 
         await this.redisClient.RPUSH(
             clientTaskQueueName,
             newTask.id,
         );
-        this.redisClient.PUBLISH(clientTaskChannelName, lockPass);
 
-        return _.omit(newTask, ['aesKey', 'hook']);
+        await this.clientService.requestClientChannel({
+            clientId,
+            scope: 'pugio.pipelines',
+            requestBody: {
+                lockPass,
+            },
+        });
+
+        return _.omit(newTask, ['hook']);
     }
 }

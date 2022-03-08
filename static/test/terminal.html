@@ -121,13 +121,18 @@
         if (terminalId) {
             const terminal = new Terminal();
 
-            client.on(`terminal:data:${terminalId}`, (data) => {
+            client.on(`terminal:${terminalId}:data`, (data) => {
                 console.log('RECEIVE DATA:', data);
                 if (data && data.content) {
                     terminal.sequenceWrite(data, (rawData) => {
                         return window.atob(rawData);
                     });
                 }
+            });
+
+            client.on(`terminal:${terminalId}:close`, (data) => {
+                console.log('TERMINAL CLOSE:', data);
+                terminal.dispose();
             });
 
             terminal.open(document.getElementById('terminal'));

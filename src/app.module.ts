@@ -17,7 +17,6 @@ import { getMetadataArgsStorage } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UtilModule } from './util/util.module';
 import { KeyModule } from './key/key.module';
-import { EventModule } from './event/event.module';
 import { ClientModule } from './client/client.module';
 import { RedisModule } from '@lenconda/nestjs-redis';
 import { LockerModule } from './locker/locker.module';
@@ -63,7 +62,6 @@ import redisConfig from './config/redis.config';
         }),
         UtilModule,
         KeyModule,
-        EventModule,
         ClientModule,
         RedisModule.forRootAsync({
             imports: [ConfigModule],

@@ -9,7 +9,6 @@ import {
     RedisService,
 } from '@lenconda/nestjs-redis';
 import { UtilService } from 'src/util/util.service';
-import { EventService } from 'src/event/event.service';
 import { TaskGateway } from './task.gateway';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -19,20 +18,17 @@ import {
 import { TaskDTO } from './dto/task.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import * as _ from 'lodash';
-import * as Crypto from 'crypto-js';
 import * as yup from 'yup';
 import { ExecutionDTO } from 'src/execution/dto/execution.dto';
 import { ClientService } from 'src/client/client.service';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
-import * as NodeRSA from 'node-rsa';
 
 @Injectable()
 export class TaskService {
     private redisClient: Redis;
 
     public constructor(
-        private readonly eventService: EventService,
         private readonly taskGateway: TaskGateway,
         private readonly utilService: UtilService,
         private readonly redisService: RedisService,
@@ -44,7 +40,6 @@ export class TaskService {
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
     ) {
-        this.eventService.setGateway(this.taskGateway);
         this.redisClient = this.redisService.getClient();
     }
 
@@ -103,7 +98,6 @@ export class TaskService {
                 'id',
                 'script',
                 'hook',
-                'aesKey',
             ],
             relations: ['hook'],
         });
@@ -123,11 +117,6 @@ export class TaskService {
 
         for (const task of tasks) {
             let status = 2;
-            const taskAesKey = task.aesKey;
-
-            if (!_.isString(taskAesKey)) {
-                status = -3;
-            }
 
             const {
                 id,
@@ -147,28 +136,13 @@ export class TaskService {
             };
 
             let executionData;
-            let encryptedAesKey: string;
 
             try {
                 if (!_.isString(clientPublicKey)) {
                     throw new Error();
                 }
 
-                const rawExecutionData = JSON.stringify(executionConfig);
-                executionData = Crypto
-                    .AES
-                    .encrypt(rawExecutionData, taskAesKey)
-                    .toString();
-                const rsaPublicKey = new NodeRSA({ b: 1024 }).importKey(
-                    clientPublicKey,
-                    'pkcs8-public-pem',
-                );
-
-                encryptedAesKey = rsaPublicKey.encrypt(taskAesKey, 'base64');
-
-                if (!_.isString(encryptedAesKey)) {
-                    throw new Error();
-                }
+                executionData = JSON.stringify(executionConfig);
             } catch (e) {
                 status = -3;
             }
@@ -178,7 +152,6 @@ export class TaskService {
             if (status === 2) {
                 result.push({
                     id,
-                    aesKey: encryptedAesKey,
                     executionCwd,
                     executionData,
                 });
@@ -192,7 +165,7 @@ export class TaskService {
         taskId: string,
         sequence = -1,
         status = 3,
-        encryptedContent = '',
+        content = '',
     ) {
         let currentStatus = status;
 
@@ -205,7 +178,7 @@ export class TaskService {
 
         if (
             (status === 3 && sequence < 0) ||
-            !(await schema.isValid({ taskId, sequence, status, content: encryptedContent }))
+            !(await schema.isValid({ taskId, sequence, status, content }))
         ) {
             throw new BadRequestException();
         }
@@ -214,24 +187,11 @@ export class TaskService {
             where: {
                 id: taskId,
             },
-            select: ['id', 'aesKey', 'executions', 'status'],
+            select: ['id', 'executions', 'status'],
         });
 
         if (!task) {
             throw new NotFoundException();
-        }
-
-        let decryptedContent: string = null;
-
-        try {
-            if (_.isString(encryptedContent)) {
-                decryptedContent = Crypto
-                    .AES
-                    .decrypt(encryptedContent, task.aesKey)
-                    .toString(Crypto.enc.Utf8);
-            }
-        } catch (e) {
-            currentStatus = -3;
         }
 
         if (
@@ -258,7 +218,7 @@ export class TaskService {
                     task: {
                         id: taskId,
                     },
-                    content: decryptedContent,
+                    content,
                     sequence,
                 }),
             );
@@ -266,7 +226,7 @@ export class TaskService {
             try {
                 this.taskGateway.server.to(taskId).emit(
                     'execution',
-                    JSON.stringify(_.omit(executionRecord, ['task'])),
+                    _.omit(executionRecord, ['task']),
                 );
             } catch (e) {}
         }

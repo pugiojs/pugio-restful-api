@@ -36,6 +36,9 @@ export class ChannelDTO {
     @Column({ default: 'https://registry.npmjs.org' })
     public registry: string;
 
+    @Column({ select: false })
+    public key: string;
+
     @OneToMany(
         () => ChannelClientDTO,
         (channelClientDTO) => channelClientDTO.channel,

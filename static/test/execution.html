@@ -8,28 +8,45 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+    <p>
+        <input id="task" type="text">
+        <button id="submit">Submit</button>
+    </p>
     <pre id="container"></pre>
 </body>
 <script>
-    window.onload = function() {
-        const search = new URLSearchParams(window.location.search);
-        const taskId = search.get('task_id');
-        const client = io('/task');
+    function enterTask(client, clientId, taskId) {
         const messages = [];
+        const containerElement = document.getElementById('container');
+        const taskInputElement = document.getElementById('task');
 
-        client.emit('join', taskId);
+        client.emit('join', clientId);
 
-        client.on('execution', (message) => {
+        containerElement.innerText = '';
+
+        client.on(`execution_result:${taskId}`, (message) => {
             try {
-                const parsedMessage = JSON.parse(message);
-                messages.push(parsedMessage);
+                messages.push(message);
 
                 const result = messages.sort((a, b) => a.sequence - b.sequence).map((message) => {
                     return message.content;
                 }).join('');
 
-                document.getElementById('container').innerText = result;
+                containerElement.innerText = result;
             } catch (e) {}
+        });
+    }
+
+    window.onload = function() {
+        const search = new URLSearchParams(window.location.search);
+        const clientId = search.get('client_id');
+        const client = io('/client');
+        const taskInputElement = document.getElementById('task');
+        const submitButtonElement = document.getElementById('submit');
+
+        submitButtonElement.addEventListener('click', () => {
+            const taskId = taskInputElement.value;
+            enterTask(client, clientId, taskId);
         });
     }
 </script>
