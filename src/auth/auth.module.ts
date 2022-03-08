@@ -11,6 +11,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ApiKeyStrategy } from './api-key.strategy';
 import { KeyModule } from 'src/key/key.module';
 import { ClientKeyStrategy } from './client-key.strategy';
+import { ChannelKeyStrategy } from './channel-key.strategy';
 
 @Global()
 @Module({
@@ -23,12 +24,14 @@ import { ClientKeyStrategy } from './client-key.strategy';
         KeyModule,
     ],
     providers: [
+        ChannelKeyStrategy,
         ApiKeyStrategy,
         ClientKeyStrategy,
         JwtStrategy,
         AuthService,
     ],
     exports: [
+        ChannelKeyStrategy,
         PassportModule,
         JwtStrategy,
         ApiKeyStrategy,

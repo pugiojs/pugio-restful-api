@@ -224,7 +224,7 @@ export class ClientController {
     }
 
     @Post('/:client_id/channel_request')
-    @UseGuards(AuthGuard())
+    @UseGuards(AuthGuard(['api-key', 'client-key', 'channel-key']))
     @UseInterceptors(ClientInterceptor({
         sources: ['params'],
         type: [0, 1],
@@ -237,20 +237,6 @@ export class ClientController {
         return await this.clientService.requestClientChannel({
             clientId,
             scope,
-            requestBody,
-        });
-    }
-
-    @Post('/:client_id/vendor_channel_request')
-    @UseGuards(AuthGuard(['channel-key']))
-    public async requestVendorClientChannel(
-        @CurrentChannel() channel: ChannelDTO,
-        @Param('client_id') clientId: string,
-        @Body('data') requestBody: any = {},
-    ) {
-        return await this.clientService.requestClientChannel({
-            clientId,
-            scope: channel.id,
             requestBody,
         });
     }

@@ -9,4 +9,10 @@ export default registerAs('app', () => ({
     lockerExpiration: process.env.APP_LOCKER_EXPIRATION
         ? parseInt(process.env.APP_LOCKER_EXPIRATION, 10)
         : 30,
+    defaultChannels: [
+        {
+            id: 'pugio.pipelines',
+            apiPrefix: 'https://pugio-channel-pipelines.lenconda.top/api/v1',
+        },
+    ],
 }));

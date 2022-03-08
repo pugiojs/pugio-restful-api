@@ -232,6 +232,7 @@ export class ChannelService {
         return relation;
     }
 
+    // TODO
     public async requestChannelApi(
         {
             clientId,

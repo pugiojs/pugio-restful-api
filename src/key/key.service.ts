@@ -30,8 +30,8 @@ export class KeyService {
         private readonly userClientRepository: Repository<UserClientDTO>,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
-        @InjectRepository(ChannelClientDTO)
-        private readonly channelClientRepository: Repository<ChannelClientDTO>,
+        // @InjectRepository(ChannelClientDTO)
+        // private readonly channelClientRepository: Repository<ChannelClientDTO>,
         @InjectRepository(ChannelDTO)
         private readonly channelRepository: Repository<ChannelDTO>,
     ) {}
@@ -134,30 +134,24 @@ export class KeyService {
             return false;
         }
 
-        const [clientId, channelId, channelKey] = Buffer
+        const [channelId, channelKey] = Buffer
             .from(encodedChannelKey, 'base64')
             .toString()
             .split(':');
 
-        const relation = await this.channelClientRepository.findOne({
+        const channel = await this.channelRepository.findOne({
             where: {
-                client: {
-                    id: clientId,
-                },
-                channel: {
-                    id: channelId,
-                },
+                id: channelId,
             },
-            relations: ['client', 'channel'],
         });
 
-        if (!relation) {
+        if (!channel) {
             return null;
         }
 
         const { key: channelAesKey } = await this.channelRepository.findOne({
             where: {
-                id: relation.channel.id,
+                id: channel.id,
             },
             select: ['id', 'key'],
         });
@@ -172,7 +166,7 @@ export class KeyService {
                 return false;
             }
 
-            return relation.channel;
+            return channel;
         } catch (e) {
             return false;
         }

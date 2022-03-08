@@ -8,7 +8,7 @@ import { KeyService } from 'src/key/key.service';
 import * as _ from 'lodash';
 
 @Injectable()
-export class ClientKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'channel-key') {
+export class ChannelKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'channel-key') {
     public constructor(
         private readonly keyService: KeyService,
     ) {
