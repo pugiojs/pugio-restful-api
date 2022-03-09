@@ -17,6 +17,7 @@ import { ClientDTO } from 'src/client/dto/client.dto';
 import { RequestService } from '@pugio/request';
 import * as Crypto from 'crypto-js';
 import { Method } from 'axios';
+import { UserClientDTO } from 'src/relations/user-client.dto';
 
 @Injectable()
 export class ChannelService {
@@ -28,12 +29,47 @@ export class ChannelService {
         private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(ChannelDTO)
         private readonly channelRepository: Repository<ChannelDTO>,
+        @InjectRepository(UserClientDTO)
+        private readonly userClientRepository: Repository<UserClientDTO>,
         @InjectRepository(ChannelClientDTO)
         private readonly channelClientRepository: Repository<ChannelClientDTO>,
     ) {
-        this.requestService.initialize({
-            transformCase: true,
-        });
+        this.requestService.initialize(
+            {
+                transformCase: true,
+            },
+            (instance) => {
+                const defaultRequestTransformers = instance.defaults.transformRequest || [];
+
+                instance.defaults.transformRequest = [
+                    (data) => {
+                        return this.utilService.transformDTOToDAO(data);
+                    },
+                    ...(
+                        _.isArray(defaultRequestTransformers)
+                            ? defaultRequestTransformers
+                            : [defaultRequestTransformers]
+                    ),
+                ];
+
+                instance.interceptors.response.use((response) => {
+                    const responseStatus = response.status;
+                    const responseContent = response.data || response;
+                    const data = {
+                        response: null,
+                        error: null,
+                    };
+
+                    if (responseStatus >= 400) {
+                        data.error = responseContent;
+                    } else {
+                        data.response = responseContent;
+                    }
+
+                    return data;
+                });
+            },
+        );
     }
 
     public async queryChannels(creatorId: string, options: PaginationQueryServiceOptions<ChannelDTO> = {}) {
@@ -290,6 +326,7 @@ export class ChannelService {
 
     public async requestChannelApi(
         {
+            user,
             clientId,
             channelId,
             pathname = '/',
@@ -297,6 +334,7 @@ export class ChannelService {
             data = {},
             query = {},
         }: {
+            user: UserDTO,
             clientId: string,
             channelId: string,
             pathname?: string,
@@ -305,16 +343,16 @@ export class ChannelService {
             query?: Record<string, any>,
         },
     ): Promise<any> {
-        const relation = await this.channelClientRepository.findOne({
+        const relation = await this.userClientRepository.findOne({
             where: {
                 client: {
                     id: clientId,
                 },
-                channel: {
-                    id: channelId,
+                user: {
+                    id: user.id,
                 },
             },
-            relations: ['client', 'channel'],
+            relations: ['client', 'user'],
         });
 
         if (!relation) {
@@ -340,8 +378,9 @@ export class ChannelService {
             .encrypt(JSON.stringify(relation), channelAesKey)
             .toString();
 
-        return await this.requestService
+        const result = await this.requestService
             .getInstance({
+                baseURL: apiPrefix,
                 headers: {
                     'X-Pugio-Context': context,
                 },
@@ -352,5 +391,7 @@ export class ChannelService {
                 data,
                 query,
             });
+
+        return result;
     }
 }

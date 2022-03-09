@@ -11,6 +11,7 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Method } from 'axios';
 import { TRangeItem } from 'src/app.interfaces';
 import {
     ParseBooleanPipe,
@@ -142,5 +143,31 @@ export class ChannelController {
         @Body('client_id') clientId: string,
     ) {
         return await this.channelService.removeChannelFromClient(clientId, channelId);
+    }
+
+    @Post('/:channel_id/client/:client_id')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+        type: -1,
+    }))
+    public async requestChannelApi(
+        @CurrentUser() user: UserDTO,
+        @Param('channel_id') channelId: string,
+        @Param('client_id') clientId: string,
+        @Body('pathname') pathname: string,
+        @Body('method') method: Method,
+        @Body('data') data: Record<string, any> = {},
+        @Body('query') query: Record<string, any> = {},
+    ) {
+        return await this.channelService.requestChannelApi({
+            user,
+            channelId,
+            clientId,
+            pathname,
+            method,
+            data,
+            query,
+        });
     }
 }
