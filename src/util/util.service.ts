@@ -111,17 +111,6 @@ export class UtilService {
         return this.transformCaseStyle<DTOType, DAOType>(dtoData, 'snake');
     }
 
-    public getUserDAOFromAuth0Response(userInfo: Object) {
-        return Object.keys(this.userDAOKeyMap).reduce((result, currentKey) => {
-            const currentKeyName = this.userDAOKeyMap[currentKey];
-            const currentValue = userInfo[currentKey];
-            if (!_.isNull(currentValue) || !_.isUndefined(currentValue)) {
-                result[currentKeyName] = currentValue;
-            }
-            return result;
-        }, {} as UserDAO);
-    }
-
     public async sleep(timeout = 500) {
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -132,14 +121,6 @@ export class UtilService {
 
     public generateChannelName(clientId: string, scope: string) {
         return `${clientId}@${scope}`;
-    }
-
-    public generateExecutionTaskQueueName(clientId: string) {
-        return `${clientId}:task_queue`;
-    }
-
-    public generateExecutionTaskLockName(clientId: string) {
-        return `${clientId}:task_queue_lock`;
     }
 
     public createQueryObjectPathGenerator(prefixSegments: string[]) {
@@ -320,59 +301,6 @@ export class UtilService {
         }
 
         return Buffer.from(passwordContent).toString('base64');
-    }
-
-    public validateHookScriptMapper(mapperContent: string) {
-        if (!mapperContent || !_.isString(mapperContent)) {
-            return false;
-        }
-
-        let mapperSchema;
-
-        try {
-            mapperSchema = JSON.parse(mapperContent);
-        } catch (e) {
-            return false;
-        }
-
-        if (!_.isObject(mapperSchema) && !_.isObjectLike(mapperSchema)) {
-            return false;
-        }
-
-        return Object.keys(mapperSchema).every((key) => key.startsWith('$.')) ||
-            Object.keys(mapperSchema).every((key) => _.isString(mapperSchema[key]));
-    }
-
-    public transformHookProps(mapperContent: string, props: Record<string, any>) {
-        if (!this.validateHookScriptMapper(mapperContent)) {
-            return props;
-        }
-
-        const mapperSchema = JSON.parse(mapperContent);
-
-        const originalProps = _.cloneDeep(props);
-        let newProps = _.cloneDeep(props);
-
-        try {
-            for (const queryPattern of Object.keys(mapperSchema)) {
-                const nodeList = jpath.nodes(originalProps, queryPattern);
-
-                for (const node of nodeList) {
-                    const pathSegments = node.path.slice(1);
-                    pathSegments.pop();
-                    pathSegments.push(mapperSchema[queryPattern]);
-                    newProps = _.set(
-                        newProps,
-                        jpath.stringify(pathSegments).slice(2),
-                        node.value,
-                    );
-                }
-            }
-        } catch (e) {
-            return props;
-        }
-
-        return newProps;
     }
 
     public getStringValueFromBody(body: Record<string, any>, keyName: string): string {
