@@ -19,8 +19,6 @@ import {
     PermanentlyParseIntPipe,
     TransformDTOPipe,
 } from 'src/app.pipe';
-import { CurrentChannel } from 'src/channel/channel.decorator';
-import { ChannelDTO } from 'src/channel/dto/channel.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
 import { CurrentClient } from './client.decorator';

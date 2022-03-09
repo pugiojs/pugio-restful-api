@@ -13,6 +13,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { TRangeItem } from 'src/app.interfaces';
 import {
+    ParseBooleanPipe,
     ParseDateRangePipe,
     PermanentlyParseIntPipe,
     TransformDTOPipe,
@@ -62,12 +63,14 @@ export class ChannelController {
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
+        @Query('built_in', ParseBooleanPipe) builtIn: boolean,
         @Query(
             'create_date_range',
             ParseDateRangePipe,
         ) createDateRange: TRangeItem[],
     ) {
         return await this.channelService.queryClientChannels(clientId, {
+            builtIn,
             size,
             searchContent,
             lastCursor,

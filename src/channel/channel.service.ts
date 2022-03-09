@@ -13,11 +13,14 @@ import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { v5 as uuidv5 } from 'uuid';
+import { ClientDTO } from 'src/client/dto/client.dto';
 
 @Injectable()
 export class ChannelService {
     public constructor(
         private readonly utilService: UtilService,
+        @InjectRepository(ClientDTO)
+        private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(ChannelDTO)
         private readonly channelRepository: Repository<ChannelDTO>,
         @InjectRepository(ChannelClientDTO)
@@ -26,15 +29,21 @@ export class ChannelService {
 
     public async queryChannels(creatorId: string, options: PaginationQueryServiceOptions<ChannelDTO> = {}) {
         const result = await this.utilService.queryWithPagination<ChannelDTO>({
-            ...(creatorId ? {
-                queryOptions: {
-                    where: {
-                        creator: {
-                            id: creatorId,
-                        },
-                    },
+            queryOptions: {
+                where: {
+                    builtIn: false,
+                    ...(
+                        creatorId
+                            ? {
+                                creator: {
+                                    id: creatorId,
+                                },
+                            }
+                            : {}
+                    ),
                 },
-            } : {}),
+                relations: ['creator'],
+            },
             searchKeys: ['name', 'id', 'description', 'packageName'] as any[],
             repository: this.channelRepository,
             ...options,
@@ -45,31 +54,69 @@ export class ChannelService {
 
     public async queryClientChannels(
         clientId: string,
-        options: PaginationQueryServiceOptions<ChannelClientDTO> = {},
+        options: PaginationQueryServiceOptions<ChannelClientDTO | ChannelDTO> & { builtIn?: boolean } = {},
     ) {
-        const result = await this.utilService.queryWithPagination<ChannelClientDTO>({
-            queryOptions: {
+        const {
+            builtIn = false,
+            ...otherOptions
+        } = options;
+
+        let result;
+
+        if (!builtIn) {
+            result = await this.utilService.queryWithPagination<ChannelClientDTO>({
+                queryOptions: {
+                    where: {
+                        client: {
+                            id: clientId,
+                        },
+                    },
+                    relations: ['client', 'channel'],
+                },
+                repository: this.channelClientRepository,
+                searchKeys: [
+                    'channel.name',
+                    'channel.id',
+                    'channel.description',
+                    'channel.packageName',
+                ] as any[],
+                ...otherOptions,
+            });
+            result.items = result.items.map((item) => _.omit(item, ['client']));
+        } else {
+            const client = await this.clientRepository.findOne({
                 where: {
-                    client: {
-                        id: clientId,
+                    id: clientId,
+                },
+            });
+
+            result = await this.utilService.queryWithPagination<ChannelDTO>({
+                queryOptions: {
+                    where: {
+                        builtIn: true,
                     },
                 },
-                relations: ['client', 'channel'],
-            },
-            repository: this.channelClientRepository,
-            searchKeys: [
-                'channel.name',
-                'channel.id',
-                'channel.description',
-                'channel.packageName',
-            ] as any[],
-            ...options,
-        });
+                repository: this.channelRepository,
+                searchKeys: [
+                    'name',
+                    'id',
+                    'description',
+                    'packageName',
+                ] as any[],
+                ...otherOptions,
+            });
 
-        return {
-            ...result,
-            items: result.items.map((item) => _.omit(item, ['client'])),
-        };
+            result.items = result.items.map((item) => {
+                return {
+                    id: item.id,
+                    createdAt: client.createdAt,
+                    updatedAt: client.updatedAt,
+                    channel: item,
+                };
+            });
+        }
+
+        return result;
     }
 
     public async getChannelInfo(channelId: string) {

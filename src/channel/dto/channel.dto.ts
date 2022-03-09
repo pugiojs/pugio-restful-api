@@ -42,6 +42,9 @@ export class ChannelDTO {
     @Column({ select: false })
     public key: string;
 
+    @Column({ select: false, name: 'built_in', default: false })
+    public builtIn: boolean
+
     @OneToMany(
         () => ChannelClientDTO,
         (channelClientDTO) => channelClientDTO.channel,

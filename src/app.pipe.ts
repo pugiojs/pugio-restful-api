@@ -145,3 +145,14 @@ export class TransformDTOPipe implements PipeTransform {
         return this.utilService.transformDAOToDTO(value);
     }
 }
+
+@Injectable()
+export class ParseBooleanPipe implements PipeTransform {
+    public transform(value: any) {
+        if (!value || value === 'false' || value === '0') {
+            return false;
+        }
+
+        return true;
+    }
+}

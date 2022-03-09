@@ -10,6 +10,7 @@ import { ChannelDTO } from './dto/channel.dto';
 @Module({
     imports: [
         TypeOrmModule.forFeature([
+            ClientDTO,
             ChannelDTO,
             ChannelClientDTO,
         ]),
