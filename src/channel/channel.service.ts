@@ -14,9 +14,14 @@ import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { v5 as uuidv5 } from 'uuid';
 import { ClientDTO } from 'src/client/dto/client.dto';
+import { RequestService } from '@pugio/request';
+import * as Crypto from 'crypto-js';
+import { Method } from 'axios';
 
 @Injectable()
 export class ChannelService {
+    private requestService: RequestService = new RequestService();
+
     public constructor(
         private readonly utilService: UtilService,
         @InjectRepository(ClientDTO)
@@ -25,7 +30,11 @@ export class ChannelService {
         private readonly channelRepository: Repository<ChannelDTO>,
         @InjectRepository(ChannelClientDTO)
         private readonly channelClientRepository: Repository<ChannelClientDTO>,
-    ) {}
+    ) {
+        this.requestService.initialize({
+            transformCase: true,
+        });
+    }
 
     public async queryChannels(creatorId: string, options: PaginationQueryServiceOptions<ChannelDTO> = {}) {
         const result = await this.utilService.queryWithPagination<ChannelDTO>({
@@ -279,20 +288,69 @@ export class ChannelService {
         return relation;
     }
 
-    // TODO
     public async requestChannelApi(
         {
             clientId,
             channelId,
+            pathname = '/',
+            method = 'get',
+            data = {},
+            query = {},
         }: {
             clientId: string,
             channelId: string,
-            pathname: string,
-            method: string,
+            pathname?: string,
+            method?: Method,
             data?: Record<string, any>,
             query?: Record<string, any>,
         },
-    ) {
+    ): Promise<any> {
+        const relation = await this.channelClientRepository.findOne({
+            where: {
+                client: {
+                    id: clientId,
+                },
+                channel: {
+                    id: channelId,
+                },
+            },
+            relations: ['client', 'channel'],
+        });
 
+        if (!relation) {
+            return new ForbiddenException();
+        }
+
+        const {
+            apiPrefix,
+            key: channelAesKey,
+        } = await this.channelRepository.findOne({
+            where: {
+                id: channelId,
+            },
+            select: ['id', 'apiPrefix', 'key'],
+        });
+
+        if (!apiPrefix) {
+            throw new BadRequestException();
+        }
+
+        const context = Crypto
+            .AES
+            .encrypt(JSON.stringify(relation), channelAesKey)
+            .toString();
+
+        return await this.requestService
+            .getInstance({
+                headers: {
+                    'X-Pugio-Context': context,
+                },
+            })
+            .request({
+                url: pathname,
+                method,
+                data,
+                query,
+            });
     }
 }
