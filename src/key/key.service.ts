@@ -17,7 +17,6 @@ import { v5 as uuidv5 } from 'uuid';
 import { UtilService } from 'src/util/util.service';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 import { ChannelDTO } from 'src/channel/dto/channel.dto';
-import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import * as Crypto from 'crypto-js';
 
 @Injectable()
@@ -30,8 +29,6 @@ export class KeyService {
         private readonly userClientRepository: Repository<UserClientDTO>,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
-        // @InjectRepository(ChannelClientDTO)
-        // private readonly channelClientRepository: Repository<ChannelClientDTO>,
         @InjectRepository(ChannelDTO)
         private readonly channelRepository: Repository<ChannelDTO>,
     ) {}
@@ -134,7 +131,7 @@ export class KeyService {
             return false;
         }
 
-        const [channelId, channelKey] = Buffer
+        const [channelId, encryptedChannelAesKey] = Buffer
             .from(encodedChannelKey, 'base64')
             .toString()
             .split(':');
@@ -143,30 +140,39 @@ export class KeyService {
             where: {
                 id: channelId,
             },
+            select: [
+                'id',
+                'name',
+                'description',
+                'packageName',
+                'avatar',
+                'bundleUrl',
+                'registry',
+                'key',
+                'apiPrefix',
+                'status',
+                'createdAt',
+                'updatedAt',
+            ],
         });
 
         if (!channel) {
             return null;
         }
 
-        const { key: channelAesKey } = await this.channelRepository.findOne({
-            where: {
-                id: channel.id,
-            },
-            select: ['id', 'key'],
-        });
+        const { key: channelAesKey } = channel;
 
         try {
-            const decryptedChannelKey = Crypto
+            const decryptedChannelAesKey = Crypto
                 .AES
-                .decrypt(channelKey, channelAesKey)
+                .decrypt(encryptedChannelAesKey, channelAesKey)
                 .toString(Crypto.enc.Utf8);
 
-            if (decryptedChannelKey !== channelAesKey) {
+            if (decryptedChannelAesKey !== channelAesKey) {
                 return false;
             }
 
-            return channel;
+            return _.omit(channel, ['key']);
         } catch (e) {
             return false;
         }

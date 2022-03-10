@@ -5,10 +5,10 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaginationQueryServiceOptions } from 'src/app.interfaces';
+import { CustomPaginationQueryOptions, PaginationQueryOptions, PaginationQueryServiceOptions } from 'src/app.interfaces';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { UtilService } from 'src/util/util.service';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
@@ -72,27 +72,51 @@ export class ChannelService {
         );
     }
 
-    public async queryChannels(creatorId: string, options: PaginationQueryServiceOptions<ChannelDTO> = {}) {
-        const result = await this.utilService.queryWithPagination<ChannelDTO>({
-            queryOptions: {
-                where: {
-                    builtIn: false,
-                    ...(
-                        creatorId
-                            ? {
+    public async queryChannels(user: UserDTO, creatorId: string, options: PaginationQueryServiceOptions<ChannelDTO> = {}) {
+        let status = _.get(options, 'queryOptions.where.status');
+
+        if (!_.isNumber(status)) {
+            status = 1;
+        }
+
+        const result = await this.utilService.queryWithPagination<ChannelDTO>(
+            _.merge<
+                PaginationQueryOptions<ChannelDTO>,
+                PaginationQueryServiceOptions<ChannelDTO>,
+                PaginationQueryServiceOptions<ChannelDTO>,
+                PaginationQueryServiceOptions<ChannelDTO>
+            >(
+                {
+                    queryOptions: {
+                        where: {
+                            builtIn: false,
+                        },
+                        relations: ['creator'],
+                    },
+                    searchKeys: ['name', 'id', 'description', 'packageName'] as any[],
+                    repository: this.channelRepository,
+                },
+                _.omit(options, 'queryOptions'),
+                creatorId
+                    ? {
+                        queryOptions: {
+                            where: {
                                 creator: {
                                     id: creatorId,
                                 },
-                            }
-                            : {}
-                    ),
+                            },
+                        },
+                    }
+                    : {},
+                {
+                    queryOptions: {
+                        where: {
+                            status: (status !== 1 && user.id !== creatorId) ? -1 : status,
+                        },
+                    },
                 },
-                relations: ['creator'],
-            },
-            searchKeys: ['name', 'id', 'description', 'packageName'] as any[],
-            repository: this.channelRepository,
-            ...options,
-        });
+            ),
+        );
 
         return result;
     }

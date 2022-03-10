@@ -33,17 +33,24 @@ export class ChannelController {
 
     @Get('')
     @UseGuards(AuthGuard())
-    public async queryClients(
+    public async queryChannels(
+        @CurrentUser() user: UserDTO,
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
         @Query('creator') creatorId: string = null,
+        @Query('status', PermanentlyParseIntPipe) status,
         @Query(
             'create_date_range',
             ParseDateRangePipe,
         ) createDateRange: TRangeItem[],
     ) {
-        return await this.channelService.queryChannels(creatorId, {
+        return await this.channelService.queryChannels(user, creatorId, {
+            queryOptions: {
+                where: {
+                    status,
+                },
+            },
             size,
             searchContent,
             lastCursor,

@@ -43,7 +43,14 @@ export class ChannelDTO {
     public key: string;
 
     @Column({ select: false, name: 'built_in', default: false })
-    public builtIn: boolean
+    public builtIn: boolean;
+
+    /**
+     * - 0: developing
+     * - 1: online
+     */
+    @Column({ default: 1 })
+    public status: number;
 
     @OneToMany(
         () => ChannelClientDTO,
