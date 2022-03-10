@@ -19,6 +19,8 @@ import {
     PermanentlyParseIntPipe,
     TransformDTOPipe,
 } from 'src/app.pipe';
+import { CurrentChannel } from 'src/channel/channel.decorator';
+import { ChannelDTO } from 'src/channel/dto/channel.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
 import { CurrentClient } from './client.decorator';
@@ -225,14 +227,16 @@ export class ClientController {
     @UseGuards(AuthGuard(['api-key', 'client-key', 'channel-key']))
     @UseInterceptors(ClientInterceptor({
         sources: ['params'],
-        type: [0, 1],
+        type: -1,
     }))
     public async requestClientChannel(
+        @CurrentChannel() channel: ChannelDTO,
         @Param('client_id') clientId: string,
         @Body('scope') scope: string,
         @Body('data') requestBody: any = {},
     ) {
         return await this.clientService.requestClientChannel({
+            channel,
             clientId,
             scope,
             requestBody,

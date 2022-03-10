@@ -5,10 +5,13 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CustomPaginationQueryOptions, PaginationQueryOptions, PaginationQueryServiceOptions } from 'src/app.interfaces';
+import {
+    PaginationQueryOptions,
+    PaginationQueryServiceOptions,
+} from 'src/app.interfaces';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { UtilService } from 'src/util/util.service';
-import { FindManyOptions, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
