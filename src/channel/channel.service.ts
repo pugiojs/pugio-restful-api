@@ -327,15 +327,17 @@ export class ChannelService {
         return _.omit(relation, ['client', 'channel']);
     }
 
-    public async getChannelClientRelation(channelId: string, clientId: string) {
-        if (!_.isString(clientId) || !_.isString(channelId)) {
+    public async getChannelClientRelation(channelId: string, clientId: string, client?: ClientDTO) {
+        const currentClientId = client ? client.id : clientId;
+
+        if (!_.isString(currentClientId) || !_.isString(channelId)) {
             throw new BadRequestException();
         }
 
         const relation = await this.channelClientRepository.findOne({
             where: {
                 client: {
-                    id: clientId,
+                    id: currentClientId,
                 },
                 channel: {
                     id: channelId,

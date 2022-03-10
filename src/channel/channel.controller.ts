@@ -19,7 +19,9 @@ import {
     PermanentlyParseIntPipe,
     TransformDTOPipe,
 } from 'src/app.pipe';
+import { CurrentClient } from 'src/client/client.decorator';
 import { ClientInterceptor } from 'src/client/client.interceptor';
+import { ClientDTO } from 'src/client/dto/client.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
 import { ChannelService } from './channel.service';
@@ -115,15 +117,12 @@ export class ChannelController {
 
     @Get('/:channel_id/client')
     @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
-    @UseInterceptors(ClientInterceptor({
-        sources: 'query',
-        type: [0, 1],
-    }))
     public async getChannelClientRelation(
         @Param('channel_id') channelId: string,
         @Query('client_id') clientId: string,
+        @CurrentClient() client: ClientDTO,
     ) {
-        return await this.channelService.getChannelClientRelation(channelId, clientId);
+        return await this.channelService.getChannelClientRelation(channelId, clientId, client);
     }
 
     @Post('/:channel_id/client')
