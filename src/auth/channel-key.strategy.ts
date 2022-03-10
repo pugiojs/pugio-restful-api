@@ -16,7 +16,6 @@ export class ChannelKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, '
             {
                 header: 'CHANNEL-KEY',
                 prefix: '',
-                property: 'channel',
             },
             true,
             async (encodedChannelKey, done) => {
@@ -29,7 +28,7 @@ export class ChannelKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, '
                         if (!channel) {
                             return done(new ForbiddenException());
                         } else {
-                            return done(null, channel);
+                            return done(null, { $channel: channel });
                         }
                     }
                 } catch (error) {

@@ -66,7 +66,7 @@ export class ClientService {
             version?: string | string[],
         },
     ) {
-        if (!_.isString(userId)) {
+        if (!_.isString(userId) || !userId) {
             return true;
         }
 

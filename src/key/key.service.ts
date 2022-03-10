@@ -114,7 +114,7 @@ export class KeyService {
                     id: clientId,
                 },
             },
-            relations: ['client'],
+            relations: ['client', 'user'],
         });
 
         if (!userClient) {

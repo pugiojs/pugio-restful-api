@@ -30,7 +30,10 @@ export class ClientKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'c
                         if (!client) {
                             return done(new ForbiddenException());
                         } else {
-                            return done(null, { ...user, client });
+                            return done(null, {
+                                ...user,
+                                $client: client,
+                            });
                         }
                     }
                 } catch (error) {

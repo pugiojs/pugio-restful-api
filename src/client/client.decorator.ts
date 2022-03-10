@@ -8,14 +8,14 @@ import { ClientDTO } from 'src/client/dto/client.dto';
 
 export const CurrentClient = createParamDecorator(
     (data: string, context: ExecutionContext): ClientDTO => {
-        const user = context.switchToHttp().getRequest().user;
+        const client = _.get(context.switchToHttp().getRequest(), 'user.$client');
 
-        if (!user) {
+        if (!client) {
             return null;
         }
 
-        const userData = (data ? user[data] : user) as UserDTO & { client: ClientDTO };
+        const clientData = (data ? client[data] : client) as ClientDTO;
 
-        return _.get(userData, 'client');
+        return clientData;
     },
 );
