@@ -151,22 +151,24 @@ export class ChannelController {
         return await this.channelService.removeChannelFromClient(clientId, channelId);
     }
 
-    @Post('/:channel_id/client/:client_id')
-    @UseGuards(AuthGuard())
+    @Post('/:channel_id/api')
+    @UseGuards(AuthGuard(['api-key', 'client-key', 'jwt']))
     @UseInterceptors(ClientInterceptor({
         sources: 'params',
         type: -1,
     }))
     public async requestChannelApi(
         @CurrentUser() user: UserDTO,
+        @CurrentClient() client: ClientDTO,
         @Param('channel_id') channelId: string,
-        @Param('client_id') clientId: string,
+        @Query('client_id') clientId: string,
         @Body('pathname') pathname: string,
         @Body('method') method: Method,
         @Body('data') data: Record<string, any> = {},
         @Body('query') query: Record<string, any> = {},
     ) {
         return await this.channelService.requestChannelApi({
+            client,
             user,
             channelId,
             clientId,

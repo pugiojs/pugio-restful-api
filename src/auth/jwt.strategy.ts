@@ -65,7 +65,7 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
                 throw new ForbiddenException(ERR_AUTH_EMAIL_NOT_VERIFIED);
             }
 
-            const userInfoData = this.utilService.transformDAOToDTO<UserDAO, UserDTO>(data);
+            const userInfoData = this.utilService.transformDAOToDTO(data);
             const result = await this.userService.syncUserInformation(userInfoData);
 
             return result;

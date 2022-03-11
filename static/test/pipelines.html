@@ -40,7 +40,7 @@
     window.onload = function() {
         const search = new URLSearchParams(window.location.search);
         const clientId = search.get('client_id');
-        const client = io('https://pugio.lenconda.top/client');
+        const client = io('/client');
         const taskInputElement = document.getElementById('task');
         const submitButtonElement = document.getElementById('submit');
 

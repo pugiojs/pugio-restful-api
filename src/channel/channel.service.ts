@@ -57,7 +57,7 @@ export class ChannelService {
 
                 instance.interceptors.response.use((response) => {
                     const responseStatus = response.status;
-                    const responseContent = response.data || response;
+                    const responseContent = response.data;
                     const data = {
                         response: null,
                         error: null,
@@ -355,6 +355,7 @@ export class ChannelService {
 
     public async requestChannelApi(
         {
+            client,
             user,
             clientId,
             channelId,
@@ -364,18 +365,21 @@ export class ChannelService {
             query = {},
         }: {
             user: UserDTO,
-            clientId: string,
             channelId: string,
+            client?: ClientDTO,
+            clientId?: string,
             pathname?: string,
             method?: Method,
             data?: Record<string, any>,
             query?: Record<string, any>,
         },
     ): Promise<any> {
+        const targetClientId = client ? client.id : clientId;
+
         const relation = await this.userClientRepository.findOne({
             where: {
                 client: {
-                    id: clientId,
+                    id: targetClientId,
                 },
                 user: {
                     id: user.id,
