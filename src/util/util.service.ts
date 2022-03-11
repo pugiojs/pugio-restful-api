@@ -11,7 +11,6 @@ import {
     TRangeMap,
     WhereOptions,
 } from 'src/app.interfaces';
-import { UserDAO } from 'src/user/dao/user.dao';
 import {
     Between,
     LessThan,
@@ -20,106 +19,19 @@ import {
 } from 'typeorm';
 import { v5 as uuidv5 } from 'uuid';
 import * as jpath from 'jsonpath';
-
-type DataType = Array<any> | Object | string | Date;
-type CaseStyleType = 'snake' | 'camel' | 'kebab';
+import { UtilsService } from '@pugio/utils';
 
 @Injectable()
 export class UtilService {
-    private userDAOKeyMap = {
-        name: 'name',
-        nickname: 'nickname',
-        picture: 'picture',
-        user_id: 'open_id',
-        email: 'email',
-        created_at: 'created_at',
-        updated_at: 'updated_at',
-    };
+    public transformCaseStyle: typeof UtilsService.prototype.transformCaseStyle;
+    public transformDAOToDTO: typeof UtilsService.prototype.transformDAOToDTO;
+    public transformDTOToDAO: typeof UtilsService.prototype.transformDTOToDAO;
 
-    public transformCaseStyle = <T extends DataType, R extends T | DataType>(
-        data: Partial<T>,
-        targetCaseStyleType: CaseStyleType,
-    ): R => {
-        if (_.isNumber(data) && data === 0) {
-            return data as any;
-        }
-
-        if (_.isBoolean(data)) {
-            return data as any;
-        }
-
-        if (!data) {
-            return null;
-        }
-
-        if (_.isDate(data)) {
-            return data as R;
-        }
-
-        if (_.isArray(data)) {
-            return data.map((currentArrayItem) => {
-                if (_.isObject(currentArrayItem) || _.isObjectLike(currentArrayItem)) {
-                    return this.transformCaseStyle(currentArrayItem, targetCaseStyleType);
-                } else if (_.isArray(currentArrayItem)) {
-                    return this.transformCaseStyle(currentArrayItem, targetCaseStyleType);
-                } else {
-                    return currentArrayItem;
-                }
-            }) as R;
-        }
-
-        if (_.isObject(data) || _.isObjectLike(data)) {
-            return Object.keys(data).reduce((result, legacyKeyName) => {
-                let currentKeyName: string;
-
-                switch (targetCaseStyleType) {
-                    case 'camel': {
-                        currentKeyName = _.camelCase(legacyKeyName);
-                        break;
-                    }
-                    case 'kebab': {
-                        currentKeyName = _.kebabCase(legacyKeyName);
-                        break;
-                    }
-                    case 'snake': {
-                        currentKeyName = _.snakeCase(legacyKeyName);
-                        break;
-                    }
-                    default:
-                        currentKeyName = legacyKeyName;
-                        break;
-                }
-
-                result[currentKeyName] = this.transformCaseStyle(data[legacyKeyName], targetCaseStyleType);
-
-                return result;
-            }, {} as R);
-        }
-
-        if (_.isPlainObject(data) || _.isString(data)) {
-            return _.cloneDeep<R>(data as R);
-        }
-
-        return data as R;
-    };
-
-    public transformDAOToDTO<DAOType, DTOType>(daoData: Partial<DAOType>): DTOType {
-        return this.transformCaseStyle<DAOType, DTOType>(daoData, 'camel');
-    }
-
-    public transformDTOToDAO<DTOType, DAOType>(dtoData: Partial<DTOType>): DAOType {
-        return this.transformCaseStyle<DTOType, DAOType>(dtoData, 'snake');
-    }
-
-    public getUserDAOFromAuth0Response(userInfo: Object) {
-        return Object.keys(this.userDAOKeyMap).reduce((result, currentKey) => {
-            const currentKeyName = this.userDAOKeyMap[currentKey];
-            const currentValue = userInfo[currentKey];
-            if (!_.isNull(currentValue) || !_.isUndefined(currentValue)) {
-                result[currentKeyName] = currentValue;
-            }
-            return result;
-        }, {} as UserDAO);
+    public constructor() {
+        const pugioUtilsService = new UtilsService();
+        this.transformCaseStyle = pugioUtilsService.transformCaseStyle.bind(this);
+        this.transformDAOToDTO = pugioUtilsService.transformDAOToDTO.bind(this);
+        this.transformDTOToDAO = pugioUtilsService.transformDTOToDAO.bind(this);
     }
 
     public async sleep(timeout = 500) {
@@ -132,14 +44,6 @@ export class UtilService {
 
     public generateChannelName(clientId: string, scope: string) {
         return `${clientId}@${scope}`;
-    }
-
-    public generateExecutionTaskQueueName(clientId: string) {
-        return `${clientId}:task_queue`;
-    }
-
-    public generateExecutionTaskLockName(clientId: string) {
-        return `${clientId}:task_queue_lock`;
     }
 
     public createQueryObjectPathGenerator(prefixSegments: string[]) {
@@ -320,59 +224,6 @@ export class UtilService {
         }
 
         return Buffer.from(passwordContent).toString('base64');
-    }
-
-    public validateHookScriptMapper(mapperContent: string) {
-        if (!mapperContent || !_.isString(mapperContent)) {
-            return false;
-        }
-
-        let mapperSchema;
-
-        try {
-            mapperSchema = JSON.parse(mapperContent);
-        } catch (e) {
-            return false;
-        }
-
-        if (!_.isObject(mapperSchema) && !_.isObjectLike(mapperSchema)) {
-            return false;
-        }
-
-        return Object.keys(mapperSchema).every((key) => key.startsWith('$.')) ||
-            Object.keys(mapperSchema).every((key) => _.isString(mapperSchema[key]));
-    }
-
-    public transformHookProps(mapperContent: string, props: Record<string, any>) {
-        if (!this.validateHookScriptMapper(mapperContent)) {
-            return props;
-        }
-
-        const mapperSchema = JSON.parse(mapperContent);
-
-        const originalProps = _.cloneDeep(props);
-        let newProps = _.cloneDeep(props);
-
-        try {
-            for (const queryPattern of Object.keys(mapperSchema)) {
-                const nodeList = jpath.nodes(originalProps, queryPattern);
-
-                for (const node of nodeList) {
-                    const pathSegments = node.path.slice(1);
-                    pathSegments.pop();
-                    pathSegments.push(mapperSchema[queryPattern]);
-                    newProps = _.set(
-                        newProps,
-                        jpath.stringify(pathSegments).slice(2),
-                        node.value,
-                    );
-                }
-            }
-        } catch (e) {
-            return props;
-        }
-
-        return newProps;
     }
 
     public getStringValueFromBody(body: Record<string, any>, keyName: string): string {

@@ -15,18 +15,22 @@ import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
 import { v5 as uuidv5 } from 'uuid';
 import { UtilService } from 'src/util/util.service';
-import { PaginationQueryServiceOptions, TRangeItem } from 'src/app.interfaces';
+import { PaginationQueryServiceOptions } from 'src/app.interfaces';
+import { ChannelDTO } from 'src/channel/dto/channel.dto';
+import * as Crypto from 'crypto-js';
 
 @Injectable()
 export class KeyService {
     public constructor(
+        private readonly utilService: UtilService,
         @InjectRepository(KeyDTO)
         private readonly keyRepository: Repository<KeyDTO>,
         @InjectRepository(UserClientDTO)
         private readonly userClientRepository: Repository<UserClientDTO>,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
-        private readonly utilService: UtilService,
+        @InjectRepository(ChannelDTO)
+        private readonly channelRepository: Repository<ChannelDTO>,
     ) {}
 
     public async createApiKey(user: UserDTO) {
@@ -110,7 +114,7 @@ export class KeyService {
                     id: clientId,
                 },
             },
-            relations: ['client'],
+            relations: ['client', 'user'],
         });
 
         if (!userClient) {
@@ -120,6 +124,58 @@ export class KeyService {
         result.client = userClient.client;
 
         return result;
+    }
+
+    public async validateChannelKey(encodedChannelKey: string) {
+        if (!encodedChannelKey || !_.isString(encodedChannelKey)) {
+            return false;
+        }
+
+        const [channelId, encryptedChannelAesKey] = Buffer
+            .from(encodedChannelKey, 'base64')
+            .toString()
+            .split(':');
+
+        const channel = await this.channelRepository.findOne({
+            where: {
+                id: channelId,
+            },
+            select: [
+                'id',
+                'name',
+                'description',
+                'packageName',
+                'avatar',
+                'bundleUrl',
+                'registry',
+                'key',
+                'apiPrefix',
+                'status',
+                'createdAt',
+                'updatedAt',
+            ],
+        });
+
+        if (!channel) {
+            return null;
+        }
+
+        const { key: channelAesKey } = channel;
+
+        try {
+            const decryptedChannelAesKey = Crypto
+                .AES
+                .decrypt(encryptedChannelAesKey, channelAesKey)
+                .toString(Crypto.enc.Utf8);
+
+            if (decryptedChannelAesKey !== channelAesKey) {
+                return false;
+            }
+
+            return _.omit(channel, ['key']);
+        } catch (e) {
+            return false;
+        }
     }
 
     public async queryApiKeys(

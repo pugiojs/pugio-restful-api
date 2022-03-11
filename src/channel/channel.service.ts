@@ -5,7 +5,10 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaginationQueryServiceOptions } from 'src/app.interfaces';
+import {
+    PaginationQueryOptions,
+    PaginationQueryServiceOptions,
+} from 'src/app.interfaces';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { UtilService } from 'src/util/util.service';
 import { Repository } from 'typeorm';
@@ -13,63 +16,179 @@ import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { v5 as uuidv5 } from 'uuid';
+import { ClientDTO } from 'src/client/dto/client.dto';
+import { RequestService } from '@pugio/request';
+import * as Crypto from 'crypto-js';
+import { Method } from 'axios';
+import { UserClientDTO } from 'src/relations/user-client.dto';
 
 @Injectable()
 export class ChannelService {
+    private requestService: RequestService = new RequestService();
+
     public constructor(
         private readonly utilService: UtilService,
+        @InjectRepository(ClientDTO)
+        private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(ChannelDTO)
         private readonly channelRepository: Repository<ChannelDTO>,
+        @InjectRepository(UserClientDTO)
+        private readonly userClientRepository: Repository<UserClientDTO>,
         @InjectRepository(ChannelClientDTO)
         private readonly channelClientRepository: Repository<ChannelClientDTO>,
-    ) {}
+    ) {
+        this.requestService.initialize(
+            {
+                transformCase: true,
+            },
+            (instance) => {
+                const defaultRequestTransformers = instance.defaults.transformRequest || [];
 
-    public async queryChannels(creatorId: string, options: PaginationQueryServiceOptions<ChannelDTO> = {}) {
-        const result = await this.utilService.queryWithPagination<ChannelDTO>({
-            ...(creatorId ? {
-                queryOptions: {
-                    where: {
-                        creator: {
-                            id: creatorId,
+                instance.defaults.transformRequest = [
+                    (data) => {
+                        return this.utilService.transformDTOToDAO(data);
+                    },
+                    ...(
+                        _.isArray(defaultRequestTransformers)
+                            ? defaultRequestTransformers
+                            : [defaultRequestTransformers]
+                    ),
+                ];
+
+                instance.interceptors.response.use((response) => {
+                    const responseStatus = response.status;
+                    const responseContent = response.data;
+                    const data = {
+                        response: null,
+                        error: null,
+                    };
+
+                    if (responseStatus >= 400) {
+                        data.error = responseContent;
+                    } else {
+                        data.response = responseContent;
+                    }
+
+                    return data;
+                });
+            },
+        );
+    }
+
+    public async queryChannels(user: UserDTO, creatorId: string, options: PaginationQueryServiceOptions<ChannelDTO> = {}) {
+        let status = _.get(options, 'queryOptions.where.status');
+
+        if (!_.isNumber(status)) {
+            status = 1;
+        }
+
+        const result = await this.utilService.queryWithPagination<ChannelDTO>(
+            _.merge<
+                PaginationQueryOptions<ChannelDTO>,
+                PaginationQueryServiceOptions<ChannelDTO>,
+                PaginationQueryServiceOptions<ChannelDTO>,
+                PaginationQueryServiceOptions<ChannelDTO>
+            >(
+                {
+                    queryOptions: {
+                        where: {
+                            builtIn: false,
+                        },
+                        relations: ['creator'],
+                    },
+                    searchKeys: ['name', 'id', 'description', 'packageName'] as any[],
+                    repository: this.channelRepository,
+                },
+                _.omit(options, 'queryOptions'),
+                creatorId
+                    ? {
+                        queryOptions: {
+                            where: {
+                                creator: {
+                                    id: creatorId,
+                                },
+                            },
+                        },
+                    }
+                    : {},
+                {
+                    queryOptions: {
+                        where: {
+                            status: (status !== 1 && user.id !== creatorId) ? -1 : status,
                         },
                     },
                 },
-            } : {}),
-            searchKeys: ['name', 'id', 'description', 'packageName'] as any[],
-            repository: this.channelRepository,
-            ...options,
-        });
+            ),
+        );
 
         return result;
     }
 
     public async queryClientChannels(
         clientId: string,
-        options: PaginationQueryServiceOptions<ChannelClientDTO> = {},
+        options: PaginationQueryServiceOptions<ChannelClientDTO | ChannelDTO> & { builtIn?: boolean } = {},
     ) {
-        const result = await this.utilService.queryWithPagination<ChannelClientDTO>({
-            queryOptions: {
+        const {
+            builtIn = false,
+            ...otherOptions
+        } = options;
+
+        let result;
+
+        if (!builtIn) {
+            result = await this.utilService.queryWithPagination<ChannelClientDTO>({
+                queryOptions: {
+                    where: {
+                        client: {
+                            id: clientId,
+                        },
+                    },
+                    relations: ['client', 'channel'],
+                },
+                repository: this.channelClientRepository,
+                searchKeys: [
+                    'channel.name',
+                    'channel.id',
+                    'channel.description',
+                    'channel.packageName',
+                ] as any[],
+                ...otherOptions,
+            });
+            result.items = result.items.map((item) => _.omit(item, ['client']));
+        } else {
+            const client = await this.clientRepository.findOne({
                 where: {
-                    client: {
-                        id: clientId,
+                    id: clientId,
+                },
+            });
+
+            result = await this.utilService.queryWithPagination<ChannelDTO>({
+                queryOptions: {
+                    where: {
+                        builtIn: true,
                     },
                 },
-                relations: ['client', 'channel'],
-            },
-            repository: this.channelClientRepository,
-            searchKeys: [
-                'channel.name',
-                'channel.id',
-                'channel.description',
-                'channel.packageName',
-            ] as any[],
-            ...options,
-        });
+                repository: this.channelRepository,
+                searchKeys: [
+                    'name',
+                    'id',
+                    'description',
+                    'packageName',
+                ] as any[],
+                ...otherOptions,
+            });
 
-        return {
-            ...result,
-            items: result.items.map((item) => _.omit(item, ['client'])),
-        };
+            result.items = result.items.map((item) => {
+                return {
+                    id: item.id,
+                    createdAt: client.createdAt,
+                    updatedAt: client.updatedAt,
+                    channel: item,
+                };
+            });
+        }
+
+        return result;
     }
 
     public async getChannelInfo(channelId: string) {
@@ -208,15 +327,17 @@ export class ChannelService {
         return _.omit(relation, ['client', 'channel']);
     }
 
-    public async getChannelClientRelation(channelId: string, clientId: string) {
-        if (!_.isString(clientId) || !_.isString(channelId)) {
+    public async getChannelClientRelation(channelId: string, clientId: string, client?: ClientDTO) {
+        const currentClientId = client ? client.id : clientId;
+
+        if (!_.isString(currentClientId) || !_.isString(channelId)) {
             throw new BadRequestException();
         }
 
         const relation = await this.channelClientRepository.findOne({
             where: {
                 client: {
-                    id: clientId,
+                    id: currentClientId,
                 },
                 channel: {
                     id: channelId,
@@ -234,17 +355,76 @@ export class ChannelService {
 
     public async requestChannelApi(
         {
+            client,
+            user,
             clientId,
             channelId,
+            pathname = '/',
+            method = 'get',
+            data = {},
+            query = {},
         }: {
-            clientId: string,
+            user: UserDTO,
             channelId: string,
-            pathname: string,
-            method: string,
+            client?: ClientDTO,
+            clientId?: string,
+            pathname?: string,
+            method?: Method,
             data?: Record<string, any>,
             query?: Record<string, any>,
         },
-    ) {
+    ): Promise<any> {
+        const targetClientId = client ? client.id : clientId;
 
+        const relation = await this.userClientRepository.findOne({
+            where: {
+                client: {
+                    id: targetClientId,
+                },
+                user: {
+                    id: user.id,
+                },
+            },
+            relations: ['client', 'user'],
+        });
+
+        if (!relation) {
+            return new ForbiddenException();
+        }
+
+        const {
+            apiPrefix,
+            key: channelAesKey,
+        } = await this.channelRepository.findOne({
+            where: {
+                id: channelId,
+            },
+            select: ['id', 'apiPrefix', 'key'],
+        });
+
+        if (!apiPrefix) {
+            throw new BadRequestException();
+        }
+
+        const context = Crypto
+            .AES
+            .encrypt(JSON.stringify(relation), channelAesKey)
+            .toString();
+
+        const result = await this.requestService
+            .getInstance({
+                baseURL: apiPrefix,
+                headers: {
+                    'X-Pugio-Context': context,
+                },
+            })
+            .request({
+                url: pathname,
+                method,
+                data,
+                query,
+            });
+
+        return result;
     }
 }

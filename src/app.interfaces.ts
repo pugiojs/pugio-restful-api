@@ -55,3 +55,4 @@ export interface ResourceBaseInterceptorOptions {
 }
 
 export type PaginationQueryServiceOptions<D> = Omit<PaginationQueryOptions<D>, 'repository'>;
+export type CustomPaginationQueryOptions<D> = Pick<PaginationQueryOptions<D>, 'queryOptions'>;

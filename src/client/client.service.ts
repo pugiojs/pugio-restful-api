@@ -6,7 +6,6 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { UtilService } from 'src/util/util.service';
-import { LockerService } from 'src/locker/locker.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     In,
@@ -31,6 +30,7 @@ import { v5 as uuidv5 } from 'uuid';
 import * as EventEmitter from 'events';
 import { ClientGateway } from './client.gateway';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
+import { ChannelDTO } from 'src/channel/dto/channel.dto';
 
 @Injectable()
 export class ClientService {
@@ -39,7 +39,6 @@ export class ClientService {
 
     public constructor(
         private readonly utilService: UtilService,
-        private readonly lockerService: LockerService,
         private readonly clientGateway: ClientGateway,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
@@ -52,17 +51,6 @@ export class ClientService {
         this.redisClient = this.redisService.getClient();
         this.emitter = new EventEmitter();
     }
-
-    public async lockExecutionTaskChannel(clientId: string, retryTimes?: number) {
-        const lockName = this.utilService.generateExecutionTaskLockName(clientId);
-        return await this.lockerService.lock(lockName, clientId, retryTimes);
-    }
-
-    public async unlockExecutionTaskChannel(clientId: string, value: string) {
-        const lockName = this.utilService.generateExecutionTaskLockName(clientId);
-        return await this.lockerService.unlock(lockName, value);
-    }
-
     public async checkPermission(
         {
             userId,
@@ -71,13 +59,17 @@ export class ClientService {
             checkDeviceId = false,
             version = [],
         }: {
-            userId: string,
+            userId?: string,
             clientId: string,
             permission?: number | number[],
             checkDeviceId?: boolean,
             version?: string | string[],
         },
     ) {
+        if (!_.isString(userId) || !userId) {
+            return true;
+        }
+
         const relations = await this.userClientRepository
             .find({
                 where: {
@@ -499,28 +491,38 @@ export class ClientService {
     }
 
     public async requestClientChannel({
+        channel,
         clientId,
-        scope,
+        scope: scopeId,
         requestBody = {},
         timeoutThreshold = 30000,
     }: {
+        channel?: ChannelDTO,
         clientId: string,
         scope: string,
         requestBody?: any,
         timeoutThreshold?: number,
     }) {
-        if (!_.isString(scope) || !_.isString(clientId)) {
+        let channelId: string;
+
+        if (_.isString(channel?.id)) {
+            channelId = channel.id;
+        } else if (_.isString(scopeId)) {
+            channelId = scopeId;
+        }
+
+        if (!_.isString(channelId) || !_.isString(clientId)) {
             throw new BadRequestException();
         }
 
-        if (!scope.startsWith('pugio.')) {
+        if (!channelId.startsWith('pugio.')) {
             const relation = await this.channelClientRepository.findOne({
                 where: {
                     client: {
                         id: clientId,
                     },
                     channel: {
-                        id: scope,
+                        id: channelId,
                     },
                 },
                 relations: ['client', 'channel'],
@@ -532,7 +534,7 @@ export class ClientService {
         }
 
         return new Promise((resolve, reject) => {
-            const requestId = uuidv5(`${new Date().toISOString()}$${scope}`, clientId);
+            const requestId = uuidv5(`${new Date().toISOString()}$${channelId}`, clientId);
 
             const requestChannelId = this.utilService.generateChannelName(clientId, 'channel_request');
             const responseChannelId = this.utilService.generateChannelName(clientId, 'channel_response');
@@ -554,7 +556,7 @@ export class ClientService {
                 requestChannelId,
                 JSON.stringify({
                     id: requestId,
-                    scope,
+                    scope: channelId,
                     options: requestBody,
                 }),
             );

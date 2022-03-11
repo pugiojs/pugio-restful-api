@@ -19,10 +19,6 @@ import { UtilModule } from './util/util.module';
 import { KeyModule } from './key/key.module';
 import { ClientModule } from './client/client.module';
 import { RedisModule } from '@lenconda/nestjs-redis';
-import { LockerModule } from './locker/locker.module';
-import { TaskModule } from './task/task.module';
-import { HookModule } from './hook/hook.module';
-import { ExecutionModule } from './execution/execution.module';
 import { ClientStatusModule } from './client-status/client-status.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ChannelModule } from './channel/channel.module';
@@ -77,10 +73,6 @@ import redisConfig from './config/redis.config';
             },
             inject: [ConfigService],
         }),
-        LockerModule,
-        TaskModule,
-        HookModule,
-        ExecutionModule,
         ClientStatusModule,
         ...(
             process.env.NODE_ENV === 'development'

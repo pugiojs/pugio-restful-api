@@ -5,6 +5,7 @@ import {
 import { UserDTO } from './dto/user.dto';
 import * as _ from 'lodash';
 import { ClientDTO } from 'src/client/dto/client.dto';
+import { ChannelDTO } from 'src/channel/dto/channel.dto';
 
 export const CurrentUser = createParamDecorator(
     (data: string, context: ExecutionContext): UserDTO => {
@@ -14,8 +15,13 @@ export const CurrentUser = createParamDecorator(
             return null;
         }
 
-        const userData = (data ? user[data] : user) as UserDTO & { client: ClientDTO };
+        const userData = (data ? user[data] : user) as UserDTO & {
+            $client?: ClientDTO;
+            $channel?: ChannelDTO;
+        };
 
-        return _.omit(userData, ['client']);
+        return _.omit(userData, [
+            '$client',
+        ]);
     },
 );

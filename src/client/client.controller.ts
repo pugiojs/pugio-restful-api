@@ -19,6 +19,8 @@ import {
     PermanentlyParseIntPipe,
     TransformDTOPipe,
 } from 'src/app.pipe';
+import { CurrentChannel } from 'src/channel/channel.decorator';
+import { ChannelDTO } from 'src/channel/dto/channel.dto';
 import { UserDTO } from 'src/user/dto/user.dto';
 import { CurrentUser } from 'src/user/user.decorator';
 import { CurrentClient } from './client.decorator';
@@ -36,27 +38,6 @@ export class ClientController {
     @UseGuards(AuthGuard('client-key'))
     public getClientInfoFromClient(@CurrentClient() client: ClientDTO) {
         return client;
-    }
-
-    @Post('/locker')
-    @UseGuards(AuthGuard('client-key'))
-    public async lockExecutionTaskChannel(
-        @CurrentClient() client: ClientDTO,
-        @Query('maximum_retry_times', PermanentlyParseIntPipe) maximumRetryTimes: number,
-    ) {
-        return await this.clientService.lockExecutionTaskChannel(
-            client.id,
-            maximumRetryTimes,
-        );
-    }
-
-    @Delete('/locker')
-    @UseGuards(AuthGuard('client-key'))
-    public async unlockExecutionTaskChannel(
-        @CurrentClient() client: ClientDTO,
-        @Body('validation') validationValue: string,
-    ) {
-        return await this.clientService.unlockExecutionTaskChannel(client.id, validationValue);
     }
 
     @Post('')
@@ -243,17 +224,19 @@ export class ClientController {
     }
 
     @Post('/:client_id/channel_request')
-    @UseGuards(AuthGuard())
+    @UseGuards(AuthGuard(['api-key', 'client-key', 'channel-key']))
     @UseInterceptors(ClientInterceptor({
         sources: ['params'],
-        type: [0, 1],
+        type: -1,
     }))
     public async requestClientChannel(
+        @CurrentChannel() channel: ChannelDTO,
         @Param('client_id') clientId: string,
         @Body('scope') scope: string,
         @Body('data') requestBody: any = {},
     ) {
         return await this.clientService.requestClientChannel({
+            channel,
             clientId,
             scope,
             requestBody,

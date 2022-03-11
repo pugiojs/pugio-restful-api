@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { KeyDTO } from './dto/key.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { ClientDTO } from 'src/client/dto/client.dto';
+import { ChannelClientDTO } from 'src/relations/channel-client.dto';
+import { ChannelDTO } from 'src/channel/dto/channel.dto';
 
 @Module({
     imports: [
@@ -12,6 +14,8 @@ import { ClientDTO } from 'src/client/dto/client.dto';
             KeyDTO,
             UserClientDTO,
             ClientDTO,
+            ChannelClientDTO,
+            ChannelDTO,
         ]),
     ],
     providers: [KeyService],
