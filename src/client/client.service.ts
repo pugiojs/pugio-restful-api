@@ -615,7 +615,7 @@ export class ClientService {
                 relations: ['user', 'client'],
             });
         } catch (e) {
-            return {};
+            throw new NotFoundException();
         }
     }
 }
