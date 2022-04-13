@@ -34,6 +34,16 @@ export class ClientController {
         private readonly clientService: ClientService,
     ) {}
 
+    @Get('/relation')
+    @UseGuards(AuthGuard(['api-key', 'jwt']))
+    public async requestClientUserRelation(
+        @CurrentUser() user: UserDTO,
+        @CurrentClient() client?: ClientDTO,
+        @Query('client_id') clientId?: string,
+    ) {
+        return await this.clientService.requestClientUserRelation(user, client, clientId);
+    }
+
     @Get('/info')
     @UseGuards(AuthGuard('client-key'))
     public getClientInfoFromClient(@CurrentClient() client: ClientDTO) {
@@ -241,15 +251,5 @@ export class ClientController {
             scope,
             requestBody,
         });
-    }
-
-    @Get('/relation')
-    @UseGuards(AuthGuard(['api-key', 'client-key']))
-    public async requestClientUserRelation(
-        @CurrentUser() user: UserDTO,
-        @CurrentClient() client?: ClientDTO,
-        @Query('client_id') clientId?: string,
-    ) {
-        return await this.clientService.requestClientUserRelation(user, client, clientId);
     }
 }

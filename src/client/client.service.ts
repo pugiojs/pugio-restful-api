@@ -602,16 +602,20 @@ export class ClientService {
             throw new BadRequestException();
         }
 
-        return await this.userClientRepository.findOne({
-            where: {
-                user: {
-                    id: user.id,
+        try {
+            return await this.userClientRepository.findOneOrFail({
+                where: {
+                    user: {
+                        id: user.id,
+                    },
+                    client: {
+                        id: targetClientId,
+                    },
                 },
-                client: {
-                    id: targetClientId,
-                },
-            },
-            relations: ['user', 'client'],
-        });
+                relations: ['user', 'client'],
+            });
+        } catch (e) {
+            return {};
+        }
     }
 }

@@ -14,7 +14,6 @@ import { passportJwtSecret } from 'jwks-rsa';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import * as _ from 'lodash';
 import { UserService } from '../user/user.service';
-import { UserDTO } from 'src/user/dto/user.dto';
 import {
     ERR_AUTH_EMAIL_NOT_VERIFIED,
 } from 'src/app.constants';
