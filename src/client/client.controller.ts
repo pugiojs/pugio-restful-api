@@ -242,4 +242,14 @@ export class ClientController {
             requestBody,
         });
     }
+
+    @Get('/relation')
+    @UseGuards(AuthGuard(['api-key', 'client-key']))
+    public async requestClientUserRelation(
+        @CurrentUser() user: UserDTO,
+        @CurrentClient() client?: ClientDTO,
+        @Query('client_id') clientId?: string,
+    ) {
+        return await this.clientService.requestClientUserRelation(user, client, clientId);
+    }
 }

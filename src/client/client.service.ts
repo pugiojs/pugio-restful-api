@@ -594,4 +594,24 @@ export class ClientService {
             return { accepted: false };
         }
     }
+
+    public async requestClientUserRelation(user: UserDTO, client?: ClientDTO, clientId?: string) {
+        const targetClientId = client?.id || clientId;
+
+        if (!targetClientId || !user?.id) {
+            throw new BadRequestException();
+        }
+
+        return await this.userClientRepository.findOne({
+            where: {
+                user: {
+                    id: user.id,
+                },
+                client: {
+                    id: targetClientId,
+                },
+            },
+            relations: ['user', 'client'],
+        });
+    }
 }
