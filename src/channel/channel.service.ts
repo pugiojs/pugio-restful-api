@@ -191,7 +191,7 @@ export class ChannelService {
         return result;
     }
 
-    public async getChannelInfo(channelId: string) {
+    public async getChannelInfo(user: UserDTO, channelId: string) {
         const result = await this.channelRepository.findOne({
             where: {
                 id: channelId,
@@ -203,17 +203,23 @@ export class ChannelService {
                 'packageName',
                 'registry',
                 'bundleUrl',
+                'creator',
                 'key',
                 'createdAt',
                 'updatedAt',
             ],
+            relations: ['creator'],
         });
 
         if (!result) {
             throw new NotFoundException();
         }
 
-        return result;
+        if (result.creator.id === user.id) {
+            return result;
+        }
+
+        return _.omit(result, ['key']);
     }
 
     public async createChannel(creator: UserDTO, data: Partial<ChannelDTO>) {

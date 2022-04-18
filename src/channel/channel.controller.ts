@@ -92,8 +92,11 @@ export class ChannelController {
 
     @Get('/:channel_id/detail')
     @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
-    public async getChannelInfo(@Param('channel_id') channelId: string) {
-        return await this.channelService.getChannelInfo(channelId);
+    public async getChannelInfo(
+        @CurrentUser() user: UserDTO,
+        @Param('channel_id') channelId: string,
+    ) {
+        return await this.channelService.getChannelInfo(user, channelId);
     }
 
     @Post('')
