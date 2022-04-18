@@ -197,13 +197,13 @@ export class ChannelService {
                 id: channelId,
             },
             select: [
+                'id',
                 'name',
                 'description',
                 'avatar',
                 'packageName',
                 'registry',
                 'bundleUrl',
-                'creator',
                 'key',
                 'createdAt',
                 'updatedAt',
@@ -215,7 +215,7 @@ export class ChannelService {
             throw new NotFoundException();
         }
 
-        if (result.creator.id === user.id) {
+        if (result?.creator?.id === user.id) {
             return result;
         }
 
