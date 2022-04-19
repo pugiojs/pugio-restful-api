@@ -143,7 +143,7 @@ export class ChannelService {
                             id: clientId,
                         },
                     },
-                    relations: ['client', 'channel'],
+                    relations: ['client', 'channel', 'channel.creator'],
                 },
                 repository: this.channelClientRepository,
                 searchKeys: [
