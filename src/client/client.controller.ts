@@ -234,7 +234,7 @@ export class ClientController {
     }
 
     @Post('/:client_id/channel_request')
-    @UseGuards(AuthGuard(['api-key', 'client-key', 'channel-key']))
+    @UseGuards(AuthGuard(['jwt', 'api-key', 'client-key', 'channel-key']))
     @UseInterceptors(ClientInterceptor({
         sources: ['params'],
         type: -1,
