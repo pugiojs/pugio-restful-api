@@ -130,15 +130,12 @@ export class ChannelController {
 
     @Post('/:channel_id/client')
     @UseGuards(AuthGuard(['client-key', 'api-key', 'jwt']))
-    @UseInterceptors(ClientInterceptor({
-        sources: 'body',
-        type: [0, 1],
-    }))
     public async addChannelToClient(
+        @CurrentUser() user: UserDTO,
         @Param('channel_id') channelId: string,
-        @Body('client_id') clientId: string,
+        @Body('client_id_list') clientIdList: string | string[],
     ) {
-        return await this.channelService.addChannelToClient(clientId, channelId);
+        return await this.channelService.addChannelToClients(user, clientIdList, channelId);
     }
 
     @Delete('/:channel_id/client')

@@ -11,7 +11,10 @@ import {
 } from 'src/app.interfaces';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { UtilService } from 'src/util/util.service';
-import { Repository } from 'typeorm';
+import {
+    In,
+    Repository,
+} from 'typeorm';
 import { ChannelDTO } from './dto/channel.dto';
 import * as _ from 'lodash';
 import { UserDTO } from 'src/user/dto/user.dto';
@@ -272,39 +275,67 @@ export class ChannelService {
         );
     }
 
-    public async addChannelToClient(clientId: string, channelId: string) {
-        if (!_.isString(clientId) || !_.isString(channelId)) {
+    public async addChannelToClients(user: UserDTO, clientIdList: string | string[], channelId: string) {
+        if ((!_.isString(clientIdList) && !_.isArray(clientIdList)) || !_.isString(channelId)) {
             throw new BadRequestException();
         }
 
-        const existedRelation = await this.channelClientRepository.findOne({
-            where: {
-                client: {
-                    id: clientId,
+        const targetClientIdList = _.isString(clientIdList)
+            ? [clientIdList]
+            : clientIdList;
+
+        const channelClientCreationPromiseList = targetClientIdList.map(async (clientId) => {
+            const currentUserClientRelation = await this.userClientRepository.findOne({
+                where: {
+                    user: {
+                        id: user.id,
+                    },
+                    client: {
+                        id: clientId,
+                    },
+                    roleType: In([0, 1]),
                 },
-                channel: {
-                    id: channelId,
+            });
+
+            if (!currentUserClientRelation) {
+                return null;
+            }
+
+            const existedChannelClientRelation = await this.channelClientRepository.findOne({
+                where: {
+                    client: {
+                        id: clientId,
+                    },
+                    channel: {
+                        id: channelId,
+                    },
                 },
-            },
-            relations: ['client', 'channel'],
+                relations: ['client', 'channel'],
+            });
+
+            if (existedChannelClientRelation) {
+                return existedChannelClientRelation;
+            }
+
+            try {
+                return await this.channelClientRepository.save(
+                    this.channelClientRepository.create({
+                        client: {
+                            id: clientId,
+                        },
+                        channel: {
+                            id: channelId,
+                        },
+                    }),
+                );
+            } catch (e) {
+                return null;
+            }
         });
 
-        if (existedRelation) {
-            return _.omit(existedRelation, ['client', 'channel']);
-        }
+        const result = await Promise.all(channelClientCreationPromiseList);
 
-        const result = await this.channelClientRepository.save(
-            this.channelClientRepository.create({
-                client: {
-                    id: clientId,
-                },
-                channel: {
-                    id: channelId,
-                },
-            }),
-        );
-
-        return _.omit(result, ['client', 'channel']);
+        return result.filter((resultItem) => resultItem !== null);
     }
 
     public async removeChannelFromClient(clientId: string, channelId: string) {
