@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Injectable,
     NotFoundException,
     UnauthorizedException,
@@ -8,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserDTO } from 'src/user/dto/user.dto';
 import {
     In,
+    Like,
     Repository,
 } from 'typeorm';
 import { KeyDTO } from './dto/key.dto';
@@ -33,7 +35,7 @@ export class KeyService {
         private readonly channelRepository: Repository<ChannelDTO>,
     ) {}
 
-    public async createApiKey(user: UserDTO) {
+    public async createApiKey(user: UserDTO, scopes: string[] = []) {
         const { id } = user;
         const seed = Buffer.from(
             [
@@ -50,12 +52,17 @@ export class KeyService {
                 id,
             },
             keyId: content,
+            scopes: ',' + scopes.join(',') + ',',
         });
 
         return await this.keyRepository.save(newAPIKey);
     }
 
-    public async validateApiKey(apiKey: string) {
+    public async validateApiKey(
+        apiKey: string,
+        scopes: string[] = [],
+        scopeMode: 'all' | 'one' = 'one',
+    ) {
         const result = await this.keyRepository.findOne({
             where: {
                 keyId: apiKey,
@@ -65,6 +72,25 @@ export class KeyService {
 
         if (!result) {
             throw new UnauthorizedException();
+        }
+
+        const resultScopes = result.scopes
+            ? result.scopes.slice(1, -1).split(',')
+            : [];
+
+        if (scopes.length > 0 || resultScopes.length > 0) {
+            switch (scopeMode) {
+                case 'all': {
+                    return scopes.every((scope) => resultScopes.indexOf(scope) !== -1)
+                        ? result.owner
+                        : undefined;
+                }
+                case 'one': {
+                    return scopes.some((scope) => resultScopes.indexOf(scope) !== -1)
+                        ? result.owner
+                        : undefined;
+                }
+            }
         }
 
         return result.owner;
@@ -97,10 +123,6 @@ export class KeyService {
 
         if (!client) {
             throw new NotFoundException();
-        }
-
-        if (!user) {
-            return result;
         }
 
         result.user = user;
@@ -196,6 +218,27 @@ export class KeyService {
         });
 
         return result;
+    }
+
+    public async ensureSingleScopedApiKey(user: UserDTO, scopeId: string) {
+        if (!scopeId) {
+            throw new BadRequestException();
+        }
+
+        const existedApiKey = await this.keyRepository.findOne({
+            where: {
+                owner: {
+                    id: user.id,
+                },
+                scopes: Like(`%,${scopeId},%`),
+            },
+        });
+
+        if (existedApiKey) {
+            return existedApiKey;
+        }
+
+        return await this.createApiKey(user, [scopeId]);
     }
 
     public async deleteApiKeys(user: UserDTO, keyIdentifierList: string[]) {

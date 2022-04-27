@@ -19,6 +19,9 @@ export class KeyDTO {
     @Column({ name: 'key_id' })
     public keyId: string;
 
+    @Column({ default: '' })
+    public scopes: string;
+
     @ManyToOne(() => UserDTO, (userDTO) => userDTO.keys, {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',

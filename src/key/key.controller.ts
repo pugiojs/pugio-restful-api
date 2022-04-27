@@ -47,9 +47,21 @@ export class KeyController {
     }
 
     @UseGuards(AuthGuard())
+    @Post('/ensure/:scope_id')
+    public async ensureSingleScopedApiKey(
+        @CurrentUser() user: UserDTO,
+        @Param('scope_id') scopeId: string,
+    ) {
+        return await this.keyService.ensureSingleScopedApiKey(user, scopeId);
+    }
+
+    @UseGuards(AuthGuard())
     @Post('')
-    public async createApiKey(@CurrentUser() user: UserDTO) {
-        return await this.keyService.createApiKey(user);
+    public async createApiKey(
+        @CurrentUser() user: UserDTO,
+        @Body('scopes') scopes: string[] = [],
+    ) {
+        return await this.keyService.createApiKey(user, scopes);
     }
 
     @UseGuards(AuthGuard())

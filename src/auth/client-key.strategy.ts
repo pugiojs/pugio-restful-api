@@ -5,6 +5,7 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { KeyService } from 'src/key/key.service';
+import * as _ from 'lodash';
 
 @Injectable()
 export class ClientKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'client-key') {
@@ -25,7 +26,7 @@ export class ClientKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy, 'c
                     } = await this.keyService.validateClientKey(encodedClientKey);
 
                     if (!user) {
-                        return done(null, false);
+                        return done(null, _.isUndefined(user) ? new ForbiddenException() : false);
                     } else {
                         if (!client) {
                             return done(new ForbiddenException());

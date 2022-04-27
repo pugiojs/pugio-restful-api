@@ -25,6 +25,7 @@ export class ClientGateway implements Gateway {
 
     public handleConnection(client: Socket) {
         this.logger.log(`Client connected: ${client.id}`);
+        this.logger.log(`Client '${client.id}' authentication info: ` + JSON.stringify(client.handshake.headers.authorization));
     }
 
     public handleDisconnect(client: Socket) {
@@ -34,6 +35,7 @@ export class ClientGateway implements Gateway {
 	@SubscribeMessage('join')
     public handleJoinRoom(client: Socket, roomId: string) {
         client.join(roomId);
+        this.logger.log(`Client joined: ${roomId}`);
     }
 
 	@SubscribeMessage('leave')
