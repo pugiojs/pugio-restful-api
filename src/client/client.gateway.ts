@@ -107,4 +107,15 @@ export class ClientGateway implements Gateway {
 	public handleLeftRoom(client: Socket, roomId: string) {
 	    client.leave(roomId);
 	}
+
+    @SubscribeMessage('channel_stream')
+	public handleChannelStream(client: Socket, data: any) {
+	    const {
+	        eventId,
+	        roomId,
+	        data: content,
+	    } = data;
+
+	    this.server.to(roomId).emit(eventId, content);
+	}
 }
