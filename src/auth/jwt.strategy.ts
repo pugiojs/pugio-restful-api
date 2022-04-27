@@ -53,8 +53,9 @@ export class JwtStrategy extends PassportStrategy(BaseStrategy) {
         }
 
         try {
+            const accountCenterApi = this.configService.get<string>('auth.accountCenterApi');
             const { data } = await axios.get<UserDAO>(
-                `http://127.0.0.1:9876/api/v1/vendor/profile?id=${id}&key=${this.configService.get('auth.apiKey')}`,
+                `${accountCenterApi}/vendor/profile?id=${id}&key=${this.configService.get('auth.apiKey')}`,
                 {
                     responseType: 'json',
                 },

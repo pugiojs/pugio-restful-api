@@ -12,4 +12,5 @@ export default registerAs('auth', () => ({
     apiKey: process.env.OAUTH2_TENANT_API_KEY,
     defaultRedirectUri: process.env.OAUTH2_DEFAULT_REDIRECT_URI,
     jwtIssuer: process.env.OAUTH2_JWT_ISSUER,
+    accountCenterApi: process.env.OAUTH2_ACCOUNT_CENTER_API,
 }));

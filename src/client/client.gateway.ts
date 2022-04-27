@@ -11,6 +11,8 @@ import {
 } from 'socket.io';
 import * as _ from 'lodash';
 import { KeyService } from 'src/key/key.service';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 @WebSocketGateway({
     namespace: 'client',
@@ -22,6 +24,7 @@ export class ClientGateway implements Gateway {
 
     public constructor (
         private readonly keyService: KeyService,
+        private readonly configService: ConfigService,
     ) {}
 
     public afterInit() {
@@ -58,6 +61,27 @@ export class ClientGateway implements Gateway {
                         this.logger.log(`Client '${client.id}' authentication via CK failed, exiting...`);
                         client.disconnect();
                     }
+                });
+                break;
+            }
+            case 'bearer': {
+                const audience = this.configService.get<string>('auth.audience');
+                const accountCenterApi = this.configService.get<string>('auth.accountCenterApi');
+                axios.post(
+                    `${accountCenterApi}/oauth2/validate`, {
+                        token,
+                        audience,
+                    },
+                    {
+                        responseType: 'json',
+                    },
+                ).then((res) => {
+                    if (!res?.data?.sub) {
+                        return Promise.reject(new Error());
+                    }
+                }).catch((e) => {
+                    this.logger.log(`Client '${client.id}' authentication via Bearer failed, exiting...`);
+                    client.disconnect();
                 });
                 break;
             }

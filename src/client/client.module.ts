@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { KeyModule } from 'src/key/key.module';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
@@ -16,6 +17,7 @@ import { ClientDTO } from './dto/client.dto';
             ChannelClientDTO,
         ]),
         KeyModule,
+        ConfigModule,
     ],
     controllers: [ClientController],
     providers: [
