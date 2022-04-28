@@ -330,6 +330,47 @@ export class ClientService {
         };
     }
 
+    public async queryClientMemberships(
+        clientId: string,
+        role: number,
+        options: PaginationQueryServiceOptions<UserClientDTO> = {},
+    ) {
+        const result = await this.utilService.queryWithPagination<UserClientDTO>({
+            queryOptions: {
+                where: {
+                    client: {
+                        id: clientId,
+                    },
+                    ...(
+                        _.isNumber(role)
+                            ? {
+                                roleType: role,
+                            }
+                            : {}
+                    ),
+                },
+                select: ['id', 'user', 'client', 'roleType', 'createdAt', 'updatedAt'],
+                relations: ['user', 'client'],
+            },
+            searchKeys: [
+                'user.id',
+                'user.openId',
+                'user.email',
+                'user.fullName',
+                'user.firstName',
+                'user.middleName',
+                'user.lastName',
+            ] as any[],
+            repository: this.userClientRepository,
+            ...options,
+        });
+
+        return {
+            ...result,
+            items: result.items.map((result) => _.omit(result, 'client')),
+        };
+    }
+
     public async handleCreateMembership(
         user: UserDTO,
         clientId: string,

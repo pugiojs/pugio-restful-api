@@ -150,6 +150,29 @@ export class ClientController {
         );
     }
 
+    @Get('/:client_id/membership')
+    @UseGuards(AuthGuard())
+    public async queryClientMemberships(
+        @Param('client_id') clientId: string,
+        @Query('size', PermanentlyParseIntPipe) size = 10,
+        @Query('search') searchContent: string,
+        @Query('last_cursor') lastCursor: string,
+        @Query('role', PermanentlyParseIntPipe) role = 2,
+        @Query(
+            'create_date_range',
+            ParseDateRangePipe,
+        ) createDateRange: TRangeItem[],
+    ) {
+        return await this.clientService.queryClientMemberships(clientId, role, {
+            size,
+            searchContent,
+            lastCursor,
+            range: {
+                createdAt: createDateRange,
+            },
+        });
+    }
+
     @Post('/:client_id/membership')
     @UseGuards(AuthGuard())
     @UseInterceptors(ClientInterceptor({
