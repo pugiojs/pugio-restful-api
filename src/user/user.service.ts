@@ -9,12 +9,15 @@ import {
 import { Repository } from 'typeorm';
 import { UserDTO } from './dto/user.dto';
 import * as _ from 'lodash';
+import { PaginationQueryServiceOptions } from 'src/app.interfaces';
+import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class UserService {
     public constructor(
         @InjectRepository(UserDTO)
         private readonly userRepository: Repository<UserDTO>,
+        private readonly utilService: UtilService,
     ) {}
 
     /**
@@ -70,5 +73,25 @@ export class UserService {
         }
 
         return data;
+    }
+
+    public async queryUsers(
+        options: PaginationQueryServiceOptions<UserDTO> = {},
+    ) {
+        const result = await this.utilService.queryWithPagination<UserDTO>({
+            ...options,
+            repository: this.userRepository,
+            searchKeys: [
+                'id',
+                'openId',
+                'email',
+                'fullName',
+                'firstName',
+                'middleName',
+                'lastName',
+            ],
+        });
+
+        return result;
     }
 }
