@@ -74,6 +74,7 @@ export class ChannelController {
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
         @Query('built_in', ParseBooleanPipe) builtIn: boolean,
+        @Query('status', PermanentlyParseIntPipe) status,
         @Query(
             'create_date_range',
             ParseDateRangePipe,
@@ -84,6 +85,7 @@ export class ChannelController {
             size,
             searchContent,
             lastCursor,
+            status,
             range: {
                 createdAt: createDateRange,
             },

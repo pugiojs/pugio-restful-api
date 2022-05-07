@@ -129,10 +129,11 @@ export class ChannelService {
 
     public async queryClientChannels(
         clientId: string,
-        options: PaginationQueryServiceOptions<ChannelClientDTO | ChannelDTO> & { builtIn?: boolean } = {},
+        options: PaginationQueryServiceOptions<ChannelClientDTO | ChannelDTO> & { builtIn?: boolean, status?: number } = {},
     ) {
         const {
             builtIn = false,
+            status,
             ...otherOptions
         } = options;
 
@@ -145,6 +146,15 @@ export class ChannelService {
                         client: {
                             id: clientId,
                         },
+                        ...(
+                            _.isNumber(status)
+                                ? {
+                                    channel: {
+                                        status,
+                                    },
+                                }
+                                : {}
+                        ),
                     },
                     relations: ['client', 'channel', 'channel.creator'],
                 },
@@ -169,6 +179,13 @@ export class ChannelService {
                 queryOptions: {
                     where: {
                         builtIn: true,
+                        ...(
+                            _.isNumber(status)
+                                ? {
+                                    status,
+                                }
+                                : {}
+                        ),
                     },
                 },
                 repository: this.channelRepository,
