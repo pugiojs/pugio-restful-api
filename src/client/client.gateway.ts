@@ -58,6 +58,9 @@ export class ClientGateway implements Gateway {
                         this.logger.log(`Client '${client.id}' authentication via AK failed, exiting...`);
                         client.disconnect();
                     }
+                }).catch(() => {
+                    this.logger.log(`Client '${client.id}' authentication via AK failed, exiting...`);
+                    client.disconnect();
                 });
                 break;
             }
@@ -67,6 +70,9 @@ export class ClientGateway implements Gateway {
                         this.logger.log(`Client '${client.id}' authentication via CK failed, exiting...`);
                         client.disconnect();
                     }
+                }).catch(() => {
+                    this.logger.log(`Client '${client.id}' authentication via CK failed, exiting...`);
+                    client.disconnect();
                 });
                 break;
             }
