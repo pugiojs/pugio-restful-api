@@ -16,7 +16,12 @@ import axios from 'axios';
 
 @WebSocketGateway({
     namespace: 'client',
-    cors: true,
+    cors: {
+        credentials: true,
+        methods: ['*'],
+        origin: ['*'],
+    },
+    transports: ['polling', 'websocket'],
 })
 export class ClientGateway implements Gateway {
     @WebSocketServer()
