@@ -16,9 +16,7 @@ import axios from 'axios';
 
 @WebSocketGateway({
     namespace: 'client',
-    cors: {
-        origin: '*',
-    },
+    cors: true,
 })
 export class ClientGateway implements Gateway {
     @WebSocketServer()
