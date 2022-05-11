@@ -5,7 +5,10 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    app.enableCors();
+    app.enableCors({
+        allowedHeaders: '*',
+        origin: '*',
+    });
     const configService = app.get<ConfigService>(ConfigService);
     app.setGlobalPrefix('/api/v1');
     app.useWebSocketAdapter(new IoAdapter(app));
