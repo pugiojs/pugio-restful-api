@@ -49,7 +49,7 @@ export class ClientGateway implements Gateway {
 
         this.logger.log(`Client '${client.id}' authentication token: ` + tokenInfo);
 
-        const [type, token] = tokenInfo.split(/\s+/g);
+        const [type, token] = (tokenInfo || '').split(/\s+/g);
 
         switch (type.toLowerCase()) {
             case 'ak': {
