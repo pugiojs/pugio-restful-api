@@ -13,6 +13,7 @@ import * as _ from 'lodash';
 import { KeyService } from 'src/key/key.service';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { ClientService } from './client.service';
 
 @WebSocketGateway({
     namespace: 'client',
@@ -31,6 +32,7 @@ export class ClientGateway implements Gateway {
     public constructor (
         private readonly keyService: KeyService,
         private readonly configService: ConfigService,
+        private readonly clientService: ClientService,
     ) {}
 
     public afterInit() {
@@ -38,71 +40,7 @@ export class ClientGateway implements Gateway {
     }
 
     public handleConnection(client: Socket) {
-        const tokenInfo = _.get(client.handshake, 'headers.authorization') as string;
-
         this.logger.log(`Client connected: ${client.id}`);
-
-        if (!tokenInfo) {
-            this.logger.log(`Token for client ${client.id} not found, exiting...`);
-            client.disconnect();
-        }
-
-        this.logger.log(`Client '${client.id}' authentication token: ` + tokenInfo);
-
-        const [type, token] = (tokenInfo || '').split(/\s+/g);
-
-        switch (type.toLowerCase()) {
-            case 'ak': {
-                this.keyService.validateApiKey(token, ['socket'], 'all').then((res) => {
-                    if (!res) {
-                        this.logger.log(`Client '${client.id}' authentication via AK failed, exiting...`);
-                        client.disconnect();
-                    }
-                }).catch(() => {
-                    this.logger.log(`Client '${client.id}' authentication via AK failed, exiting...`);
-                    client.disconnect();
-                });
-                break;
-            }
-            case 'ck': {
-                this.keyService.validateClientKey(token).then((res) => {
-                    if (!res?.user) {
-                        this.logger.log(`Client '${client.id}' authentication via CK failed, exiting...`);
-                        client.disconnect();
-                    }
-                }).catch(() => {
-                    this.logger.log(`Client '${client.id}' authentication via CK failed, exiting...`);
-                    client.disconnect();
-                });
-                break;
-            }
-            case 'bearer': {
-                const audience = this.configService.get<string>('auth.audience');
-                const accountCenterApi = this.configService.get<string>('auth.accountCenterApi');
-                axios.post(
-                    `${accountCenterApi}/oauth2/validate`, {
-                        token,
-                        audience,
-                    },
-                    {
-                        responseType: 'json',
-                    },
-                ).then((res) => {
-                    if (!res?.data?.sub) {
-                        return Promise.reject(new Error());
-                    }
-                }).catch((e) => {
-                    this.logger.log(`Client '${client.id}' authentication via Bearer failed, exiting...`);
-                    client.disconnect();
-                });
-                break;
-            }
-            default: {
-                this.logger.log(`Cannot parse type '${type}' from client '${client.id}'`);
-                client.disconnect();
-                break;
-            }
-        }
     }
 
     public handleDisconnect(client: Socket) {
@@ -111,8 +49,77 @@ export class ClientGateway implements Gateway {
 
 	@SubscribeMessage('join')
     public handleJoinRoom(client: Socket, roomId: string) {
-        client.join(roomId);
-        this.logger.log(`Client joined: ${roomId}`);
+        const validatePermissionPromise: Promise<string> = new Promise((resolve, reject) => {
+            const tokenInfo = _.get(client.handshake, 'headers.authorization') as string;
+            const [type = '', token = ''] = tokenInfo.split(/\s+/g);
+
+            switch (type.toLocaleLowerCase()) {
+                case 'ak': {
+                    this.keyService.validateApiKey(token, ['socket'], 'all')
+                        .then((user) => {
+                            if (_.isString(user?.id)) {
+                                resolve(user.id);
+                            } else {
+                                reject(new Error());
+                            }
+                        })
+                        .catch(() => reject(new Error()));
+                    break;
+                }
+                case 'ck': {
+                    this.keyService.validateClientKey(token)
+                        .then(({ user }) => {
+                            if (_.isString(user?.id)) {
+                                resolve(user.id);
+                            } else {
+                                reject(new Error());
+                            }
+                        })
+                        .catch(() => reject(new Error()));
+                    break;
+                }
+                case 'bearer': {
+                    const audience = this.configService.get<string>('auth.audience');
+                    const accountCenterApi = this.configService.get<string>('auth.accountCenterApi');
+                    axios.post(
+                        `${accountCenterApi}/oauth2/validate`, {
+                            token,
+                            audience,
+                        },
+                        {
+                            responseType: 'json',
+                        },
+                    ).then((res) => {
+                        if (!res?.data?.sub) {
+                            return Promise.reject(new Error());
+                        }
+
+                        resolve(res.data.sub);
+                    }).catch(() => {
+                        reject(new Error());
+                    });
+                }
+            }
+        });
+
+        validatePermissionPromise.then((userId) => {
+            return this.clientService.checkPermission({
+                userId,
+                clientId: roomId,
+            });
+        })
+            .then((valid) => {
+                if (valid) {
+                    client.join(roomId);
+                    this.logger.log('Client ' + client.id + ' joined room: ' + roomId);
+                } else {
+                    return Promise.reject(new Error());
+                }
+            })
+            .catch(() => {
+                this.logger.log('User permission validation failed, socket: ' + client.id + ', room: ' + roomId);
+                client.disconnect();
+            });
     }
 
 	@SubscribeMessage('leave')
