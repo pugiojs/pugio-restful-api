@@ -1,4 +1,8 @@
-import { Logger } from '@nestjs/common';
+import {
+    forwardRef,
+    Inject,
+    Logger,
+} from '@nestjs/common';
 import {
     SubscribeMessage,
     WebSocketGateway,
@@ -14,6 +18,7 @@ import { KeyService } from 'src/key/key.service';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { ClientService } from './client.service';
+import { UserService } from 'src/user/user.service';
 
 @WebSocketGateway({
     namespace: 'client',
@@ -32,7 +37,9 @@ export class ClientGateway implements Gateway {
     public constructor (
         private readonly keyService: KeyService,
         private readonly configService: ConfigService,
+        @Inject(forwardRef(() => ClientService))
         private readonly clientService: ClientService,
+        private readonly userService: UserService,
     ) {}
 
     public afterInit() {
@@ -94,7 +101,13 @@ export class ClientGateway implements Gateway {
                             return Promise.reject(new Error());
                         }
 
-                        resolve(res.data.sub);
+                        return this.userService.getUserInformation({ openId: res.data.sub });
+                    }).then((user) => {
+                        if (user) {
+                            resolve(user.id);
+                        } else {
+                            reject(new Error());
+                        }
                     }).catch(() => {
                         reject(new Error());
                     });

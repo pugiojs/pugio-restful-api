@@ -94,4 +94,10 @@ export class UserService {
 
         return result;
     }
+
+    public async getUserInformation(options: Partial<UserDTO>) {
+        return await this.userRepository.findOne({
+            where: options,
+        });
+    }
 }
