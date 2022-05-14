@@ -14,11 +14,8 @@ import {
     Socket,
 } from 'socket.io';
 import * as _ from 'lodash';
-import { KeyService } from 'src/key/key.service';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
 import { ClientService } from './client.service';
-import { UserService } from 'src/user/user.service';
+import { AuthService } from 'src/auth/auth.service';
 
 @WebSocketGateway({
     namespace: 'client',
@@ -35,11 +32,9 @@ export class ClientGateway implements Gateway {
     private logger: Logger = new Logger('ClientGateway');
 
     public constructor (
-        private readonly keyService: KeyService,
-        private readonly configService: ConfigService,
         @Inject(forwardRef(() => ClientService))
         private readonly clientService: ClientService,
-        private readonly userService: UserService,
+        private readonly authService: AuthService,
     ) {}
 
     public afterInit() {
@@ -56,66 +51,10 @@ export class ClientGateway implements Gateway {
 
 	@SubscribeMessage('join')
     public handleJoinRoom(client: Socket, roomId: string) {
-        const validatePermissionPromise: Promise<string> = new Promise((resolve, reject) => {
-            const tokenInfo = _.get(client.handshake, 'headers.authorization') as string;
-            const [type = '', token = ''] = tokenInfo.split(/\s+/g);
+        const tokenInfo = _.get(client.handshake, 'headers.authorization') as string || '';
+        const [type = '', token = ''] = tokenInfo.split(/\s+/g);
 
-            switch (type.toLocaleLowerCase()) {
-                case 'ak': {
-                    this.keyService.validateApiKey(token, ['socket'], 'all')
-                        .then((user) => {
-                            if (_.isString(user?.id)) {
-                                resolve(user.id);
-                            } else {
-                                reject(new Error());
-                            }
-                        })
-                        .catch(() => reject(new Error()));
-                    break;
-                }
-                case 'ck': {
-                    this.keyService.validateClientKey(token)
-                        .then(({ user }) => {
-                            if (_.isString(user?.id)) {
-                                resolve(user.id);
-                            } else {
-                                reject(new Error());
-                            }
-                        })
-                        .catch(() => reject(new Error()));
-                    break;
-                }
-                case 'bearer': {
-                    const audience = this.configService.get<string>('auth.audience');
-                    const accountCenterApi = this.configService.get<string>('auth.accountCenterApi');
-                    axios.post(
-                        `${accountCenterApi}/oauth2/validate`, {
-                            token,
-                            audience,
-                        },
-                        {
-                            responseType: 'json',
-                        },
-                    ).then((res) => {
-                        if (!res?.data?.sub) {
-                            return Promise.reject(new Error());
-                        }
-
-                        return this.userService.getUserInformation({ openId: res.data.sub });
-                    }).then((user) => {
-                        if (user) {
-                            resolve(user.id);
-                        } else {
-                            reject(new Error());
-                        }
-                    }).catch(() => {
-                        reject(new Error());
-                    });
-                }
-            }
-        });
-
-        validatePermissionPromise.then((userId) => {
+        this.authService.checkSocketGatewayPermission(token, type).then((userId) => {
             return this.clientService.checkPermission({
                 userId,
                 clientId: roomId,

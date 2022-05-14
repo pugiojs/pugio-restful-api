@@ -63,7 +63,7 @@
         "semver": "^7.3.5",
         "typeorm": "^0.2.29",
         "uuid": "^8.3.2",
-        "ws": "^8.4.0",
+        "ws": "^8.6.0",
         "yup": "^0.32.11"
     },
     "devDependencies": {
@@ -86,7 +86,7 @@
         "@types/socket.io": "^2.1.13",
         "@types/supertest": "^2.0.10",
         "@types/uuid": "^8.3.4",
-        "@types/ws": "^8.2.2",
+        "@types/ws": "^8.5.3",
         "@typescript-eslint/eslint-plugin": "^4.15.2",
         "@typescript-eslint/parser": "^4.15.2",
         "eslint": "^7.20.0",
