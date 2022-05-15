@@ -16,6 +16,8 @@ import {
 import * as _ from 'lodash';
 import { ClientService } from './client.service';
 import { AuthService } from 'src/auth/auth.service';
+import { parse } from 'url';
+import * as qs from 'qs';
 
 @WebSocketGateway({
     namespace: 'client',
@@ -24,7 +26,6 @@ import { AuthService } from 'src/auth/auth.service';
         methods: ['*'],
         origin: ['*'],
     },
-    transports: ['polling', 'websocket'],
 })
 export class ClientGateway implements Gateway {
     @WebSocketServer()
@@ -51,8 +52,11 @@ export class ClientGateway implements Gateway {
 
 	@SubscribeMessage('join')
     public handleJoinRoom(client: Socket, roomId: string) {
-        const tokenInfo = _.get(client.handshake, 'headers.authorization') as string || '';
-        const [type = '', token = ''] = tokenInfo.split(/\s+/g);
+        const query = (qs.parse(parse(client?.request?.url).query || '') || {}) as Record<string, string>;
+        const {
+            auth_type: type = '',
+            auth_token: token = '',
+        } = query;
 
         this.authService.checkSocketGatewayPermission(token, type).then((userId) => {
             return this.clientService.checkPermission({

@@ -55,7 +55,10 @@ async function bootstrap() {
         auth_type: yup.string().min(1).required(),
         auth_token: yup.string().min(1).required(),
     });
-    const wss = new WebSocketServer({ server: app.getHttpServer() });
+    const wss = new WebSocketServer({
+        path: '/ws',
+        server: app.getHttpServer(),
+    });
 
     wss.on('connection', (socket, request) => {
         let urlConfig: UrlWithStringQuery;
