@@ -56,7 +56,7 @@ async function bootstrap() {
         auth_token: yup.string().min(1).required(),
     });
     const wss = new WebSocketServer({
-        path: '/ws',
+        path: '/websocket',
         server: app.getHttpServer(),
     });
 
