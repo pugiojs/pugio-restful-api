@@ -56,7 +56,6 @@ async function bootstrap() {
         auth_token: yup.string().min(1).required(),
     });
     const wss = new WebSocketServer({
-        path: '/websocket',
         server: app.getHttpServer(),
     });
 
@@ -72,6 +71,10 @@ async function bootstrap() {
         if (!urlConfig || !urlConfig.search) {
             logger.log('WS connection config parse error, exiting...');
             socket.close();
+            return;
+        }
+
+        if (urlConfig.pathname !== '/websocket') {
             return;
         }
 
