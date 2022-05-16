@@ -9,7 +9,6 @@ import {
     WebSocket,
 } from 'ws';
 import * as _ from 'lodash';
-import { ClientService } from 'src/client/client.service';
 import { AuthService } from 'src/auth/auth.service';
 import {
     parse,
@@ -55,7 +54,6 @@ export class AppGateway implements Gateway {
     private clientMap: ClientMap = {};
 
     public constructor (
-        private readonly clientService: ClientService,
         private readonly authService: AuthService,
     ) {}
 
@@ -120,7 +118,7 @@ export class AppGateway implements Gateway {
 
         this.authService.checkSocketGatewayPermission(authToken, authType)
             .then((userId) => {
-                return this.clientService.checkPermission({
+                return this.authService.checkPermission({
                     userId,
                     clientId: roomId,
                 }).then((valid) => ({ userId, valid }));

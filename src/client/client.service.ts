@@ -1,8 +1,6 @@
 import {
     BadRequestException,
     ForbiddenException,
-    // forwardRef,
-    // Inject,
     Injectable,
     InternalServerErrorException,
     NotFoundException,
@@ -22,17 +20,12 @@ import {
 } from '@lenconda/nestjs-redis';
 import * as _ from 'lodash';
 import { PaginationQueryServiceOptions } from 'src/app.interfaces';
-import {
-    ERR_CLIENT_REQUEST_TIMED_OUT,
-    ERR_CLIENT_UNVERIFIED,
-    ERR_CLIENT_VERSION_NOT_SUPPORT,
-} from 'src/app.constants';
-import * as semver from 'semver';
+import { ERR_CLIENT_REQUEST_TIMED_OUT } from 'src/app.constants';
 import { v5 as uuidv5 } from 'uuid';
 import * as EventEmitter from 'events';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { ChannelDTO } from 'src/channel/dto/channel.dto';
-// import { AppGateway } from 'src/app.gateway';
+import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class ClientService {
@@ -41,8 +34,6 @@ export class ClientService {
 
     public constructor(
         private readonly utilService: UtilService,
-        // @Inject(forwardRef(() => AppGateway))
-        // private readonly appGateway: AppGateway,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(UserClientDTO)
@@ -50,114 +41,10 @@ export class ClientService {
         @InjectRepository(ChannelClientDTO)
         private readonly channelClientRepository: Repository<ChannelClientDTO>,
         private readonly redisService: RedisService,
+        private readonly appGateway: AppGateway,
     ) {
         this.redisClient = this.redisService.getClient();
         this.emitter = new EventEmitter();
-    }
-    public async checkPermission(
-        {
-            userId,
-            clientId,
-            permission = -1,
-            checkDeviceId = false,
-            version = [],
-        }: {
-            userId?: string,
-            clientId: string,
-            permission?: number | number[],
-            checkDeviceId?: boolean,
-            version?: string | string[],
-        },
-    ) {
-        if (!_.isString(userId) || !userId) {
-            return true;
-        }
-
-        const relations = await this.userClientRepository
-            .find({
-                where: {
-                    user: {
-                        id: userId,
-                    },
-                    client: {
-                        id: clientId,
-                    },
-                },
-                relations: ['client'],
-            });
-
-        if (relations.length === 0) {
-            return false;
-        }
-
-        if (
-            checkDeviceId &&
-            relations.some((relation) => !relation.client.verified)
-        ) {
-            throw new ForbiddenException(ERR_CLIENT_UNVERIFIED);
-        }
-
-        if (_.isString(version) || (_.isArray(version) && version.length > 0)) {
-            let compareType: string;
-            let minVersion: string;
-            let maxVersion: string;
-            let canUse = true;
-
-            if (_.isString(version)) {
-                compareType = 'gte';
-                minVersion = version;
-            } else if (_.isArray(version)) {
-                const [min, max] = version;
-                if (_.isString(min) && _.isString(max)) {
-                    compareType = 'between';
-                    minVersion = min;
-                    maxVersion = max;
-                } else if (_.isString(min) && !_.isString(max)) {
-                    compareType = 'gte';
-                    minVersion = min;
-                } else if (!_.isString(min) && _.isString(max)) {
-                    compareType = 'lte';
-                    maxVersion = max;
-                }
-            }
-
-            if (!compareType) {
-                return canUse;
-            }
-
-            canUse = relations.some((relation) => {
-                const clientVersion = relation.client.version;
-
-                switch (compareType) {
-                    case 'gte': {
-                        return semver.gte(clientVersion, minVersion);
-                    }
-                    case 'lte': {
-                        return semver.lte(clientVersion, maxVersion);
-                    }
-                    case 'between': {
-                        return semver.gte(clientVersion, minVersion) && semver.lte(clientVersion, maxVersion);
-                    }
-                    default: {
-                        return true;
-                    }
-                }
-            });
-
-            if (!canUse) {
-                throw new ForbiddenException(ERR_CLIENT_VERSION_NOT_SUPPORT);
-            }
-        }
-
-        if (permission === -1) {
-            return true;
-        }
-
-        const permissionList = _.isNumber(permission)
-            ? [permission]
-            : permission;
-
-        return relations.some((relation) => permissionList.indexOf(relation.roleType) !== -1);
     }
 
     public async createClient(user: UserDTO, configuration: Partial<ClientDTO>) {
@@ -627,18 +514,12 @@ export class ClientService {
     }
 
     public pushChannelGateway(client: ClientDTO, eventId: string, data: any) {
-        // try {
-        //     this.clientGateway.server.to(client.id).emit(
-        //         eventId,
-        //         data,
-        //     );
-
-        //     return { accepted: true };
-        // } catch (e) {
-        //     return { accepted: false };
-        // }
-
-        return { accepted: true };
+        try {
+            this.appGateway.sendMessage(client.id, eventId, data);
+            return { accepted: true };
+        } catch (e) {
+            return { accepted: false };
+        }
     }
 
     public async requestClientUserRelation(user: UserDTO, client?: ClientDTO, clientId?: string) {
