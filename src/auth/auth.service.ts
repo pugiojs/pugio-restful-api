@@ -30,7 +30,7 @@ export class AuthService {
         return new Promise((resolve, reject) => {
             switch (type.toLocaleLowerCase()) {
                 case 'ak': {
-                    this.keyService.validateApiKey(token, ['socket'], 'all')
+                    this.keyService.validateApiKey(token)
                         .then((user) => {
                             if (_.isString(user?.id)) {
                                 resolve(user.id);

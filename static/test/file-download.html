@@ -7,7 +7,6 @@
     <title>Test Cases | File Upload</title>
     <script src="https://unpkg.com/js-base64@3.7.2/base64.js"></script>
     <script src="https://resources.lenconda.top/pugio/packages/pugio-segmental-transferer/umd/index.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <input id="pathname" type="text" placeholder="Enter file pathname" style="width: 480px" />
@@ -30,12 +29,12 @@
             if (currentChunks.length > 0) {
                 for (const chunk of currentChunks) {
                     const {
-                        file_id: fileId,
-                        chunk_count: chunkCount,
-                        chunk_content: chunkContent = '',
+                        fileId,
+                        chunkCount,
+                        chunkContent = '',
                         filename,
                         index,
-                        md_5: md5,
+                        md5,
                     } = chunk;
 
                     if (!receiverList.get(fileId)) {
@@ -73,13 +72,14 @@
         const search = new URLSearchParams(window.location.search);
         const clientId = search.get('client_id');
         const apiKey = search.get('api_key');
+        const socket = new WebSocket(`wss://pugio.lenconda.top/websocket?auth_type=ak&auth_token=${apiKey}&room=${clientId}&event=file:download:processing&broadcast[]=file:download:processing`);
 
-        const client = io('/client');
-
-        client.emit('join', clientId);
-
-        client.on('file:download:processing', (chunk) => {
-            chunks.push(chunk);
+        socket.addEventListener('message', (event) => {
+            try {
+                chunks.push(JSON.parse(event.data));
+            } catch (e) {
+                console.log(e);
+            }
         });
 
         pathnameInputElement.onchange = function(event) {
