@@ -39,10 +39,10 @@ export class AppGateway implements Gateway {
         broadcast: yup.lazy((value) => {
             switch (typeof value) {
                 case 'string': {
-                    return yup.string().min(1).required();
+                    return yup.string().min(0).required();
                 }
                 case 'object': {
-                    return yup.array(yup.string()).min(1).required();
+                    return yup.array(yup.string()).min(0).required();
                 }
                 default:
                     return yup.mixed().required();
@@ -73,10 +73,6 @@ export class AppGateway implements Gateway {
         if (!urlConfig || !urlConfig.search) {
             this.logger.log('WS connection config parse error, exiting...');
             socket.close();
-            return;
-        }
-
-        if (urlConfig.pathname !== '/websocket') {
             return;
         }
 
@@ -146,9 +142,13 @@ export class AppGateway implements Gateway {
             eventId,
             roomId,
         } = connectionConfig;
-        this.clientMap[roomId][eventId] = (this.clientMap[roomId][eventId] || []).filter((currentSocket) => {
-            return currentSocket !== socket;
-        });
+        this.clientMap = _.set(
+            this.clientMap,
+            `${roomId}.${eventId}`,
+            (_.get(this.clientMap, `${roomId}.${eventId}` || [])).filter((currentSocket) => {
+                return currentSocket !== socket;
+            }),
+        );
         this.logger.log(`Client disconnected: ${JSON.stringify(_.get(socket, '_pugioWSConnectionConfig'))}`);
     }
 
@@ -157,7 +157,7 @@ export class AppGateway implements Gateway {
             ? [event]
             : event;
         const sockets = broadcastEventIdList.reduce((result, broadcastEventId) => {
-            return result.concat(this.clientMap[roomId][broadcastEventId] || []);
+            return result.concat(_.get(this.clientMap, `${roomId}.${broadcastEventId}` || []));
         }, [] as WebSocket[]);
 
         sockets.forEach((targetSocket) => {
