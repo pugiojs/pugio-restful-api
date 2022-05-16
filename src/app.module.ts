@@ -1,4 +1,5 @@
 import {
+    Global,
     Logger,
     Module,
 } from '@nestjs/common';
@@ -22,6 +23,7 @@ import { RedisModule } from '@lenconda/nestjs-redis';
 import { ClientStatusModule } from './client-status/client-status.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ChannelModule } from './channel/channel.module';
+import { AppGateway } from './app.gateway';
 
 // Application configs
 import appConfig from './config/app.config';
@@ -29,6 +31,7 @@ import dbConfig from './config/db.config';
 import authConfig from './config/auth.config';
 import redisConfig from './config/redis.config';
 
+@Global()
 @Module({
     imports: [
         ConfigModule.forRoot({
@@ -93,6 +96,8 @@ import redisConfig from './config/redis.config';
             provide: APP_INTERCEPTOR,
             useClass: AppInterceptor,
         },
+        AppGateway,
     ],
+    exports: [AppGateway],
 })
 export class AppModule {}

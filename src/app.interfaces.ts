@@ -3,7 +3,7 @@ import {
     OnGatewayDisconnect,
     OnGatewayInit,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server } from 'ws';
 import {
     FindConditions,
     FindManyOptions,

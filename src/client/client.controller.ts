@@ -251,7 +251,7 @@ export class ClientController {
     public async pushChannelGateway(
         @CurrentClient() client: ClientDTO,
         @Param('event_id') eventId: string,
-        @Body() data: any,
+        @Body('data') data: any,
     ) {
         return await this.clientService.pushChannelGateway(client, eventId, data);
     }

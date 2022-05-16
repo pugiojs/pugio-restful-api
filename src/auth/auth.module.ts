@@ -12,6 +12,8 @@ import { ApiKeyStrategy } from './api-key.strategy';
 import { KeyModule } from 'src/key/key.module';
 import { ClientKeyStrategy } from './client-key.strategy';
 import { ChannelKeyStrategy } from './channel-key.strategy';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserClientDTO } from 'src/relations/user-client.dto';
 
 @Global()
 @Module({
@@ -22,6 +24,9 @@ import { ChannelKeyStrategy } from './channel-key.strategy';
         }),
         UserModule,
         KeyModule,
+        TypeOrmModule.forFeature([
+            UserClientDTO,
+        ]),
     ],
     providers: [
         ChannelKeyStrategy,

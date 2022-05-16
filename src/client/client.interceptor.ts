@@ -12,6 +12,7 @@ import { ClientService } from '../client/client.service';
 import * as _ from 'lodash';
 import { memoize } from 'src/app.util';
 import { ResourceBaseInterceptorOptions } from 'src/app.interfaces';
+import { AuthService } from 'src/auth/auth.service';
 
 const createClientInterceptor = ({
     type = -1,
@@ -24,6 +25,7 @@ const createClientInterceptor = ({
             private readonly clientService: ClientService,
             @Inject(UtilService)
             private readonly utilService: UtilService,
+            private readonly authService: AuthService,
         ) {}
 
         public async intercept(
@@ -36,7 +38,7 @@ const createClientInterceptor = ({
 
             if (
                 _.isString(clientId) &&
-                !(await this.clientService.checkPermission({ userId, clientId, permission: type }))
+                !(await this.authService.checkPermission({ userId, clientId, permission: type }))
             ) {
                 throw new ForbiddenException();
             }
