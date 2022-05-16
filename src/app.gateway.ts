@@ -161,7 +161,9 @@ export class AppGateway implements Gateway {
         }, [] as WebSocket[]);
 
         sockets.forEach((targetSocket) => {
-            targetSocket.send(data);
+            if (_.isFunction(_.get(targetSocket, 'send'))) {
+                targetSocket.send(data);
+            }
         });
     }
 }
