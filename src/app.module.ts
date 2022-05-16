@@ -28,6 +28,7 @@ import appConfig from './config/app.config';
 import dbConfig from './config/db.config';
 import authConfig from './config/auth.config';
 import redisConfig from './config/redis.config';
+import { AppGateway } from './app.gateway';
 
 @Module({
     imports: [
@@ -93,6 +94,8 @@ import redisConfig from './config/redis.config';
             provide: APP_INTERCEPTOR,
             useClass: AppInterceptor,
         },
+        AppGateway,
     ],
+    exports: [AppGateway],
 })
 export class AppModule {}

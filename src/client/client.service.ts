@@ -1,6 +1,8 @@
 import {
     BadRequestException,
     ForbiddenException,
+    // forwardRef,
+    // Inject,
     Injectable,
     InternalServerErrorException,
     NotFoundException,
@@ -28,9 +30,9 @@ import {
 import * as semver from 'semver';
 import { v5 as uuidv5 } from 'uuid';
 import * as EventEmitter from 'events';
-import { ClientGateway } from './client.gateway';
 import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { ChannelDTO } from 'src/channel/dto/channel.dto';
+// import { AppGateway } from 'src/app.gateway';
 
 @Injectable()
 export class ClientService {
@@ -39,7 +41,8 @@ export class ClientService {
 
     public constructor(
         private readonly utilService: UtilService,
-        private readonly clientGateway: ClientGateway,
+        // @Inject(forwardRef(() => AppGateway))
+        // private readonly appGateway: AppGateway,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(UserClientDTO)
@@ -624,16 +627,18 @@ export class ClientService {
     }
 
     public pushChannelGateway(client: ClientDTO, eventId: string, data: any) {
-        try {
-            this.clientGateway.server.to(client.id).emit(
-                eventId,
-                data,
-            );
+        // try {
+        //     this.clientGateway.server.to(client.id).emit(
+        //         eventId,
+        //         data,
+        //     );
 
-            return { accepted: true };
-        } catch (e) {
-            return { accepted: false };
-        }
+        //     return { accepted: true };
+        // } catch (e) {
+        //     return { accepted: false };
+        // }
+
+        return { accepted: true };
     }
 
     public async requestClientUserRelation(user: UserDTO, client?: ClientDTO, clientId?: string) {

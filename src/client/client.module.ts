@@ -6,7 +6,6 @@ import { ChannelClientDTO } from 'src/relations/channel-client.dto';
 import { UserClientDTO } from 'src/relations/user-client.dto';
 import { UserModule } from 'src/user/user.module';
 import { ClientController } from './client.controller';
-import { ClientGateway } from './client.gateway';
 import { ClientService } from './client.service';
 import { ClientDTO } from './dto/client.dto';
 
@@ -24,11 +23,9 @@ import { ClientDTO } from './dto/client.dto';
     controllers: [ClientController],
     providers: [
         ClientService,
-        ClientGateway,
     ],
     exports: [
         ClientService,
-        ClientGateway,
     ],
 })
 export class ClientModule {}
