@@ -9,6 +9,7 @@ import { UtilService } from 'src/util/util.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
     In,
+    Not,
     Repository,
 } from 'typeorm';
 import { UserClientDTO } from 'src/relations/user-client.dto';
@@ -221,6 +222,7 @@ export class ClientService {
     }
 
     public async queryClientMemberships(
+        user: UserDTO,
         clientId: string,
         role: number,
         options: PaginationQueryServiceOptions<UserClientDTO> = {},
@@ -230,6 +232,9 @@ export class ClientService {
                 where: {
                     client: {
                         id: clientId,
+                    },
+                    user: {
+                        id: Not(user.id),
                     },
                     ...(
                         _.isNumber(role)

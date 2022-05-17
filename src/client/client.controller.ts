@@ -153,17 +153,18 @@ export class ClientController {
     @Get('/:client_id/membership')
     @UseGuards(AuthGuard())
     public async queryClientMemberships(
+        @CurrentUser() user: UserDTO,
         @Param('client_id') clientId: string,
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
-        @Query('role', PermanentlyParseIntPipe) role = 2,
+        @Query('role', PermanentlyParseIntPipe) role,
         @Query(
             'create_date_range',
             ParseDateRangePipe,
         ) createDateRange: TRangeItem[],
     ) {
-        return await this.clientService.queryClientMemberships(clientId, role, {
+        return await this.clientService.queryClientMemberships(user, clientId, role, {
             size,
             searchContent,
             lastCursor,
