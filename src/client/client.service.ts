@@ -20,7 +20,10 @@ import {
     RedisService,
 } from '@lenconda/nestjs-redis';
 import * as _ from 'lodash';
-import { PaginationQueryServiceOptions } from 'src/app.interfaces';
+import {
+    MembershipRequestDataItem,
+    PaginationQueryServiceOptions,
+} from 'src/app.interfaces';
 import { ERR_CLIENT_REQUEST_TIMED_OUT } from 'src/app.constants';
 import { v5 as uuidv5 } from 'uuid';
 import * as EventEmitter from 'events';
@@ -269,10 +272,11 @@ export class ClientService {
     public async handleCreateMembership(
         user: UserDTO,
         clientId: string,
-        newUserId: string,
-        roleType: number,
+        memberships: MembershipRequestDataItem[],
     ) {
-        const currentRelationship = await this.userClientRepository.findOne({
+        let resultList = [];
+
+        const currentUserMembership = await this.userClientRepository.findOne({
             where: {
                 user: {
                     id: user.id,
@@ -283,38 +287,166 @@ export class ClientService {
             },
         });
 
-        if (roleType < currentRelationship.roleType) {
-            throw new ForbiddenException();
-        }
-
-        if (roleType === 0) {
-            await this.userClientRepository.delete({
-                id: currentRelationship.id,
-            });
-        }
-
-        const newOwnerShipConfig = {
-            user: {
-                id: newUserId,
+        const existedMemberships = await this.userClientRepository.find({
+            where: {
+                user: {
+                    id: In(memberships.map((membership) => membership.userId)),
+                },
+                client: {
+                    id: clientId,
+                },
+                roleType: Not(0),
             },
-            client: {
-                id: clientId,
-            },
-        };
-
-        let newOwnerRelationShip = await this.userClientRepository.findOne({
-            where: newOwnerShipConfig,
+            relations: ['user', 'client'],
+            select: ['user', 'client', 'id', 'roleType'],
         });
 
-        if (!newOwnerRelationShip) {
-            newOwnerRelationShip = this.userClientRepository.create(newOwnerShipConfig);
+        const newMemberships: MembershipRequestDataItem[] = [];
+        const ownerMemberships: MembershipRequestDataItem[] = [];
+        const updateMemberships: MembershipRequestDataItem[] = [];
+
+        for (const membership of memberships) {
+            if (membership.roleType < currentUserMembership.roleType) {
+                continue;
+            }
+
+            if (
+                membership.roleType !== 0 &&
+                existedMemberships.find((existedMembership) => {
+                    return membership.userId === existedMembership.user.id;
+                })
+            ) {
+                updateMemberships.push(membership);
+                continue;
+            }
+
+            if (membership.roleType === 0) {
+                ownerMemberships.push(membership);
+                continue;
+            }
+
+            if (
+                membership.roleType !== 0 &&
+                await this.userClientRepository.findOne({
+                    where: {
+                        user: {
+                            id: membership.userId,
+                        },
+                        client: {
+                            id: clientId,
+                        },
+                        roleType: 0,
+                    },
+                    relations: ['user', 'client'],
+                })
+            ) {
+                continue;
+            }
+
+            newMemberships.push(membership);
         }
 
-        newOwnerRelationShip.roleType = roleType;
 
-        const result = await this.userClientRepository.save(newOwnerRelationShip);
+        /**
+         * create ownership
+         */
+        if (ownerMemberships.length > 0) {
+            try {
+                await this.userClientRepository.delete({
+                    id: currentUserMembership.id,
+                });
+            } catch (e) {}
 
-        return _.omit(result, ['user', 'client']);
+            const legacyOwnerShip = await this.userClientRepository.findOne({
+                where: {
+                    client: {
+                        id: clientId,
+                    },
+                    roleType: 0,
+                },
+            });
+
+            if (!legacyOwnerShip) {
+                const legacyMembership = await this.userClientRepository.findOne({
+                    where: {
+                        user: {
+                            id: ownerMemberships[0].userId,
+                        },
+                        client: {
+                            id: clientId,
+                        },
+                    },
+                    relations: ['user', 'client'],
+                });
+
+                if (legacyMembership) {
+                    await this.userClientRepository.delete({
+                        id: legacyMembership.id,
+                    });
+                }
+
+                const result = await this.userClientRepository.save(
+                    this.userClientRepository.create({
+                        user: {
+                            id: ownerMemberships[0].userId,
+                        },
+                        client: {
+                            id: clientId,
+                        },
+                        roleType: 0,
+                    }),
+                );
+
+                resultList.push(result);
+            }
+        }
+
+        if (newMemberships.length > 0) {
+            const currentResults = await this.userClientRepository.save(
+                newMemberships.map((membership) => {
+                    return this.userClientRepository.create({
+                        user: {
+                            id: membership.userId,
+                        },
+                        client: {
+                            id: clientId,
+                        },
+                        roleType: membership.roleType,
+                    });
+                }),
+            );
+
+            resultList = resultList.concat(currentResults);
+        }
+
+        if (updateMemberships.length > 0) {
+            const currentResults = await this.userClientRepository.save(
+                updateMemberships.map((updateMembership) => {
+                    const legacyOwnerShip = existedMemberships.find((existedMembership) => {
+                        return existedMembership.user.id === updateMembership.userId;
+                    });
+
+                    if (!legacyOwnerShip) {
+                        return null;
+                    }
+
+                    return this.userClientRepository.create({
+                        id: legacyOwnerShip.id,
+                        roleType: updateMembership.roleType,
+                        user: {
+                            id: updateMembership.userId,
+                        },
+                        client: {
+                            id: clientId,
+                        },
+                    });
+                }).filter((updateMembership) => !!updateMembership),
+            );
+
+            resultList = resultList.concat(currentResults);
+        }
+
+        return resultList;
     }
 
     public async handleDeleteMemberRelationship(

@@ -12,7 +12,7 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { TRangeItem } from 'src/app.interfaces';
+import { MembershipRequestDataItem, TRangeItem } from 'src/app.interfaces';
 import {
     ParseDateRangePipe,
     ParseQueryArrayPipe,
@@ -145,8 +145,12 @@ export class ClientController {
         return await this.clientService.handleCreateMembership(
             user,
             clientId,
-            ownerId,
-            0,
+            [
+                {
+                    userId: ownerId,
+                    roleType: 0,
+                },
+            ],
         );
     }
 
@@ -182,14 +186,17 @@ export class ClientController {
     public async handleCreateMembership(
         @CurrentUser() user: UserDTO,
         @Param('client_id') clientId: string,
-        @Body('new_user') newUserId: string,
-        @Body('role_type', PermanentlyParseIntPipe) roleType: number,
+        @Body('memberships', TransformDTOPipe) memberships: MembershipRequestDataItem[],
     ) {
         return await this.clientService.handleCreateMembership(
             user,
             clientId,
-            newUserId,
-            roleType || 2,
+            memberships.map((membership) => {
+                return {
+                    userId: membership.userId,
+                    roleType: membership.roleType || 2,
+                };
+            }),
         );
     }
 
