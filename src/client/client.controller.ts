@@ -4,6 +4,7 @@ import {
     Delete,
     Get,
     Param,
+    ParseArrayPipe,
     Patch,
     Post,
     Put,
@@ -162,13 +163,13 @@ export class ClientController {
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
-        @Query('role', PermanentlyParseIntPipe) role,
+        @Query('role', ParseArrayPipe, PermanentlyParseIntPipe) roles: number[],
         @Query(
             'create_date_range',
             ParseDateRangePipe,
         ) createDateRange: TRangeItem[],
     ) {
-        return await this.clientService.queryClientMemberships(user, clientId, role, {
+        return await this.clientService.queryClientMemberships(user, clientId, roles, {
             size,
             searchContent,
             lastCursor,

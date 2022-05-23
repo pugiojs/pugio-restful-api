@@ -227,7 +227,7 @@ export class ClientService {
     public async queryClientMemberships(
         user: UserDTO,
         clientId: string,
-        role: number,
+        roles: number[],
         options: PaginationQueryServiceOptions<UserClientDTO> = {},
     ) {
         const result = await this.utilService.queryWithPagination<UserClientDTO>({
@@ -240,9 +240,9 @@ export class ClientService {
                         id: Not(user.id),
                     },
                     ...(
-                        _.isNumber(role)
+                        roles.length > 0
                             ? {
-                                roleType: role,
+                                roleType: In(roles),
                             }
                             : {}
                     ),
