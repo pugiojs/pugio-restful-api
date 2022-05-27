@@ -34,12 +34,14 @@ export class ClientStatusController {
         @CurrentClient() client: ClientDTO,
         @Body('plaintext') plaintext: string,
         @Body('cipher') cipher: string,
+        @Body('system') systemInfo: any,
     ) {
         return await this.clientStatusService.reportClientStatus(
             reporter,
             client,
             plaintext,
             cipher,
+            systemInfo,
         );
     }
 
