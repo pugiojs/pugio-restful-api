@@ -24,7 +24,7 @@ export class ClientStatusService {
         client: ClientDTO,
         plaintext: string,
         cipher: string,
-        systemInfo: any,
+        system: string,
     ) {
         const {
             publicKey,
@@ -59,14 +59,6 @@ export class ClientStatusService {
         } catch (e) {
             status = -1;
         }
-
-        let system = '';
-
-        try {
-            if (systemInfo) {
-                system = JSON.stringify(systemInfo);
-            }
-        } catch (e) {}
 
         const report = await this.clientStatusRepository.save(
             this.clientStatusRepository.create({
