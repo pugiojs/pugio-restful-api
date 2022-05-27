@@ -25,6 +25,9 @@ export class ClientStatusDTO {
     @Column({ default: 1 })
     public status: number;
 
+    @Column({ type: 'longtext', nullable: true, default: null })
+    public system: string;
+
     @ManyToOne(
         () => ClientDTO,
         (clientDTO) => clientDTO.statuses,
