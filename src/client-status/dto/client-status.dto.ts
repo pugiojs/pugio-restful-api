@@ -7,6 +7,7 @@ import {
     Index,
     JoinColumn,
     ManyToOne,
+    OneToOne,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
@@ -38,6 +39,16 @@ export class ClientStatusDTO {
     )
     @JoinColumn({ name: 'client_id' })
     public client: ClientDTO;
+
+    @OneToOne(
+        () => ClientStatusDTO,
+        {
+            nullable: true,
+            cascade: true,
+        },
+    )
+    @JoinColumn({ name: 'previous_record_id' })
+    public previous: ClientStatusDTO;
 
     @ManyToOne(
         () => UserDTO,

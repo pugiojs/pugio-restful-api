@@ -81,4 +81,23 @@ export class ClientStatusController {
     ) {
         return await this.clientStatusService.getClientCurrentStatus(clientId, offlineThreshold);
     }
+
+    @UseGuards(AuthGuard())
+    @Get('/:client_id/system')
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+    }))
+    public async getClientSystemStatus(
+        @Param('client_id') clientId: string,
+        @Query('pathname') pathname: string,
+        @Query('date_range', ParseDateRangePipe) dateRange: [Date, Date],
+        @Query('count', PermanentlyParseIntPipe) count = 50,
+    ) {
+        return await this.clientStatusService.getClientSystemStatus(
+            clientId,
+            pathname,
+            dateRange,
+            count,
+        );
+    }
 }
