@@ -244,6 +244,7 @@ export class ClientStatusService {
         const statusResult = {
             offline: false,
             statusCode: 1,
+            systemInfo: {},
         };
 
         const [latestStatus] = await this.clientStatusRepository.find({
@@ -273,6 +274,10 @@ export class ClientStatusService {
         }
 
         statusResult.statusCode = latestStatus.status;
+
+        try {
+            statusResult.systemInfo = JSON.parse(latestStatus.system);
+        } catch (e) {}
 
         return statusResult;
     }
