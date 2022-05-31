@@ -276,7 +276,10 @@ export class ClientStatusService {
         statusResult.statusCode = latestStatus.status;
 
         try {
-            statusResult.systemInfo = JSON.parse(latestStatus.system);
+            statusResult.systemInfo = _.get(
+                JSON.parse(latestStatus.system),
+                'os',
+            ) || {};
         } catch (e) {}
 
         return statusResult;
