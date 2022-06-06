@@ -225,6 +225,8 @@ export class ChannelService {
                 'registry',
                 'bundleUrl',
                 'key',
+                'localeMap',
+                'nameTranslation',
                 'createdAt',
                 'updatedAt',
             ],
@@ -254,6 +256,8 @@ export class ChannelService {
                     'packageName',
                     'registry',
                     'bundleUrl',
+                    'localeMap',
+                    'nameTranslation',
                 ]),
                 key,
                 creator,
@@ -285,6 +289,8 @@ export class ChannelService {
             'avatar',
             'registry',
             'bundleUrl',
+            'localeMap',
+            'nameTranslation',
         ]);
 
         return await this.channelRepository.save(

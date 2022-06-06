@@ -45,6 +45,20 @@ export class ChannelDTO {
     @Column({ select: false, name: 'built_in', default: false })
     public builtIn: boolean;
 
+    @Column({
+        name: 'name_translation',
+        nullable: true,
+        type: 'longtext',
+    })
+    public nameTranslation: string;
+
+    @Column({
+        name: 'locale_map',
+        nullable: true,
+        type: 'longtext',
+    })
+    public localeMap: string;
+
     /**
      * - 0: developing
      * - 1: online
