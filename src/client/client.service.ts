@@ -103,7 +103,31 @@ export class ClientService {
             throw new ForbiddenException();
         }
 
-        return result.client;
+        const clientInfo = await this.clientRepository.findOne({
+            where: {
+                id: clientId,
+            },
+            select: [
+                'id',
+                'name',
+                'description',
+                'deviceId',
+                'verified',
+                'version',
+                'createdAt',
+                'updatedAt',
+                ...(
+                    result.roleType <= 1
+                        ? [
+                            'publicKey',
+                            'privateKey',
+                        ] as Array<keyof ClientDTO>
+                        : []
+                ),
+            ],
+        });
+
+        return clientInfo;
     }
 
     public async handleMakeChallenge(client: ClientDTO, deviceId: string, version = '1.0.0') {
