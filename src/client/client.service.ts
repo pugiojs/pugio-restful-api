@@ -260,9 +260,6 @@ export class ClientService {
                     client: {
                         id: clientId,
                     },
-                    user: {
-                        id: Not(user.id),
-                    },
                     ...(
                         roles.length > 0
                             ? {
@@ -275,8 +272,6 @@ export class ClientService {
                 relations: ['user', 'client'],
             },
             searchKeys: [
-                'user.id',
-                'user.openId',
                 'user.email',
                 'user.fullName',
                 'user.firstName',
@@ -289,7 +284,9 @@ export class ClientService {
 
         return {
             ...result,
-            items: result.items.map((result) => _.omit(result, 'client')),
+            items: result.items
+                .map((result) => _.omit(result, 'client'))
+                .filter((result) => result?.user?.id !== user.id),
         };
     }
 

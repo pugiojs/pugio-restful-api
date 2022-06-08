@@ -4,7 +4,6 @@ import {
     Delete,
     Get,
     Param,
-    ParseArrayPipe,
     Patch,
     Post,
     Put,
@@ -13,7 +12,10 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { MembershipRequestDataItem, TRangeItem } from 'src/app.interfaces';
+import {
+    MembershipRequestDataItem,
+    TRangeItem,
+} from 'src/app.interfaces';
 import {
     ParseDateRangePipe,
     ParseQueryArrayPipe,
@@ -163,7 +165,7 @@ export class ClientController {
         @Query('size', PermanentlyParseIntPipe) size = 10,
         @Query('search') searchContent: string,
         @Query('last_cursor') lastCursor: string,
-        @Query('role', ParseArrayPipe, PermanentlyParseIntPipe) roles: number[],
+        @Query('role', ParseQueryArrayPipe, PermanentlyParseIntPipe) roles: number[] = [],
         @Query(
             'create_date_range',
             ParseDateRangePipe,

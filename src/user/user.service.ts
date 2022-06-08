@@ -82,8 +82,6 @@ export class UserService {
             ...options,
             repository: this.userRepository,
             searchKeys: [
-                'id',
-                'openId',
                 'email',
                 'fullName',
                 'firstName',
