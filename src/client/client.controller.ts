@@ -88,6 +88,19 @@ export class ClientController {
         return await this.clientService.getClientInfoFromNetwork(clientId, user);
     }
 
+    @Delete('/:client_id')
+    @UseGuards(AuthGuard())
+    @UseInterceptors(ClientInterceptor({
+        sources: 'params',
+        type: [0],
+    }))
+    public async deleteClient(
+        @Param('client_id') clientId: string,
+        @CurrentUser() user: UserDTO,
+    ) {
+        return await this.clientService.deleteClient(clientId);
+    }
+
     @Post('/challenge')
     @UseGuards(AuthGuard('client-key'))
     public async handleMakeChallenge(

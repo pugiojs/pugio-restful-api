@@ -130,6 +130,23 @@ export class ClientService {
         return clientInfo;
     }
 
+    public async deleteClient(clientId: string) {
+        const client = await this.clientRepository.findOne({
+            where: {
+                id: clientId,
+            },
+        });
+
+        if (client) {
+            await this.clientRepository.delete({
+                id: clientId,
+            });
+            return client;
+        }
+
+        return {};
+    }
+
     public async handleMakeChallenge(client: ClientDTO, deviceId: string, version = '1.0.0') {
         if (!client || !_.isString(deviceId)) {
             throw new BadRequestException();
