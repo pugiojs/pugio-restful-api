@@ -6,13 +6,11 @@ import { Between, FindConditions, Repository } from 'typeorm';
 import { ClientStatusDTO } from './dto/client-status.dto';
 import * as _ from 'lodash';
 import * as NodeRSA from 'node-rsa';
-import { PaginationQueryServiceOptions } from 'src/app.interfaces';
 import { UtilService } from 'src/util/util.service';
 
 @Injectable()
 export class ClientStatusService {
     public constructor(
-        private readonly utilService: UtilService,
         @InjectRepository(ClientDTO)
         private readonly clientRepository: Repository<ClientDTO>,
         @InjectRepository(ClientStatusDTO)
@@ -86,26 +84,6 @@ export class ClientStatusService {
         );
 
         return report;
-    }
-
-    public async queryClientStatuses(
-        clientId: string,
-        queryOptions: PaginationQueryServiceOptions<ClientStatusDTO>,
-    ) {
-        const result = await this.utilService.queryWithPagination({
-            ...queryOptions,
-            repository: this.clientStatusRepository,
-            queryOptions: {
-                where: {
-                    client: {
-                        id: clientId,
-                    },
-                },
-                relations: ['reporter'],
-            },
-        });
-
-        return result;
     }
 
     public async getClientSystemStatus(

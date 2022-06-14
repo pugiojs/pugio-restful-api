@@ -9,7 +9,6 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { TRangeItem } from 'src/app.interfaces';
 import {
     ParseDateRangePipe,
     PermanentlyParseIntPipe,
@@ -42,31 +41,6 @@ export class ClientStatusController {
             plaintext,
             cipher,
             system,
-        );
-    }
-
-    @UseGuards(AuthGuard())
-    @Get('/:client_id/all')
-    @UseInterceptors(ClientInterceptor({
-        sources: 'params',
-    }))
-    public async queryClientStatuses(
-        @Param('client_id') clientId: string,
-        @Query('size', PermanentlyParseIntPipe) size = 10,
-        @Query('search') searchContent: string,
-        @Query('last_cursor') lastCursor: string,
-        @Query('create_date_range', ParseDateRangePipe) createDateRange: TRangeItem[],
-    ) {
-        return await this.clientStatusService.queryClientStatuses(
-            clientId,
-            {
-                size,
-                lastCursor,
-                searchContent,
-                range: {
-                    createdAt: createDateRange,
-                },
-            },
         );
     }
 

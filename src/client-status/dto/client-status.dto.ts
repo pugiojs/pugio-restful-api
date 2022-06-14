@@ -4,7 +4,6 @@ import {
     Column,
     CreateDateColumn,
     Entity,
-    Index,
     JoinColumn,
     ManyToOne,
     OneToOne,
@@ -13,7 +12,6 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'client_statuses' })
-@Index(['createdAt', 'id'])
 export class ClientStatusDTO {
     @PrimaryGeneratedColumn('uuid')
     public id: string;
@@ -42,9 +40,11 @@ export class ClientStatusDTO {
 
     @OneToOne(
         () => ClientStatusDTO,
+        (clientStatus) => clientStatus.id,
         {
             nullable: true,
-            cascade: true,
+            onUpdate: 'CASCADE',
+            onDelete: 'CASCADE',
         },
     )
     @JoinColumn({ name: 'previous_record_id' })

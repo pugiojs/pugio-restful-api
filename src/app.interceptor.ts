@@ -5,6 +5,7 @@ import {
     CallHandler,
     HttpException,
     InternalServerErrorException,
+    Logger,
 } from '@nestjs/common';
 import * as _ from 'lodash';
 import { Observable } from 'rxjs';
@@ -19,6 +20,8 @@ export type Response = Record<string, any>;
 
 @Injectable()
 export class AppInterceptor<T> implements NestInterceptor<T, Response> {
+    private logger = new Logger('AppInterceptor');
+
     public constructor(
         private readonly utilService: UtilService,
     ) {}
@@ -29,6 +32,7 @@ export class AppInterceptor<T> implements NestInterceptor<T, Response> {
     ): Promise<Observable<Response>> {
         return next.handle().pipe(
             catchError((e) => {
+                this.logger.warn(e);
                 if (e instanceof HttpException) {
                     throw e;
                 } else {
