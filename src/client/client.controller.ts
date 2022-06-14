@@ -94,10 +94,7 @@ export class ClientController {
         sources: 'params',
         type: [0],
     }))
-    public async deleteClient(
-        @Param('client_id') clientId: string,
-        @CurrentUser() user: UserDTO,
-    ) {
+    public async deleteClient(@Param('client_id') clientId: string) {
         return await this.clientService.deleteClient(clientId);
     }
 
