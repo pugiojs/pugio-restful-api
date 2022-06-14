@@ -1,6 +1,7 @@
 import {
     ForbiddenException,
     Injectable,
+    Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as _ from 'lodash';
@@ -18,6 +19,8 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger('AuthService');
+
     public constructor(
         private readonly keyService: KeyService,
         private readonly configService: ConfigService,
@@ -102,6 +105,8 @@ export class AuthService {
             version?: string | string[],
         },
     ) {
+        this.logger.log(JSON.stringify({ userId, clientId, permission, checkDeviceId, version }));
+
         if (!_.isString(userId) || !userId) {
             return true;
         }
@@ -120,6 +125,7 @@ export class AuthService {
             });
 
         if (relations.length === 0) {
+            this.logger.warn('Cannot find relations as user: ' + userId + ' and client: ' + clientId);
             return false;
         }
 
@@ -127,6 +133,7 @@ export class AuthService {
             checkDeviceId &&
             relations.some((relation) => !relation.client.verified)
         ) {
+            this.logger.warn('Current client is not verified');
             throw new ForbiddenException(ERR_CLIENT_UNVERIFIED);
         }
 
@@ -178,6 +185,7 @@ export class AuthService {
             });
 
             if (!canUse) {
+                this.logger.warn('Cannot use this function in current version: ' + relations[0].client.version + ' clientId: ' + clientId);
                 throw new ForbiddenException(ERR_CLIENT_VERSION_NOT_SUPPORT);
             }
         }
@@ -189,6 +197,8 @@ export class AuthService {
         const permissionList = _.isNumber(permission)
             ? [permission]
             : permission;
+
+        this.logger.log('Checking permission for client ' + clientId + ', permissions: ' + permissionList + ' roleType: ' + relations.map((relation) => relation.roleType));
 
         return relations.some((relation) => permissionList.indexOf(relation.roleType) !== -1);
     }

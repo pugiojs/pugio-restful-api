@@ -3,12 +3,12 @@ import {
     ExecutionContext,
     ForbiddenException,
     Inject,
+    Logger,
     mixin,
     NestInterceptor,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { UtilService } from 'src/util/util.service';
-import { ClientService } from '../client/client.service';
 import * as _ from 'lodash';
 import { memoize } from 'src/app.util';
 import { ResourceBaseInterceptorOptions } from 'src/app.interfaces';
@@ -20,9 +20,9 @@ const createClientInterceptor = ({
     paths = '$.client_id',
 }: ResourceBaseInterceptorOptions) => {
     class MixinClientInterceptor implements NestInterceptor {
+        private readonly logger = new Logger('ClientInterceptor');
+
         public constructor(
-            @Inject(ClientService)
-            private readonly clientService: ClientService,
             @Inject(UtilService)
             private readonly utilService: UtilService,
             private readonly authService: AuthService,
@@ -35,6 +35,8 @@ const createClientInterceptor = ({
             const request = context.switchToHttp().getRequest();
             const userId = _.get(request, 'user.id');
             const clientId = this.utilService.getResourceIdentityFromContext(context, sources, paths);
+
+            this.logger.log('Checking client permission: ' + JSON.stringify({ userId, clientId, type }));
 
             if (
                 _.isString(clientId) &&
