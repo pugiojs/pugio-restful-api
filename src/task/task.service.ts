@@ -19,7 +19,7 @@ export class TaskService {
         private readonly clientStatusRepository: Repository<ClientStatusDTO>,
     ) {}
 
-    @Cron('0 0 2 * * *')
+    @Cron('0 0 */2 * * *')
     public async handleCleanClientStatusRecords() {
         try {
             const date = new Date(Date.now() - 48 * 60 * 60 * 1000);
